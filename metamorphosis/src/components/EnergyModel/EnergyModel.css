@@ -1,0 +1,75 @@
+.energy {
+  background: var(--ink);
+  padding: 110px 0 80px;
+}
+.energy__inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 88px;
+  align-items: start;
+  margin-bottom: 80px;
+}
+.energy__headline {
+  font-size: clamp(1.8rem, 3vw, 2.75rem);
+  color: var(--paper);
+  margin-bottom: 28px;
+}
+.energy__left p {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.58);
+  line-height: 1.82;
+  margin-bottom: 18px;
+}
+.energy__left strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+.energy__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-top: 8px;
+}
+.ebar__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+.ebar__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.ebar__caption {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  font-style: italic;
+}
+.ebar__track {
+  height: 8px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.ebar__fill {
+  height: 100%;
+  border-radius: 4px;
+  box-shadow: 0 0 12px currentColor;
+}
+.energy__pullquote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  color: var(--paper);
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--pad-x, 40px);
+  opacity: 0.85;
+  line-height: 1.5;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 64px;
+}
+@media (max-width: 900px) {
+  .energy__inner { grid-template-columns: 1fr; gap: 48px; }
+}
