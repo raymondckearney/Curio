@@ -1,0 +1,75 @@
+.approach {
+  background: var(--paper-warm);
+  padding: 110px 0;
+  border-top: 1px solid var(--rule);
+}
+.approach__intro { margin-bottom: 64px; }
+.approach__headline {
+  font-size: clamp(1.8rem, 3vw, 2.75rem);
+  color: var(--ink);
+}
+.approach__phases {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.phase-card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 48px 36px;
+  position: relative;
+  overflow: hidden;
+}
+.phase-card__watermark {
+  position: absolute;
+  top: -10px; right: 16px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 9rem;
+  line-height: 1;
+  color: var(--ink);
+  opacity: 0.04;
+  pointer-events: none;
+  user-select: none;
+}
+.phase-card__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.phase-card__title {
+  font-size: 1rem;
+  color: var(--ink);
+  line-height: 1.65;
+  margin-bottom: 28px;
+  font-weight: 500;
+}
+.phase-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.phase-card__list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.phase-card__list li::before {
+  content: '';
+  display: block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+@media (max-width: 900px) {
+  .approach__phases { grid-template-columns: 1fr; }
+}
