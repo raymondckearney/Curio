@@ -471,62 +471,35 @@ p  { line-height: 1.78; }
 .lenses {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  background: rgba(255,255,255,0.07);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  gap: 0;
+  border-top: 1px solid rgba(196,154,74,0.45);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
   position: relative; z-index: 1;
 }
 .lens {
   background: var(--navy);
-  padding: 52px 40px;
+  padding: 52px 44px 56px;
   position: relative;
-  overflow: hidden;
+  border-right: 1px solid rgba(255,255,255,0.08);
   transition: background 0.3s var(--ease);
 }
-.lens::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--gold);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.45s var(--ease);
-}
-.lens:hover::after { transform: scaleX(1); }
-.lens:hover { background: rgba(255,255,255,0.035); }
-.lens-bg-num {
-  font-family: var(--font-display);
-  font-size: 7rem;
-  font-weight: 700;
-  color: rgba(255,255,255,0.03);
-  position: absolute;
-  top: 12px; right: 16px;
-  line-height: 1;
-  pointer-events: none;
-}
-.lens-icon {
-  width: 56px; height: 56px;
-  background: rgba(196,154,74,0.14);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--gold);
-  margin-bottom: 30px;
-}
+.lens:last-child { border-right: none; }
+.lens:hover { background: rgba(255,255,255,0.025); }
 .lens-type {
-  font-size: 0.68rem;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 4.5vw, 4.5rem);
+  font-weight: 400;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 14px;
+}
+.lens-name {
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 6px;
-}
-.lens-name {
-  font-family: var(--font-display);
-  font-size: 2.25rem;
   color: var(--white);
-  margin-bottom: 18px;
+  margin-bottom: 8px;
 }
 .lens-desc {
   font-size: 0.9rem;
@@ -788,31 +761,35 @@ footer {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.38);
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   display: block;
+}
+.lens-rule {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin: 0 0 24px;
 }
 .lens-italic {
   font-family: var(--font-display);
   font-style: italic;
   font-size: 1rem;
-  color: rgba(255,255,255,0.72);
-  line-height: 1.7;
-  margin-bottom: 16px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.72;
+  margin-bottom: 18px;
 }
 .lens-body-text {
-  font-size: 0.875rem;
-  color: rgba(255,255,255,0.48);
-  line-height: 1.8;
-  margin-bottom: 20px;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.82;
+  margin-bottom: 24px;
 }
 .lens-quote {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--gold-light);
-  border-top: 1px solid rgba(196,154,74,0.25);
-  padding-top: 18px;
-  margin-top: 4px;
+  border-top: 1px solid rgba(196,154,74,0.28);
+  padding-top: 20px;
   display: block;
 }
 
