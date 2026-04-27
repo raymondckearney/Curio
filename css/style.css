@@ -699,46 +699,17 @@ p  { line-height: 1.78; }
 
 /* ─── IMPACT ─── */
 #impact {
-  padding: var(--section-y) 0;
+  padding-top: var(--section-y);
+  padding-bottom: 0;
   background: var(--navy);
   position: relative;
   overflow: hidden;
 }
 .impact-glow {
   position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse 700px 500px at 15% 85%, rgba(196,154,74,0.055) 0%, transparent 55%);
+  background: radial-gradient(ellipse 900px 600px at 80% 20%, rgba(196,154,74,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse 600px 400px at 10% 90%, rgba(196,154,74,0.04) 0%, transparent 50%);
 }
-.impact-head {
-  text-align: center;
-  margin-bottom: 72px;
-  position: relative; z-index: 1;
-}
-.impact-head h2 { color: var(--white); margin-bottom: 18px; }
-.impact-head p { color: rgba(255,255,255,0.58); max-width: 520px; margin: 0 auto; font-size: 1.025rem; }
-.impact-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  background: rgba(255,255,255,0.06);
-  position: relative; z-index: 1;
-}
-.i-card {
-  background: var(--navy);
-  padding: 48px 38px;
-  text-align: center;
-  transition: background 0.3s;
-}
-.i-card:hover { background: rgba(255,255,255,0.03); }
-.i-icon {
-  width: 64px; height: 64px;
-  background: rgba(196,154,74,0.12);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 24px;
-  color: var(--gold);
-}
-.i-card h3 { font-size: 1.4rem; color: var(--white); margin-bottom: 14px; }
-.i-card p { font-size: 0.9rem; color: rgba(255,255,255,0.52); line-height: 1.8; }
 
 /* ─── CTA ─── */
 #cta {
@@ -846,33 +817,6 @@ footer {
 }
 
 /* ─── SIX TYPES PROFILE CARDS ─── */
-.p-card {
-  background: var(--navy);
-  padding: 40px 34px;
-  transition: background 0.3s;
-}
-.p-card:hover { background: rgba(255,255,255,0.03); }
-.p-combo {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
-}
-.p-combo .tag { font-size: 0.65rem; }
-.p-italic {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.6);
-  line-height: 1.7;
-  margin-bottom: 14px;
-}
-.p-summary {
-  font-size: 0.82rem;
-  color: rgba(255,255,255,0.38);
-  line-height: 1.8;
-}
-
 /* ─── SIX TYPES HEADER ─── */
 .sixtypes-header {
   display: grid;
@@ -881,10 +825,64 @@ footer {
   align-items: start;
   margin-bottom: 64px;
 }
-.sixtypes-header-right { padding-top: 8px; }
-.sixtypes-header-right p { color: rgba(255,255,255,0.52); font-size: 1rem; line-height: 1.8; }
+.sixtypes-header h2 { color: var(--white); margin-bottom: 0; }
+.sixtypes-header-right { padding-top: 6px; }
+.sixtypes-header-right p { color: rgba(255,255,255,0.62); font-size: 1.0rem; line-height: 1.85; }
+
+/* ─── TYPE BARS ─── */
+.type-bars {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: var(--section-y);
+}
+.t-bar {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  transition: background 0.25s;
+}
+.t-bar:hover { background: rgba(255,255,255,0.025); }
+.t-bar-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 44px var(--pad-x);
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 72px;
+  align-items: center;
+}
+.t-bar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.t-num {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  line-height: 1;
+  color: rgba(196,154,74,0.18);
+  font-weight: 700;
+}
+.t-combo {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.t-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.6;
+}
+.t-summary {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  color: var(--white);
+  line-height: 1.45;
+}
+
 @media (max-width: 840px) {
   .sixtypes-header { grid-template-columns: 1fr; gap: 32px; }
+  .t-bar-inner { grid-template-columns: 1fr; gap: 20px; }
+  .t-num { font-size: 1.8rem; }
 }
 
 /* ─── SCROLL ANIMATIONS ─── */
@@ -908,7 +906,6 @@ footer {
 }
 @media (max-width: 840px) {
   .lenses          { grid-template-columns: 1fr; }
-  .impact-cards    { grid-template-columns: 1fr; }
   .phase           { grid-template-columns: 1fr; }
   .phase-num-col   { padding: 40px 0 0; }
   .phase-body      { border-left: none; border-top: 1px solid var(--border); padding: 28px 0 44px; }
