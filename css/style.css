@@ -896,3 +896,71 @@ footer {
   .footer-top      { grid-template-columns: 1fr; gap: 36px; }
   .footer-bottom   { flex-direction: column; gap: 10px; text-align: center; }
 }
+
+/* ─── APPLICATIONS ─── */
+#applications { background: var(--navy); padding: var(--section-y) 0; }
+
+.app-header {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+  align-items: end; margin-bottom: 64px;
+}
+.app-header h2 { color: var(--white); }
+.app-header-right { font-size: 1rem; color: rgba(255,255,255,0.5); line-height: 1.8; }
+
+.app-accordion { border-top: 1px solid rgba(196,154,74,0.3); }
+
+.app-item { border-bottom: 1px solid rgba(255,255,255,0.07); }
+
+.app-item summary {
+  list-style: none; display: grid;
+  grid-template-columns: 56px 1fr 40px;
+  gap: 28px; align-items: start;
+  padding: 36px 0; cursor: pointer;
+}
+.app-item summary::-webkit-details-marker { display: none; }
+.app-item summary::marker { display: none; }
+
+.app-num {
+  font-family: var(--font-display); font-size: 0.78rem;
+  color: var(--gold); font-weight: 700;
+  letter-spacing: 0.1em; padding-top: 4px;
+}
+
+.app-title-text {
+  font-family: var(--font-display); font-size: 1.25rem;
+  font-weight: 700; color: var(--white);
+  margin-bottom: 10px; line-height: 1.2;
+  transition: color 0.2s;
+}
+.app-item[open] .app-title-text { color: var(--gold); }
+
+.app-problem { font-size: 0.9rem; color: rgba(255,255,255,0.4); line-height: 1.75; }
+
+.app-toggle {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+  font-size: 20px; line-height: 1;
+  color: rgba(255,255,255,0.35);
+  transition: all 0.2s;
+}
+.app-item[open] .app-toggle {
+  background: var(--gold); border-color: var(--gold); color: var(--navy);
+}
+
+.app-body { padding: 0 0 40px calc(56px + 28px); }
+
+.app-bullets { display: flex; flex-direction: column; gap: 14px; }
+.app-bullet  { display: flex; gap: 16px; align-items: flex-start; }
+.app-bullet-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--gold); margin-top: 9px; flex-shrink: 0;
+}
+.app-bullet-text { font-size: 0.9rem; color: rgba(255,255,255,0.65); line-height: 1.78; }
+
+@media (max-width: 768px) {
+  .app-header { grid-template-columns: 1fr; gap: 20px; }
+  .app-item summary { grid-template-columns: 40px 1fr 36px; gap: 16px; }
+  .app-body { padding-left: calc(40px + 16px); }
+}

@@ -45,6 +45,14 @@ const observer = new IntersectionObserver(entries => {
 }, { threshold: 0.1, rootMargin: '0px 0px -48px 0px' });
 revealEls.forEach(el => observer.observe(el));
 
+// Accordion toggle symbol
+document.querySelectorAll('.app-item').forEach(item => {
+  const toggle = item.querySelector('.app-toggle');
+  item.addEventListener('toggle', () => {
+    toggle.textContent = item.open ? '−' : '+';
+  });
+});
+
 // Dynamic footer year
 const yearEl = document.getElementById('year');
 if (yearEl) yearEl.textContent = new Date().getFullYear();
