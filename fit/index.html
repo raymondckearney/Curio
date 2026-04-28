@@ -20,7 +20,6 @@
   <script type="text/babel">
     const { useState, useRef, useEffect } = React;
 
-    const API_KEY = ""; // Add your Anthropic API key here
 
     const TYPES = [
       { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "The Visionary Strategist",   primary: "WHY",  secondary: "WHAT" },
@@ -201,11 +200,6 @@
       async function analyze() {
         if (!selectedType || !role.trim()) return;
 
-        if (!API_KEY) {
-          setError("API key not configured. Please add your Anthropic API key to the page.");
-          return;
-        }
-
         setLoading(true);
         setError("");
         setResult(null);
@@ -264,14 +258,9 @@ Their current job title/role: "${role.trim()}"
 Please analyze the alignment between this Three Brains profile and this role. Be specific to what this job actually involves.`;
 
         try {
-          const response = await fetch("https://api.anthropic.com/v1/messages", {
+          const response = await fetch("/api/analyze", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-api-key": API_KEY,
-              "anthropic-version": "2023-06-01",
-              "anthropic-dangerous-direct-browser-access": "true",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               model: "claude-sonnet-4-6",
               max_tokens: 1500,
