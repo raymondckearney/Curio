@@ -284,8 +284,15 @@ p  { line-height: 1.78; }
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--gold);
-  margin-bottom: 48px;
+  margin-bottom: 8px;
   animation: fadeUp 0.9s var(--ease) 0.6s both;
+}
+.hero-developed-by {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.06em;
+  margin-bottom: 44px;
+  animation: fadeUp 0.9s var(--ease) 0.75s both;
 }
 .hero-intro-line::before {
   content: '';
