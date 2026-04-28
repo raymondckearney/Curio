@@ -266,12 +266,15 @@ p  { line-height: 1.78; }
   font-family: var(--font-display);
   font-size: clamp(2rem, 4vw, 3.8rem);
   font-weight: 700;
-  color: var(--white);
   line-height: 1.22;
   max-width: 860px;
   margin-bottom: 36px;
   animation: fadeUp 0.9s var(--ease) 0.2s both;
+  display: flex; flex-direction: column; gap: 4px;
 }
+.hero-headline .hl-1 { color: rgba(255,255,255,0.42); }
+.hero-headline .hl-2 { color: rgba(255,255,255,0.68); }
+.hero-headline .hl-3 { color: var(--white); }
 .hero-intro-line {
   display: inline-flex;
   align-items: center;
