@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Role Alignment Analyzer — Curio</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #F9FAFB; }
+    input:focus { outline: none; }
+    button:focus-visible { outline: 2px solid #6366F1; outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    const API_KEY = ""; // Add your Anthropic API key here
+
+    const TYPES = [
+      { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "The Visionary Strategist",   primary: "WHY",  secondary: "WHAT" },
+      { id: "WHY-HOW",  label: "WHY – HOW",  tagline: "The Systems Visionary",      primary: "WHY",  secondary: "HOW"  },
+      { id: "WHAT-WHY", label: "WHAT – WHY", tagline: "The Purpose-Driven Driver",  primary: "WHAT", secondary: "WHY"  },
+      { id: "WHAT-HOW", label: "WHAT – HOW", tagline: "The Iterative Executor",     primary: "WHAT", secondary: "HOW"  },
+      { id: "HOW-WHY",  label: "HOW – WHY",  tagline: "The Insightful Optimizer",   primary: "HOW",  secondary: "WHY"  },
+      { id: "HOW-WHAT", label: "HOW – WHAT", tagline: "The Operational Architect",  primary: "HOW",  secondary: "WHAT" },
+    ];
+
+    const TYPE_DETAILS = {
+      "WHY-WHAT": {
+        desc: "Comes into situations, quickly visualizes an ideal state, and articulates the steps to get there. Questions the status quo and plots paths to opportunities just out of reach.",
+        strengths: ["Strategic vision and big-picture thinking","Identifying opportunities and gaps","Setting direction and goals","Pitching and narrative building","Questioning the status quo","High-level roadmap planning"],
+        drains: ["Granular execution and task management","Following detailed processes","Documentation and administrative work","Repetitive or routine tasks","Working in the weeds for extended periods"],
+        bestPartners: ["HOW-WHAT","HOW-WHY","WHAT-HOW"],
+      },
+      "WHY-HOW": {
+        desc: "A systems thinker who sees the big picture and finest details simultaneously. Constantly links outcomes to tasks and builds visions grounded in how things actually work.",
+        strengths: ["Systems thinking and framework design","Research synthesis and distilling insights","Diagnosing root causes","Writing thought leadership","Building comprehensive strategies","Connecting vision to execution detail"],
+        drains: ["Fast-paced iteration without analysis","Rushing to launch before it feels right","Pure action without sufficient grounding","Communicating to WHAT-dominant audiences"],
+        bestPartners: ["WHAT-WHY","WHAT-HOW","HOW-WHAT"],
+      },
+      "WHAT-WHY": {
+        desc: "Values intuition and moves forward with purpose. Equally concerned about the journey as the destination. A natural motivator who rallies teams around clear goals.",
+        strengths: ["Building and maintaining momentum","Rallying teams around shared goals","Fast decision-making under ambiguity","Client-facing discovery and pitching","Running high-energy team sessions","Milestone-oriented project leadership"],
+        drains: ["Detailed process design and documentation","Administrative and compliance work","Deep analytical research","Managing granular task execution","Precision-oriented work for extended periods"],
+        bestPartners: ["HOW-WHAT","WHY-HOW","WHY-WHAT"],
+      },
+      "WHAT-HOW": {
+        desc: "Driven by action and iteration. Can zoom into the deepest details then return to a high-level view instantly. Hates leaving a conversation without a clear next step.",
+        strengths: ["Detailed project planning and management","Breaking initiatives into actionable steps","Building metrics and dashboards","Managing cross-functional execution","Running agile and iterative processes","Operationalizing workflows and processes"],
+        drains: ["Open-ended visioning without clear milestones","Work lacking defined next steps","Pure strategy without implementation path","Extended ambiguity about direction or goals"],
+        bestPartners: ["WHY-WHAT","WHY-HOW","HOW-WHY"],
+      },
+      "HOW-WHY": {
+        desc: "Interested in making things work better. Deeply understands how systems function and imagines better ways to use time, space, money, and energy.",
+        strengths: ["Deep analytical work and root cause analysis","Process auditing and redesign","Synthesizing complex data into insights","Testing and validating approaches rigorously","Spotting inefficiencies","Mentoring on methodology and best practices"],
+        drains: ["Launching before full analysis is complete","High-velocity action-oriented environments","Communicating findings to non-technical audiences","Prioritizing when everything feels equally important"],
+        bestPartners: ["WHAT-HOW","WHAT-WHY","WHY-WHAT"],
+      },
+      "HOW-WHAT": {
+        desc: "Driven by making work function at its best. Understands all the details, thrives in complexity, brings structure to keep everything moving. Can predict where a system will break.",
+        strengths: ["Designing operational processes end-to-end","Building organizational structures and operating models","Creating SOPs, playbooks, and documentation","Implementing systems and managing change","Identifying and resolving bottlenecks","Managing multi-workstream complexity"],
+        drains: ["Ambiguous open-ended creative work","Vision-setting without clear parameters","Work requiring frequent pivots without structure","Communication of 'why' to stakeholders"],
+        bestPartners: ["WHY-WHAT","WHY-HOW","WHAT-WHY"],
+      },
+    };
+
+    const BRAIN_COLORS = {
+      WHY:  { bg: "#EFF6FF", border: "#BFDBFE", text: "#1D4ED8", dot: "#3B82F6" },
+      WHAT: { bg: "#F0FDF4", border: "#BBF7D0", text: "#15803D", dot: "#22C55E" },
+      HOW:  { bg: "#FFF1F2", border: "#FECDD3", text: "#BE123C", dot: "#F43F5E" },
+    };
+
+    function ScoreRing({ score }) {
+      const r = 52;
+      const circ = 2 * Math.PI * r;
+      const pct = Math.round(score);
+      const dash = (pct / 100) * circ;
+      const color = pct >= 75 ? "#22C55E" : pct >= 50 ? "#F59E0B" : "#F43F5E";
+      const label = pct >= 80 ? "Strong fit" : pct >= 60 ? "Good fit" : pct >= 40 ? "Partial fit" : "Low fit";
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <svg width="130" height="130" viewBox="0 0 130 130">
+            <circle cx="65" cy="65" r={r} fill="none" stroke="#E5E7EB" strokeWidth="10" />
+            <circle
+              cx="65" cy="65" r={r} fill="none"
+              stroke={color} strokeWidth="10"
+              strokeDasharray={`${dash} ${circ}`}
+              strokeLinecap="round"
+              transform="rotate(-90 65 65)"
+              style={{ transition: "stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" }}
+            />
+            <text x="65" y="60" textAnchor="middle" fontSize="26" fontWeight="700" fill={color} fontFamily="Georgia, serif">{pct}%</text>
+            <text x="65" y="78" textAnchor="middle" fontSize="11" fill="#9CA3AF" fontFamily="system-ui, sans-serif">match</text>
+          </svg>
+          <span style={{
+            fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase",
+            color: color, padding: "3px 10px", borderRadius: 99,
+            border: `1px solid ${color}30`, background: `${color}10`,
+          }}>{label}</span>
+        </div>
+      );
+    }
+
+    function TypeSelector({ selected, onSelect }) {
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          {TYPES.map(t => {
+            const pc = BRAIN_COLORS[t.primary];
+            const isActive = selected === t.id;
+            return (
+              <button key={t.id} onClick={() => onSelect(t.id)} style={{
+                background: isActive ? pc.bg : "white",
+                border: `1.5px solid ${isActive ? pc.dot : "#E5E7EB"}`,
+                borderRadius: 10, padding: "10px 12px", cursor: "pointer",
+                textAlign: "left", transition: "all 0.15s ease",
+                boxShadow: isActive ? `0 0 0 3px ${pc.dot}20` : "none",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: pc.dot, display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? pc.text : "#374151", letterSpacing: "0.03em" }}>
+                    {t.label}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: "#9CA3AF", paddingLeft: 14 }}>{t.tagline}</div>
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    function Section({ icon, title, color, children }) {
+      return (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <span style={{
+              width: 28, height: 28, borderRadius: 8, background: `${color}15`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 14, flexShrink: 0,
+            }}>{icon}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#374151", letterSpacing: "0.02em", textTransform: "uppercase" }}>{title}</span>
+          </div>
+          {children}
+        </div>
+      );
+    }
+
+    function BulletList({ items, color }) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {items.map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <span style={{
+                width: 6, height: 6, borderRadius: "50%", background: color,
+                marginTop: 6, flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 14, color: "#4B5563", lineHeight: 1.6 }}>{item}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function RecommendationCard({ rec, index }) {
+      return (
+        <div style={{
+          background: "white", border: "1px solid #E5E7EB", borderRadius: 12,
+          padding: "14px 16px", marginBottom: 10,
+          borderLeft: "3px solid #6366F1",
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#6366F1", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+            {rec.category}
+          </div>
+          <div style={{ fontSize: 14, color: "#1F2937", fontWeight: 500, marginBottom: 4 }}>{rec.action}</div>
+          <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.6 }}>{rec.rationale}</div>
+        </div>
+      );
+    }
+
+    function ThreeBrainsAnalyzer() {
+      const [selectedType, setSelectedType] = useState("");
+      const [role, setRole] = useState("");
+      const [loading, setLoading] = useState(false);
+      const [result, setResult] = useState(null);
+      const [error, setError] = useState("");
+      const resultRef = useRef(null);
+
+      useEffect(() => {
+        if (result && resultRef.current) {
+          resultRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, [result]);
+
+      async function analyze() {
+        if (!selectedType || !role.trim()) return;
+
+        if (!API_KEY) {
+          setError("API key not configured. Please add your Anthropic API key to the page.");
+          return;
+        }
+
+        setLoading(true);
+        setError("");
+        setResult(null);
+
+        const type = TYPES.find(t => t.id === selectedType);
+        const details = TYPE_DETAILS[selectedType];
+        const tertiary = ["WHY","WHAT","HOW"].find(b => b !== type.primary && b !== type.secondary);
+
+        const systemPrompt = `You are an expert analyst for The Three Brains Framework, a model for understanding how people solve problems. The framework defines three cognitive orientations:
+
+- WHY Brain: Vision-oriented, purpose-driven, big-picture thinker, asks questions, challenges the status quo, thinks about future possibilities, organizes by goal-setting
+- WHAT Brain: Action-oriented, momentum-driven, milestone-focused, good gut instinct, structured thinking, values progress and iteration, organizes by milestones
+- HOW Brain: Detail-oriented, process-focused, precision-driven, systematic thinker, tracks all moving parts, values completing tasks thoroughly, organizes by tasks
+
+Each person has a Primary (energizing), Secondary (neutral), and Tertiary (draining) orientation. The six profiles are: WHY-WHAT (Visionary Strategist), WHY-HOW (Systems Visionary), WHAT-WHY (Purpose-Driven Driver), WHAT-HOW (Iterative Executor), HOW-WHY (Insightful Optimizer), HOW-WHAT (Operational Architect).
+
+You will receive a person's profile type and their current job title/role. You must return ONLY a valid JSON object with this exact structure — no markdown, no extra text, just the JSON:
+
+{
+  "score": <integer 0-100>,
+  "scoreRationale": "<2-3 sentence explanation of why this score was given>",
+  "enjoys": ["<thing they likely enjoy 1>", "<thing they likely enjoy 2>", "<thing they likely enjoy 3>", "<thing they likely enjoy 4>"],
+  "excels": ["<thing they likely excel at 1>", "<thing they likely excel at 2>", "<thing they likely excel at 3>", "<thing they likely excel at 4>"],
+  "dislikes": ["<thing they likely dislike 1>", "<thing they likely dislike 2>", "<thing they likely dislike 3>"],
+  "struggles": ["<thing they likely struggle with 1>", "<thing they likely struggle with 2>", "<thing they likely struggle with 3>"],
+  "recommendations": [
+    { "category": "<short category label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
+    { "category": "<short category label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
+    { "category": "<short category label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
+    { "category": "<short category label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" }
+  ],
+  "partnerTypes": [
+    { "type": "<partner type id e.g. HOW-WHAT>", "reason": "<why this partner helps in this specific role>" },
+    { "type": "<partner type id>", "reason": "<why this partner helps in this specific role>" }
+  ]
+}
+
+Scoring guidance:
+- 85-100: The role is an ideal match — primary tasks strongly align with the type's natural orientation
+- 70-84: Good fit — most core responsibilities energize this type, some minor drains
+- 50-69: Partial fit — meaningful alignment but significant portions of the role work against the type
+- 30-49: Low fit — the role demands more from tertiary/secondary than primary orientation
+- 0-29: Poor fit — the role is fundamentally misaligned with how this type gains energy
+
+Be specific to the actual job title/role given. Research what that role actually involves day-to-day. Make the enjoys/excels/dislikes/struggles lists concrete and role-specific, not generic. Recommendations should be practical and actionable for someone in that specific role.`;
+
+        const userMessage = `Profile type: ${type.label} (${type.tagline})
+Primary orientation: ${type.primary}
+Secondary orientation: ${type.secondary}
+Tertiary (draining) orientation: ${tertiary}
+
+Profile description: ${details.desc}
+
+Their current job title/role: "${role.trim()}"
+
+Please analyze the alignment between this Three Brains profile and this role. Be specific to what this job actually involves.`;
+
+        try {
+          const response = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": API_KEY,
+              "anthropic-version": "2023-06-01",
+              "anthropic-dangerous-direct-browser-access": "true",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-6",
+              max_tokens: 1500,
+              system: systemPrompt,
+              messages: [{ role: "user", content: userMessage }],
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.error) throw new Error(data.error.message);
+
+          const raw = data.content?.[0]?.text || "";
+          const cleaned = raw.replace(/```json|```/g, "").trim();
+          const parsed = JSON.parse(cleaned);
+          setResult(parsed);
+        } catch (e) {
+          setError("Something went wrong analyzing your role. Please try again.");
+          console.error(e);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      const type = TYPES.find(t => t.id === selectedType);
+      const pc = type ? BRAIN_COLORS[type.primary] : null;
+
+      return (
+        <div style={{
+          minHeight: "100vh",
+          background: "#F9FAFB",
+          fontFamily: "'Georgia', 'Times New Roman', serif",
+        }}>
+
+          {/* Header */}
+          <div style={{
+            background: "white",
+            borderBottom: "1px solid #E5E7EB",
+            padding: "24px 32px",
+          }}>
+            <div style={{ maxWidth: 720, margin: "0 auto" }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#111827", marginBottom: 4, letterSpacing: "-0.02em" }}>
+                Role Alignment Analyzer
+              </div>
+              <div style={{ fontSize: 14, color: "#6B7280", fontFamily: "system-ui, sans-serif", lineHeight: 1.6 }}>
+                Discover how well your current role fits your natural problem-solving style — and how to get more from it.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ maxWidth: 720, margin: "0 auto", padding: "32px 32px" }}>
+
+            {/* Step 1 */}
+            <div style={{
+              background: "white", border: "1px solid #E5E7EB", borderRadius: 16,
+              padding: "28px", marginBottom: 20,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, fontWeight: 700, color: "#374151", fontFamily: "system-ui",
+                }}>1</div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", fontFamily: "system-ui" }}>Select your Three Brains type</div>
+                  <div style={{ fontSize: 13, color: "#9CA3AF", fontFamily: "system-ui" }}>Choose your primary — secondary orientation</div>
+                </div>
+              </div>
+              <TypeSelector selected={selectedType} onSelect={setSelectedType} />
+            </div>
+
+            {/* Step 2 */}
+            <div style={{
+              background: "white", border: "1px solid #E5E7EB", borderRadius: 16,
+              padding: "28px", marginBottom: 20,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, fontWeight: 700, color: "#374151", fontFamily: "system-ui",
+                }}>2</div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", fontFamily: "system-ui" }}>Enter your current role</div>
+                  <div style={{ fontSize: 13, color: "#9CA3AF", fontFamily: "system-ui" }}>Your job title or a brief description of what you do</div>
+                </div>
+              </div>
+              <input
+                value={role}
+                onChange={e => setRole(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") analyze(); }}
+                placeholder="e.g. Senior Product Manager, VP of Sales, Operations Director..."
+                style={{
+                  width: "100%", padding: "12px 16px", fontSize: 15,
+                  border: "1.5px solid #E5E7EB", borderRadius: 10,
+                  fontFamily: "system-ui, sans-serif", color: "#111827",
+                  background: "white", outline: "none", boxSizing: "border-box",
+                  transition: "border-color 0.15s",
+                }}
+                onFocus={e => { e.target.style.borderColor = "#6366F1"; }}
+                onBlur={e => { e.target.style.borderColor = "#E5E7EB"; }}
+              />
+            </div>
+
+            {/* Analyze button */}
+            <button
+              onClick={analyze}
+              disabled={!selectedType || !role.trim() || loading}
+              style={{
+                width: "100%", padding: "15px 24px",
+                background: selectedType && role.trim() && !loading ? "#111827" : "#E5E7EB",
+                color: selectedType && role.trim() && !loading ? "white" : "#9CA3AF",
+                border: "none", borderRadius: 12, fontSize: 15, fontWeight: 600,
+                fontFamily: "system-ui, sans-serif",
+                cursor: selectedType && role.trim() && !loading ? "pointer" : "not-allowed",
+                transition: "all 0.15s ease", letterSpacing: "0.01em", marginBottom: 32,
+              }}
+            >
+              {loading ? "Analyzing your alignment..." : "Analyze my role alignment →"}
+            </button>
+
+            {/* Error */}
+            {error && (
+              <div style={{
+                background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12,
+                padding: "16px 20px", color: "#991B1B", fontSize: 14,
+                fontFamily: "system-ui", marginBottom: 24,
+              }}>{error}</div>
+            )}
+
+            {/* Results */}
+            {result && (
+              <div ref={resultRef}>
+
+                {/* Score + type header */}
+                <div style={{
+                  background: "white", border: "1px solid #E5E7EB", borderRadius: 16,
+                  padding: "28px", marginBottom: 20,
+                  display: "flex", gap: 28, alignItems: "flex-start",
+                }}>
+                  <ScoreRing score={result.score} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: "#9CA3AF", fontFamily: "system-ui", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
+                      {type && type.label} &middot; {type && type.tagline}
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", fontFamily: "system-ui", marginBottom: 4 }}>
+                      {role}
+                    </div>
+                    <div style={{ fontSize: 14, color: "#6B7280", fontFamily: "system-ui", lineHeight: 1.7 }}>
+                      {result.scoreRationale}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enjoys & Excels */}
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20,
+                }}>
+                  <div style={{
+                    background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 16, padding: "22px",
+                  }}>
+                    <Section icon="✦" title="Likely enjoys" color="#22C55E">
+                      <BulletList items={result.enjoys} color="#22C55E" />
+                    </Section>
+                  </div>
+                  <div style={{
+                    background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 16, padding: "22px",
+                  }}>
+                    <Section icon="◈" title="Likely excels at" color="#3B82F6">
+                      <BulletList items={result.excels} color="#3B82F6" />
+                    </Section>
+                  </div>
+                </div>
+
+                {/* Dislikes & Struggles */}
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20,
+                }}>
+                  <div style={{
+                    background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 16, padding: "22px",
+                  }}>
+                    <Section icon="△" title="Likely dislikes" color="#F59E0B">
+                      <BulletList items={result.dislikes} color="#F59E0B" />
+                    </Section>
+                  </div>
+                  <div style={{
+                    background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: 16, padding: "22px",
+                  }}>
+                    <Section icon="⚡" title="May struggle with" color="#F43F5E">
+                      <BulletList items={result.struggles} color="#F43F5E" />
+                    </Section>
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                <div style={{
+                  background: "white", border: "1px solid #E5E7EB", borderRadius: 16,
+                  padding: "24px 28px", marginBottom: 20,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                    <span style={{ fontSize: 16 }}>⬡</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#374151", fontFamily: "system-ui", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                      Recommendations
+                    </span>
+                  </div>
+                  {result.recommendations && result.recommendations.map((rec, i) => (
+                    <RecommendationCard key={i} rec={rec} index={i} />
+                  ))}
+                </div>
+
+                {/* Partner types */}
+                {result.partnerTypes && result.partnerTypes.length > 0 && (
+                  <div style={{
+                    background: "white", border: "1px solid #E5E7EB", borderRadius: 16,
+                    padding: "24px 28px", marginBottom: 32,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                      <span style={{ fontSize: 16 }}>⟳</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#374151", fontFamily: "system-ui", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                        Ideal collaborators for this role
+                      </span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      {result.partnerTypes.map((p, i) => {
+                        const pt = TYPES.find(t => t.id === p.type);
+                        const ptc = pt ? BRAIN_COLORS[pt.primary] : { bg: "#F9FAFB", border: "#E5E7EB", text: "#374151", dot: "#9CA3AF" };
+                        return (
+                          <div key={i} style={{
+                            background: ptc.bg, border: `1px solid ${ptc.border}`,
+                            borderRadius: 12, padding: "14px 16px",
+                          }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                              <span style={{ width: 8, height: 8, borderRadius: "50%", background: ptc.dot, display: "inline-block", flexShrink: 0 }} />
+                              <span style={{ fontSize: 13, fontWeight: 700, color: ptc.text, fontFamily: "system-ui" }}>
+                                {p.type}{pt ? ` · ${pt.tagline}` : ""}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 13, color: "#6B7280", fontFamily: "system-ui", lineHeight: 1.6 }}>
+                              {p.reason}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Try another */}
+                <button
+                  onClick={() => { setResult(null); setRole(""); setSelectedType(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  style={{
+                    width: "100%", padding: "13px 24px",
+                    background: "transparent", color: "#6B7280",
+                    border: "1px solid #E5E7EB", borderRadius: 12,
+                    fontSize: 14, fontFamily: "system-ui",
+                    cursor: "pointer", marginBottom: 40,
+                  }}
+                >
+                  ← Analyze a different role
+                </button>
+
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(ThreeBrainsAnalyzer));
+  </script>
+</body>
+</html>
