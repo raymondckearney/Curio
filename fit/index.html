@@ -278,7 +278,7 @@ Please analyze the alignment between this Three Brains profile and this role. Be
           const parsed = JSON.parse(cleaned);
           setResult(parsed);
         } catch (e) {
-          setError("Something went wrong analyzing your role. Please try again.");
+          setError("Error: " + (e.message || "Unknown error — check browser console for details."));
           console.error(e);
         } finally {
           setLoading(false);
