@@ -897,6 +897,14 @@ footer {
   gap: 6px;
   flex-wrap: wrap;
 }
+.t-type-label {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  line-height: 1.2;
+}
 .t-italic {
   font-family: var(--font-display);
   font-style: italic;
@@ -909,7 +917,33 @@ footer {
   font-size: clamp(1.2rem, 2vw, 1.55rem);
   color: var(--white);
   line-height: 1.45;
+  margin-bottom: 16px;
 }
+.t-signal {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.97rem;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.52);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 16px;
+  margin: 0;
+}
+
+/* Six Types color accents */
+.t-bar--why       { border-left: 3px solid rgba(196,154,74,0.75); }
+.t-bar--why-alt   { border-left: 3px solid rgba(196,154,74,0.45); }
+.t-bar--what      { border-left: 3px solid rgba(100,160,220,0.75); }
+.t-bar--what-alt  { border-left: 3px solid rgba(100,160,220,0.45); }
+.t-bar--how       { border-left: 3px solid rgba(120,190,140,0.75); }
+.t-bar--how-alt   { border-left: 3px solid rgba(120,190,140,0.45); }
+
+.t-bar--why .t-type-label       { color: var(--gold-light); }
+.t-bar--why-alt .t-type-label   { color: rgba(212,170,106,0.80); }
+.t-bar--what .t-type-label      { color: #82b4e0; }
+.t-bar--what-alt .t-type-label  { color: rgba(130,180,224,0.80); }
+.t-bar--how .t-type-label       { color: #7ec99a; }
+.t-bar--how-alt .t-type-label   { color: rgba(126,201,154,0.80); }
 
 @media (max-width: 840px) {
   .sixtypes-header { grid-template-columns: 1fr; gap: 32px; }
