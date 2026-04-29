@@ -1012,6 +1012,7 @@ footer {
   border-left: 3px solid transparent;
   border-bottom: 1px solid rgba(255,255,255,0.07);
   cursor: default;
+  padding-left: 24px;
 }
 
 .app-summary {
