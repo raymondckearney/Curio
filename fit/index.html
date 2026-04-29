@@ -503,12 +503,15 @@ Please analyze the alignment between this Three Brains profile and this role.`;
             }),
           });
 
-          if (!response.ok && response.headers.get("content-type")?.includes("application/json")) {
-            const err = await response.json();
-            throw new Error(err.error || "API error");
+          const ct = response.headers.get("content-type") || "";
+          let raw;
+          if (ct.includes("application/json")) {
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message || data.error);
+            raw = data.content?.[0]?.text || "";
+          } else {
+            raw = await readStream(response);
           }
-
-          const raw = await readStream(response);
           const cleaned = raw.replace(/```json|```/g, "").trim();
           const parsed = JSON.parse(cleaned);
           setResult(parsed);
