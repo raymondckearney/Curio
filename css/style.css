@@ -913,11 +913,14 @@ footer {
   line-height: 1.2;
 }
 .t-italic {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: 0.92rem;
-  color: rgba(255,255,255,0.5);
-  line-height: 1.6;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.42);
+  line-height: 1.5;
 }
 .t-summary {
   font-family: var(--font-display);
