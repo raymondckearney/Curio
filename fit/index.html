@@ -497,7 +497,7 @@ Please analyze the alignment between this Three Brains profile and this role.`;
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               model: "claude-haiku-4-5",
-              max_tokens: 1000,
+              max_tokens: 2000,
               system: systemPrompt,
               messages: [{ role: "user", content: userMessage }],
             }),

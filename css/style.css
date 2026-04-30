@@ -323,7 +323,6 @@ p  { line-height: 1.78; }
 .hero-concinnity-pron {
   display: block;
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 0.72rem;
   color: rgba(255,255,255,0.28);
   margin-bottom: 6px;
@@ -331,7 +330,6 @@ p  { line-height: 1.78; }
 .hero-concinnity-def {
   display: block;
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 0.75rem;
   color: rgba(255,255,255,0.28);
   line-height: 1.65;
@@ -396,7 +394,6 @@ p  { line-height: 1.78; }
 .pq-quote {
   font-family: var(--font-display);
   font-size: clamp(1.4rem, 2.5vw, 2.1rem);
-  font-style: italic;
   color: var(--navy);
   line-height: 1.55;
   margin-bottom: 22px;
@@ -833,7 +830,6 @@ footer {
 }
 .lens-italic {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 1rem;
   color: rgba(255,255,255,0.78);
   line-height: 1.72;
@@ -847,7 +843,6 @@ footer {
 }
 .lens-quote {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 1rem;
   color: var(--gold-light);
   border-top: 1px solid rgba(196,154,74,0.28);
@@ -931,7 +926,6 @@ footer {
 }
 .t-signal {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 0.97rem;
   line-height: 1.65;
   color: rgba(255,255,255,0.52);
