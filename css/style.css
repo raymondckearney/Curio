@@ -217,7 +217,7 @@ p  { line-height: 1.78; }
 /* ─── HERO ─── */
 #hero {
   min-height: 100vh;
-  background: var(--navy);
+  background: #070d14;
   display: flex;
   align-items: center;
   position: relative;
@@ -227,8 +227,96 @@ p  { line-height: 1.78; }
 .hero-aura {
   position: absolute; inset: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 900px 700px at 75% 40%, rgba(196,154,74,0.07) 0%, transparent 70%),
-    radial-gradient(ellipse 600px 500px at 5% 85%, rgba(30,64,128,0.55) 0%, transparent 60%);
+    radial-gradient(ellipse 800px 700px at 72% 50%, rgba(196,154,74,0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 500px 400px at 10% 80%, rgba(12,27,53,0.6) 0%, transparent 60%);
+}
+
+/* ─── CONCINNITY HERO LAYOUT ─── */
+.concin-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 48px;
+  padding-top: 96px;
+  padding-bottom: 96px;
+  position: relative;
+  z-index: 1;
+}
+.concin-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.concin-word {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
+  font-weight: 400;
+  color: var(--white);
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  margin-bottom: 14px;
+}
+.concin-pron {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.30);
+  margin-bottom: 22px;
+  letter-spacing: 0.05em;
+}
+.concin-rule {
+  border: none;
+  border-top: 1px solid rgba(196,154,74,0.22);
+  margin: 18px 0;
+}
+.concin-def {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.65;
+}
+.concin-pitch {
+  font-size: 0.92rem;
+  color: var(--white);
+  line-height: 1.6;
+}
+.concin-sub {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.40);
+  margin-top: 4px;
+  margin-bottom: 34px;
+}
+.concin-ctas {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.concin-approach-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.concin-approach-link:hover { color: var(--gold); }
+.concin-right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.concin-mandala {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  display: block;
+}
+@media (max-width: 900px) {
+  .concin-layout { grid-template-columns: 1fr; }
+  .concin-right { display: none; }
 }
 .hero-grid-bg {
   position: absolute; inset: 0; pointer-events: none;
@@ -550,8 +638,14 @@ p  { line-height: 1.78; }
 
 /* ─── ENERGY MODEL ─── */
 #energy { background: var(--cream); padding-top: var(--section-y); padding-bottom: 0; }
-.energy-header { max-width: 640px; margin-bottom: 56px; }
+.energy-header { max-width: 680px; margin-bottom: 56px; }
 .energy-header h2 { margin-bottom: 0; }
+.energy-subtext {
+  font-size: 1rem;
+  color: rgba(28,28,46,0.6);
+  line-height: 1.8;
+  margin-top: 16px;
+}
 .energy-bars { display: flex; flex-direction: column; }
 .e-bar { width: 100%; }
 .e-bar--1 { background: var(--navy); }
@@ -1000,70 +1094,53 @@ footer {
 .app-header h2 { color: var(--white); }
 .app-header-right { font-size: 1rem; color: rgba(255,255,255,0.5); line-height: 1.8; }
 
-.app-accordion { border-top: 1px solid rgba(196,154,74,0.3); }
-
-.app-item {
-  border-left: 3px solid transparent;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  cursor: default;
-  padding-left: 24px;
-}
-
-.app-summary {
-  padding: 28px 0;
-}
-
-.app-title-text {
-  font-family: var(--font-display); font-size: 1.25rem;
-  font-weight: 700; color: rgba(255,255,255,0.55);
-  line-height: 1.2; transition: color 0.25s;
-}
-.app-item:hover .app-title-text { color: var(--white); }
-
-.app-problem {
-  font-size: 0.9rem; color: rgba(255,255,255,0.4);
-  line-height: 1.75; margin-bottom: 20px;
-}
-
-.app-body {
+.app-grid {
   display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s ease, padding 0.35s ease;
-  padding-bottom: 0;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
-.app-body-inner { overflow: hidden; }
-.app-item:hover .app-body {
-  grid-template-rows: 1fr;
-  padding-bottom: 32px;
+.app-card {
+  border: 1px solid rgba(196,154,74,0.14);
+  border-radius: 6px;
+  padding: 20px;
+  cursor: default;
+  transition: border-color 0.25s, background 0.25s;
+  overflow: hidden;
+}
+.app-card:hover {
+  background: rgba(196,154,74,0.06);
+  border-color: rgba(196,154,74,0.35);
+}
+.app-card-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.3;
+  transition: color 0.25s;
+}
+.app-card:hover .app-card-title { color: var(--white); }
+.app-card-desc {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.42);
+  line-height: 1.65;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.3s ease;
+  margin-top: 0;
+}
+.app-card:hover .app-card-desc {
+  max-height: 160px;
+  opacity: 1;
+  margin-top: 10px;
 }
 
-.app-bullets { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
-.app-bullet  { display: flex; gap: 16px; align-items: flex-start; }
-.app-bullet-dot {
-  width: 4px; height: 4px; border-radius: 50%;
-  background: var(--gold); margin-top: 9px; flex-shrink: 0;
-}
-.app-bullet-text { font-size: 0.9rem; color: rgba(255,255,255,0.65); line-height: 1.78; }
-
-/* Decorative left-border cycle: gold / blue / green × 4 */
-.app-item:nth-child(1),
-.app-item:nth-child(4),
-.app-item:nth-child(7),
-.app-item:nth-child(10) { border-left-color: rgba(196,154,74,0.55); }
-
-.app-item:nth-child(2),
-.app-item:nth-child(5),
-.app-item:nth-child(8),
-.app-item:nth-child(11) { border-left-color: rgba(100,160,220,0.55); }
-
-.app-item:nth-child(3),
-.app-item:nth-child(6),
-.app-item:nth-child(9),
-.app-item:nth-child(12) { border-left-color: rgba(120,190,140,0.55); }
-
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .app-header { grid-template-columns: 1fr; gap: 20px; }
-  /* On mobile, show all content expanded since hover doesn't work */
-  .app-body { grid-template-rows: 1fr; padding-bottom: 28px; }
-  .app-title-text { color: var(--white); }
+  .app-grid { grid-template-columns: repeat(2, 1fr); }
+  .app-card-desc { max-height: 160px; opacity: 1; margin-top: 10px; }
+}
+@media (max-width: 480px) {
+  .app-grid { grid-template-columns: 1fr; }
 }
