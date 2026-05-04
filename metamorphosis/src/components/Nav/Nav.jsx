@@ -17,7 +17,7 @@ export default function Nav() {
     <>
       <nav className={`nav ${scrolled ? 'nav--scrolled' : ''}`}>
         <div className="nav__inner container">
-          <a href="#" className="nav__logo">Metamorphosis<span className="nav__dot">.</span></a>
+          <a href="#" className="nav__logo">Metamorphosis<span className="nav__dot"> ✦</span></a>
           <ul className="nav__links">
             <li><a href="#framework" onClick={close}>The Framework</a></li>
             <li><a href="#energy" onClick={close}>The Energy Model</a></li>

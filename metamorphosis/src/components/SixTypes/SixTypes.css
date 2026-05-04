@@ -1,5 +1,5 @@
 .sixtypes {
-  background: var(--paper);
+  background: #F0FDF4;
   padding: 110px 0;
 }
 .sixtypes__intro { max-width: 720px; margin-bottom: 64px; }
@@ -7,8 +7,9 @@
   font-size: clamp(1.8rem, 3vw, 2.75rem);
   color: var(--ink);
   margin-bottom: 20px;
+  font-weight: 800;
 }
-.sixtypes__lead { font-size: 1.0rem; color: var(--ink-soft); line-height: 1.8; }
+.sixtypes__lead { font-size: 1.0rem; font-weight: 500; color: var(--ink-soft); line-height: 1.8; }
 .sixtypes__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -16,28 +17,29 @@
   margin-bottom: 64px;
 }
 .profile-card {
-  background: var(--paper-warm);
-  border: 1px solid var(--rule);
-  border-radius: 6px;
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
+  border-radius: 20px;
   padding: 36px 30px;
   transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
   cursor: default;
 }
 .profile-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
   border-color: var(--accent);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+  box-shadow: 0 20px 48px rgba(5,150,105,0.12);
 }
 .profile-card__num {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-style: italic;
+  font-weight: 800;
   font-size: 1.5rem;
   color: var(--ink-muted);
   margin-bottom: 8px;
 }
 .profile-card__combo {
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--accent);
@@ -45,11 +47,13 @@
 }
 .profile-card__name {
   font-size: 1.25rem;
+  font-weight: 800;
   color: var(--ink);
   margin-bottom: 14px;
 }
 .profile-card__desc {
   font-size: 0.875rem;
+  font-weight: 500;
   color: var(--ink-soft);
   line-height: 1.75;
   margin-bottom: 20px;
@@ -61,19 +65,19 @@
 }
 .profile-card__badge {
   display: inline-block;
-  padding: 3px 12px;
+  padding: 4px 12px;
   border-radius: 100px;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: white;
-  opacity: 0.9;
 }
 .sixtypes__cta { text-align: center; }
 .sixtypes__nudge {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-style: italic;
+  font-weight: 700;
   font-size: 1.5rem;
   color: var(--ink-soft);
   margin-bottom: 24px;

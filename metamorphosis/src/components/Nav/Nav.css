@@ -5,11 +5,14 @@
   height: 76px;
   display: flex;
   align-items: center;
-  transition: background 0.4s ease, border-bottom 0.4s ease;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid transparent;
+  transition: border-bottom-color 0.4s ease, box-shadow 0.4s ease;
 }
 .nav--scrolled {
-  background: var(--paper);
-  border-bottom: 1px solid var(--rule);
+  border-bottom-color: var(--rule);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
 }
 .nav__inner {
   display: flex;
@@ -18,28 +21,25 @@
   width: 100%;
 }
 .nav__logo {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 1.3rem;
-  color: var(--paper);
-  letter-spacing: 0.01em;
-  transition: color 0.4s;
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.02em;
 }
-.nav--scrolled .nav__logo { color: var(--ink); }
 .nav__dot { color: var(--accent); }
 .nav__links {
   display: flex;
   gap: 36px;
 }
 .nav__links a {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: rgba(255,255,255,0.75);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-soft);
   transition: color 0.25s;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
-.nav--scrolled .nav__links a { color: var(--ink-soft); }
 .nav__links a:hover { color: var(--accent); }
-.nav--scrolled .nav__links a:hover { color: var(--accent); }
 .nav__cta { padding: 10px 22px; font-size: 0.8rem; }
 .nav__hamburger {
   display: none;
@@ -54,10 +54,10 @@
   display: block;
   width: 22px;
   height: 2px;
-  background: var(--paper);
-  transition: background 0.4s;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: background 0.25s;
 }
-.nav--scrolled .nav__hamburger span { background: var(--ink); }
 .mobile-nav {
   position: fixed;
   top: 76px; left: 0; right: 0;
@@ -69,10 +69,12 @@
   align-items: center;
   gap: 24px;
   padding: 32px 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 .mobile-nav a {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-family: var(--font-sans);
+  font-size: 1.4rem;
+  font-weight: 700;
   color: var(--ink);
 }
 @media (max-width: 900px) {

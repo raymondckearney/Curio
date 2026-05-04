@@ -1,5 +1,5 @@
 .energy {
-  background: var(--ink);
+  background: #1D4ED8;
   padding: 110px 0 80px;
 }
 .energy__inner {
@@ -11,16 +11,17 @@
 }
 .energy__headline {
   font-size: clamp(1.8rem, 3vw, 2.75rem);
-  color: var(--paper);
+  color: #fff;
   margin-bottom: 28px;
+  font-weight: 800;
 }
 .energy__left p {
   font-size: 0.9375rem;
-  color: rgba(255,255,255,0.58);
+  color: rgba(255,255,255,0.72);
   line-height: 1.82;
   margin-bottom: 18px;
 }
-.energy__left strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+.energy__left strong { color: #fff; font-weight: 700; }
 .energy__bars {
   display: flex;
   flex-direction: column;
@@ -38,36 +39,37 @@
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.6);
 }
 .ebar__caption {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.45);
   font-style: italic;
 }
 .ebar__track {
   height: 8px;
-  background: rgba(255,255,255,0.07);
-  border-radius: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50px;
   overflow: hidden;
 }
 .ebar__fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 50px;
   box-shadow: 0 0 12px currentColor;
 }
 .energy__pullquote {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-style: italic;
+  font-weight: 700;
   font-size: clamp(1.4rem, 2.5vw, 2rem);
-  color: var(--paper);
+  color: #fff;
   text-align: center;
   max-width: 800px;
   margin: 0 auto;
   padding: 0 var(--pad-x, 40px);
-  opacity: 0.85;
+  opacity: 0.9;
   line-height: 1.5;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid rgba(255,255,255,0.15);
   padding-top: 64px;
 }
 @media (max-width: 900px) {

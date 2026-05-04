@@ -1,52 +1,62 @@
 .tension {
-  background: var(--ink);
+  background: #92400E;
   padding: 110px 0;
 }
 .tension__header { margin-bottom: 64px; }
+.tension__header .section-label { color: rgba(255,255,255,0.8); }
+.tension__header .section-label::before { background: rgba(255,255,255,0.8); }
 .tension__headline {
   font-size: clamp(2rem, 3.5vw, 3rem);
-  color: var(--paper);
+  color: #fff;
   max-width: 560px;
+  font-weight: 800;
 }
 .tension__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  background: rgba(255,255,255,0.06);
+  gap: 16px;
   margin-bottom: 80px;
 }
 .tension__card {
-  background: var(--ink);
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 16px;
   padding: 48px 40px;
-  transition: background 0.3s;
+  transition: background 0.3s, transform 0.3s;
 }
-.tension__card:hover { background: rgba(255,255,255,0.03); }
+.tension__card:hover {
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-4px);
+}
 .tension__card-num {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-style: italic;
+  font-weight: 900;
   font-size: 3rem;
-  color: var(--accent);
-  opacity: 0.4;
+  color: rgba(255,255,255,0.35);
   line-height: 1;
   margin-bottom: 20px;
 }
 .tension__card-title {
-  font-size: 1.3rem;
-  color: var(--paper);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
   margin-bottom: 16px;
 }
 .tension__card-body {
   font-size: 0.9375rem;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.7);
   line-height: 1.8;
+  font-weight: 500;
 }
 .tension__kicker {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-style: italic;
+  font-weight: 700;
   font-size: clamp(1.5rem, 2.5vw, 2.25rem);
-  color: var(--paper);
+  color: #fff;
   text-align: center;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 @media (max-width: 900px) {
   .tension__grid { grid-template-columns: 1fr; }

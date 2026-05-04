@@ -10,20 +10,15 @@ const fadeUp = (delay = 0) => ({
 function VennDiagram() {
   return (
     <svg viewBox="0 0 400 400" className="hero__venn">
-      <defs>
-        <radialGradient id="why-grad" cx="50%" cy="50%"><stop offset="0%" stopColor="#6FAADC" stopOpacity="0.3"/><stop offset="100%" stopColor="#1A3A5C" stopOpacity="0.1"/></radialGradient>
-        <radialGradient id="what-grad" cx="50%" cy="50%"><stop offset="0%" stopColor="#D4846A" stopOpacity="0.3"/><stop offset="100%" stopColor="#7A2E0E" stopOpacity="0.1"/></radialGradient>
-        <radialGradient id="how-grad" cx="50%" cy="50%"><stop offset="0%" stopColor="#5DAA80" stopOpacity="0.3"/><stop offset="100%" stopColor="#1A4A2E" stopOpacity="0.1"/></radialGradient>
-      </defs>
-      <motion.circle cx="185" cy="155" r="120" fill="url(#why-grad)" stroke="#6FAADC" strokeWidth="1.5" strokeOpacity="0.6"
+      <motion.circle cx="185" cy="155" r="120" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.7)" strokeWidth="2"
         initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.9, delay: 0.2 }} style={{ transformOrigin: '185px 155px' }} />
-      <motion.circle cx="290" cy="275" r="120" fill="url(#what-grad)" stroke="#D4846A" strokeWidth="1.5" strokeOpacity="0.6"
+      <motion.circle cx="290" cy="275" r="120" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.7)" strokeWidth="2"
         initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.9, delay: 0.5 }} style={{ transformOrigin: '290px 275px' }} />
-      <motion.circle cx="110" cy="275" r="120" fill="url(#how-grad)" stroke="#5DAA80" strokeWidth="1.5" strokeOpacity="0.6"
+      <motion.circle cx="110" cy="275" r="120" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.7)" strokeWidth="2"
         initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.9, delay: 0.8 }} style={{ transformOrigin: '110px 275px' }} />
       {[['WHY', 185, 110], ['WHAT', 320, 310], ['HOW', 58, 310]].map(([label, x, y], i) => (
-        <motion.text key={label} x={x} y={y} textAnchor="middle" fill="white" fontSize="13" fontFamily="DM Sans" fontWeight="600" letterSpacing="3"
-          initial={{ opacity: 0 }} animate={{ opacity: 0.9 }} transition={{ delay: 1 + i * 0.15 }}>
+        <motion.text key={label} x={x} y={y} textAnchor="middle" fill="white" fontSize="13" fontFamily="Nunito" fontWeight="800" letterSpacing="3"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 + i * 0.15 }}>
           {label}
         </motion.text>
       ))}

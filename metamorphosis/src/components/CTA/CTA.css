@@ -1,20 +1,22 @@
 .cta-section {
-  background: var(--ink);
+  background: #065F46;
   padding: 128px 0;
   text-align: center;
 }
 .cta-section__inner { max-width: 720px; margin: 0 auto; }
 .cta-section__headline {
   font-size: clamp(2.2rem, 4vw, 3.5rem);
-  color: var(--paper);
+  color: #fff;
   margin-bottom: 24px;
   line-height: 1.15;
+  font-weight: 900;
 }
 .cta-section__sub {
   font-size: 1.0625rem;
-  color: rgba(255,255,255,0.58);
+  color: rgba(255,255,255,0.7);
   margin-bottom: 44px;
   line-height: 1.7;
+  font-weight: 500;
 }
 .cta-section__btns {
   display: flex;
