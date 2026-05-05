@@ -360,31 +360,32 @@ p  { line-height: 1.78; }
 .energy-header h2 { margin-bottom: 0; color: var(--ink); font-weight: 700; }
 .energy-subtext { font-size: 1rem; font-weight: 400; color: var(--ink-muted); line-height: 1.8; margin-top: 16px; }
 
-/* Car image — centered, prominent */
-.energy-car-section {
-  border-top: 1px solid var(--rule);
-  padding: 64px var(--pad-x) 0;
-  text-align: center;
-}
-.energy-car-section img {
-  max-width: 700px;
-  width: 85%;
-  filter: drop-shadow(0 4px 28px rgba(0,0,0,0.07));
-}
-
-/* Primary + Secondary */
-.energy-ps-row {
+/* Primary + Secondary stack | Car image */
+.energy-ps-car-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin-top: 48px;
   border-top: 1px solid var(--rule);
+  margin-top: 0;
 }
+.energy-ps-stack { display: flex; flex-direction: column; }
 .energy-ps-item {
   padding: 48px clamp(24px, 4vw, 56px);
+  flex: 1;
 }
-.energy-ps-item + .energy-ps-item { border-left: 1px solid var(--rule); }
-.energy-ps-item--primary  { border-top: 4px solid #065F46; }
-.energy-ps-item--secondary { border-top: 4px solid #1E40AF; }
+.energy-ps-item--primary  { border-left: 4px solid #065F46; }
+.energy-ps-item--secondary { border-left: 4px solid #1E40AF; border-top: 1px solid var(--rule); }
+.energy-car-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px clamp(24px, 4vw, 56px);
+  border-left: 1px solid var(--rule);
+}
+.energy-car-img img {
+  max-width: 525px;
+  width: 75%;
+  filter: drop-shadow(0 4px 28px rgba(0,0,0,0.07));
+}
 
 /* Tertiary — boulder + text */
 .energy-tertiary-section {
@@ -639,8 +640,10 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
 }
 @media (max-width: 840px) {
   .lenses              { grid-template-columns: 1fr; }
-  .energy-ps-row       { grid-template-columns: 1fr; }
-  .energy-ps-item + .energy-ps-item { border-left: none; border-top: 1px solid var(--rule); }
+  .energy-ps-car-section { grid-template-columns: 1fr; }
+  .energy-car-img      { border-left: none; border-top: 1px solid var(--rule); }
+  .energy-ps-item--primary  { border-left: none; border-top: 4px solid #065F46; }
+  .energy-ps-item--secondary { border-left: none; }
   .energy-tertiary-section { grid-template-columns: 1fr; }
   .energy-boulder-img  { order: -1; }
   .energy-tertiary-text { border-left: none; }
