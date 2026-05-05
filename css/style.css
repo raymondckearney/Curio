@@ -385,8 +385,8 @@ p  { line-height: 1.78; }
   padding: 32px clamp(24px, 4vw, 48px);
 }
 .energy-car-img img {
-  max-width: 525px;
-  width: 75%;
+  max-width: 640px;
+  width: 95%;
   filter: drop-shadow(0 4px 28px rgba(0,0,0,0.07));
 }
 
