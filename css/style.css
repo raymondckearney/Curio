@@ -273,7 +273,7 @@ p  { line-height: 1.78; }
 /* ─── FRAMEWORK ─── */
 #framework {
   padding: var(--section-y) 0;
-  background: #1E40AF;
+  background: var(--white);
   position: relative;
   overflow: hidden;
 }
@@ -285,9 +285,9 @@ p  { line-height: 1.78; }
   align-items: end;
   margin-bottom: 64px;
 }
-.fw-header h2 { color: #fff; font-weight: 900; }
-.fw-intro p { color: rgba(255,255,255,0.7); margin-bottom: 18px; font-size: 1.0125rem; line-height: 1.82; font-weight: 500; }
-.fw-intro strong { color: #fff; }
+.fw-header h2 { color: var(--ink); font-weight: 900; }
+.fw-intro p { color: var(--ink-soft); margin-bottom: 18px; font-size: 1.0125rem; line-height: 1.82; font-weight: 500; }
+.fw-intro strong { color: var(--ink); }
 
 .lenses {
   display: grid;
@@ -295,18 +295,20 @@ p  { line-height: 1.78; }
   gap: 16px;
 }
 .lens {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.18);
+  background: var(--paper-warm);
+  border: 1.5px solid var(--rule);
   border-radius: var(--radius-card);
-  padding: 48px 40px 52px;
-  transition: background 0.3s, transform 0.3s;
+  padding: 36px 36px 48px;
+  transition: background 0.3s, transform 0.3s, border-color 0.3s;
 }
-.lens:hover { background: rgba(255,255,255,0.16); transform: translateY(-4px); }
+.lens:hover { background: var(--white); border-color: var(--gold); transform: translateY(-4px); box-shadow: var(--shadow); }
+.lens-img { width: 160px; height: 180px; margin: 0 auto 28px; }
+.lens-img img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.10)); }
 .lens-type {
   font-family: var(--font-display);
   font-size: clamp(2.5rem, 4vw, 4rem);
   font-weight: 900;
-  color: rgba(255,255,255,0.9);
+  color: var(--ink);
   line-height: 1;
   margin-bottom: 10px;
 }
@@ -315,28 +317,28 @@ p  { line-height: 1.78; }
   font-weight: 800;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.6);
+  color: var(--gold);
   margin-bottom: 6px;
 }
 .lens-subtitle { display: none; }
-.lens-rule { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin: 20px 0; }
+.lens-rule { border: none; border-top: 1px solid var(--rule); margin: 20px 0; }
 .lens-italic {
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 500;
   font-style: italic;
-  color: rgba(255,255,255,0.82);
+  color: var(--ink-soft);
   line-height: 1.72;
   margin-bottom: 18px;
 }
-.lens-body-text { font-size: 0.9rem; color: rgba(255,255,255,0.55); line-height: 1.82; margin-bottom: 24px; }
+.lens-body-text { font-size: 0.9rem; color: var(--ink-muted); line-height: 1.82; margin-bottom: 24px; }
 .lens-quote {
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 600;
   font-style: italic;
-  color: var(--gold-light);
-  border-top: 1px solid rgba(255,255,255,0.15);
+  color: var(--gold);
+  border-top: 1px solid var(--rule);
   padding-top: 18px;
   display: block;
 }
@@ -344,12 +346,12 @@ p  { line-height: 1.78; }
 .tag {
   display: inline-block;
   padding: 5px 14px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: var(--gold-pale);
+  border: 1px solid rgba(5,150,105,0.2);
   border-radius: 100px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.8);
+  color: var(--gold);
 }
 
 /* ─── ENERGY MODEL ─── */
@@ -358,23 +360,61 @@ p  { line-height: 1.78; }
 .energy-header h2 { margin-bottom: 0; color: var(--ink); font-weight: 900; }
 .energy-subtext { font-size: 1rem; font-weight: 500; color: var(--ink-muted); line-height: 1.8; margin-top: 16px; }
 
-.energy-bars { display: flex; flex-direction: column; gap: 0; }
-.e-bar { width: 100%; }
-.e-bar--1 { background: #065F46; }
-.e-bar--2 { background: #1E40AF; }
-.e-bar--3 { background: #92400E; }
-.e-bar-inner {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  padding: 52px var(--pad-x);
+/* Top row: PS stack | Car */
+.energy-grid-top {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 64px;
-  align-items: center;
+  grid-template-columns: 1fr 1fr;
 }
-.e-bar--1 .e-bar-inner { padding-top: 64px; padding-bottom: 64px; }
-.e-bar--3 .e-bar-inner { padding-top: 44px; padding-bottom: 44px; }
-.e-bar-left { display: flex; flex-direction: column; gap: 10px; }
+.energy-ps-stack { display: flex; flex-direction: column; }
+
+/* Bottom row: Boulder | Tertiary */
+.energy-grid-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Color panels */
+.e-panel { display: flex; }
+.e-panel--primary  { background: #065F46; flex: 1; }
+.e-panel--secondary { background: #1E40AF; flex: 1; }
+.e-panel--tertiary  { background: #92400E; flex: 1; }
+.e-panel-inner {
+  padding: 52px clamp(28px, 4vw, 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Image panels */
+.energy-car-panel {
+  background: #F0FDF9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 48px;
+}
+.energy-car-panel img {
+  max-width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 32px rgba(0,0,0,0.10));
+}
+.energy-boulder-panel {
+  background: #1c1c1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 48px;
+}
+.energy-boulder-panel img {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 32px rgba(0,0,0,0.5));
+}
+
+/* Text styles */
 .e-type {
   font-family: var(--font-display);
   font-size: clamp(1.8rem, 2.8vw, 2.5rem);
@@ -382,7 +422,7 @@ p  { line-height: 1.78; }
   color: #fff;
   line-height: 1;
 }
-.e-subtitle { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-top: 2px; }
+.e-subtitle { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
 .e-badge {
   display: inline-flex;
   align-items: center;
@@ -392,29 +432,15 @@ p  { line-height: 1.78; }
   font-size: 0.82rem;
   font-weight: 700;
   width: fit-content;
-  margin-top: 14px;
   color: #fff;
   background: rgba(255,255,255,0.15);
+  margin-top: 4px;
 }
-.e-bar-body p { font-size: 1.05rem; font-weight: 500; line-height: 1.8; color: rgba(255,255,255,0.75); margin: 0; }
-.e-bar--1 .e-bar-body p { color: rgba(255,255,255,0.85); font-size: 1.1rem; }
-
-.energy-insight {
-  margin-top: 40px;
-  margin-bottom: var(--section-y);
-  padding: 24px 28px;
-  background: var(--paper-warm);
-  border-radius: var(--radius-card);
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--ink-soft);
-  line-height: 1.75;
-  border: 1px solid var(--border);
-}
-.energy-insight strong { color: var(--ink); font-weight: 700; }
+.e-panel-inner p { font-size: 1rem; font-weight: 500; line-height: 1.8; color: rgba(255,255,255,0.75); margin: 0; margin-top: 6px; }
+.e-panel--primary .e-panel-inner p { color: rgba(255,255,255,0.88); font-size: 1.05rem; }
 
 /* ─── APPLICATIONS ─── */
-#applications { background: var(--white); padding: var(--section-y) 0; }
+#applications { background: #FFF7ED; padding: var(--section-y) 0; }
 .app-header { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 48px; }
 .app-header h2 { color: var(--ink); font-weight: 900; }
 .app-header-right { font-size: 1rem; font-weight: 500; color: var(--ink-muted); line-height: 1.8; }
@@ -594,12 +620,13 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
 @media (max-width: 1080px) {
   .challenge-grid  { grid-template-columns: 1fr; gap: 56px; }
   .fw-header       { grid-template-columns: 1fr; gap: 36px; }
-  .e-bar-inner     { grid-template-columns: 1fr; gap: 28px; }
   .footer-top      { grid-template-columns: 1fr 1fr; }
   .app-grid        { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 840px) {
   .lenses          { grid-template-columns: 1fr; }
+  .energy-grid-top, .energy-grid-bottom { grid-template-columns: 1fr; }
+  .energy-car-panel, .energy-boulder-panel { min-height: 260px; padding: 40px 32px; }
   .phase           { grid-template-columns: 1fr; }
   .phase-num-col   { padding: 40px 0 0; }
   .phase-body      { border-left: none; border-top: 1.5px solid #BFDBFE; padding: 28px 0 44px; }
