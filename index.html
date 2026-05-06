@@ -49,7 +49,7 @@
   <div class="hero-aura"></div>
   <div class="concin-layout container">
     <div class="concin-left">
-      <h1 class="concin-word">strategic harmony</h1>
+      <h1 class="concin-word">stra·te·gic<br>har·mo·ny</h1>
       <div class="concin-pron">/strəˈtē·jik ˈhär·mə·nē/ &nbsp;·&nbsp; NOUN PHRASE</div>
       <hr class="concin-rule" />
       <p class="concin-def">a state where an organization can deliver more output with less friction and people are aligned to work that energizes them</p>
@@ -109,7 +109,7 @@
   <div class="container">
     <div class="energy-header reveal">
       <h2>Each person operates in all three orientations — but not equally.</h2>
-      <p class="energy-subtext">Strategic team design isn't just about skills — it's about energy. When the right people are doing the right work, the team doesn't just perform better. They thrive.</p>
+      <p class="energy-subtext">Strategic harmony isn't just about skills, it's about energy and fit. When the right people are doing the right work, the team doesn't just perform better, they thrive. When people and problems are aligned teams operate at their best and that impacts results, outcomes and individual satisfaction.</p>
     </div>
   </div>
 
@@ -216,7 +216,6 @@
 <section id="approach">
   <div class="container">
     <div class="approach-lead reveal">
-      <div class="label">How We Work With You</div>
       <h2>Knowing the types is the starting point.</h2>
       <p>The next question is how to identify them on your team — and what to do with that knowledge. We work with leadership teams to map cognitive orientations, redesign how work is assigned, and build the conditions where every person operates from their primary — generating the energy that drives exceptional output.</p>
     </div>
@@ -312,7 +311,6 @@
   var S=480;
   el.width=S*dpr; el.height=S*dpr;
   el.style.width=S+'px'; el.style.height=S+'px';
-  el.style.cursor='crosshair';
   var ctx=el.getContext('2d');
   ctx.scale(dpr,dpr);
   var cx=S/2,cy=S/2;
@@ -336,19 +334,6 @@
     my=(e.clientY-r.top)*(S/r.height);
   });
   el.addEventListener('mouseleave',function(){mx=-9999;my=-9999;});
-
-  /* ── explosion: per-ring spring-damper ── */
-  var xr=[0,0,0,0,0,0];
-  var xv=[0,0,0,0,0,0];
-  var K=0.08,C=0.28;
-
-  /* ── ripple ── */
-  var rip={active:false,t:0};
-
-  el.addEventListener('click',function(){
-    for(var i=0;i<6;i++) xv[i]=4+i*17;
-    rip.t=0; rip.active=true;
-  });
 
   function lerp(a,b,t){return a+(b-a)*t;}
   function ease(t){return t*t*(3-2*t);}
@@ -376,25 +361,16 @@
     return pts;
   }
 
-  function updateExplode(){
-    for(var i=0;i<6;i++){
-      xv[i]+=-K*xr[i]-C*xv[i];
-      xr[i]+=xv[i];
-      if(Math.abs(xr[i])<0.05&&Math.abs(xv[i])<0.05){xr[i]=0;xv[i]=0;}
-    }
-  }
-
   function rings(){
     var c1=CFG[cfgA],c2=CFG[(cfgA+1)%4],e=ease(morph);
     return c1.map(function(r,i){
-      return{r:Math.max(8,lerp(r.r,c2[i].r,e)+xr[i]),o:lerp(r.o,c2[i].o,e)};
+      return{r:Math.max(8,lerp(r.r,c2[i].r,e)),o:lerp(r.o,c2[i].o,e)};
     });
   }
 
   function draw(){
     ctx.clearRect(0,0,S,S);
     ctx.lineJoin='round'; ctx.lineCap='round';
-    updateExplode();
     var rs=rings();
     var all=rs.map(function(r,ri){return hexPts(r.r,r.o,ri);});
     var n=all.length;
@@ -464,14 +440,6 @@
       ctx.beginPath(); ctx.arc(cx,cy,rs[n-1].r*m,0,PI*2);
       ctx.strokeStyle='rgba(30,30,40,0.04)'; ctx.lineWidth=0.5; ctx.stroke();
     });
-    /* click ripple */
-    if(rip.active){
-      var p=rip.t/55;
-      ctx.beginPath(); ctx.arc(cx,cy,p*290,0,PI*2);
-      ctx.strokeStyle='rgba(5,150,105,'+(0.5*(1-p))+')';
-      ctx.lineWidth=2.5*(1-p)+0.3; ctx.stroke();
-      if(++rip.t>55) rip.active=false;
-    }
     rot+=0.003; morph+=0.0025;
     if(morph>=1){morph=0;cfgA=(cfgA+1)%4;}
     requestAnimationFrame(draw);
