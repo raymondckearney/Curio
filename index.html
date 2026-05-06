@@ -49,17 +49,14 @@
   <div class="hero-aura"></div>
   <div class="concin-layout container">
     <div class="concin-left">
-      <div class="concin-label">STRATEGIC HARMONY</div>
-      <h1 class="concin-word">con·cin·ni·ty</h1>
-      <div class="concin-pron">/kən·ˈsi·nə·dē/ &nbsp;·&nbsp; NOUN</div>
+      <h1 class="concin-word">strategic harmony</h1>
+      <div class="concin-pron">/strəˈtē·jik ˈhär·mə·nē/ &nbsp;·&nbsp; NOUN PHRASE</div>
       <hr class="concin-rule" />
-      <p class="concin-def">The skillful arrangement of parts into an elegant, unified whole working in harmony.</p>
+      <p class="concin-def">a state where an organization can deliver more output with less friction and people are aligned to work that energizes them</p>
       <hr class="concin-rule" />
-      <p class="concin-pitch"><strong>Most organizations have the pieces. Few have the harmony.</strong></p>
-      <p class="concin-sub">We build the difference.</p>
+      <p class="concin-pitch">Most organizations have the strategy. Few have the harmony. <strong class="concin-pitch-bold">We build the difference.</strong></p>
       <div class="concin-ctas">
         <a href="#framework" class="btn btn-gold">DISCOVER HOW</a>
-        <a href="#approach" class="concin-approach-link">OUR APPROACH →</a>
       </div>
     </div>
     <div class="concin-right">
@@ -346,7 +343,7 @@
     var rs=rings();
     var all=rs.map(function(r){return hexPts(r.r,r.o);});
     var n=all.length;
-    /* panel fills between rings */
+    /* panel fills between rings — subtle ink wash */
     for(var ri=0;ri<n-1;ri++){
       var p1=all[ri],p2=all[ri+1];
       for(var i=0;i<6;i++){
@@ -357,7 +354,7 @@
         ctx.lineTo(p2[j][0],p2[j][1]);
         ctx.lineTo(p1[j][0],p1[j][1]);
         ctx.closePath();
-        ctx.fillStyle=ri%2===0?'rgba(196,154,74,'+(0.04+ri*0.01)+')':'rgba(40,25,8,'+(0.03+ri*0.008)+')';
+        ctx.fillStyle=ri%2===0?'rgba(30,30,40,'+(0.025+ri*0.006)+')':'rgba(5,150,105,'+(0.018+ri*0.004)+')';
         ctx.fill();
       }
     }
@@ -368,7 +365,7 @@
         ctx.beginPath();
         ctx.moveTo(p1[i][0],p1[i][1]);
         ctx.lineTo(p2[i][0],p2[i][1]);
-        ctx.strokeStyle='rgba(196,154,74,'+(0.10+(n-1-ri)*0.03)+')';
+        ctx.strokeStyle='rgba(30,30,40,'+(0.08+(n-1-ri)*0.025)+')';
         ctx.lineWidth=0.6;
         ctx.stroke();
       }
@@ -381,35 +378,36 @@
       ctx.closePath();
       if(ri===0){
         var g=ctx.createRadialGradient(cx,cy,0,cx,cy,rs[0].r*1.1);
-        g.addColorStop(0,'rgba(255,238,170,1)');
-        g.addColorStop(0.6,'rgba(220,178,90,0.95)');
-        g.addColorStop(1,'rgba(196,154,74,0.75)');
+        g.addColorStop(0,'rgba(5,150,105,0.12)');
+        g.addColorStop(0.6,'rgba(5,150,105,0.06)');
+        g.addColorStop(1,'rgba(5,150,105,0)');
         ctx.fillStyle=g; ctx.fill();
-        ctx.strokeStyle='rgba(255,220,130,0.9)'; ctx.lineWidth=1.5;
+        ctx.strokeStyle='rgba(5,150,105,0.55)'; ctx.lineWidth=1.5;
       } else {
-        ctx.strokeStyle='rgba(196,154,74,'+Math.max(0.06,0.45-ri*0.07)+')';
+        ctx.strokeStyle='rgba(30,30,40,'+Math.max(0.05,0.35-ri*0.06)+')';
         ctx.lineWidth=ri<2?1:0.7;
       }
       ctx.stroke();
     }
     /* vertex dots */
     all.forEach(function(pts,ri){
-      var dr=ri===0?3.5:ri===1?2.5:1.8;
-      var a=Math.max(0.2,0.85-ri*0.11);
+      var dr=ri===0?3:ri===1?2:1.5;
+      var a=Math.max(0.15,0.7-ri*0.1);
+      var clr=ri===0?'rgba(5,150,105,'+a+')':'rgba(30,30,40,'+a+')';
       pts.forEach(function(p){
         ctx.beginPath(); ctx.arc(p[0],p[1],dr,0,PI*2);
-        ctx.fillStyle='rgba(196,154,74,'+a+')'; ctx.fill();
+        ctx.fillStyle=clr; ctx.fill();
       });
     });
     /* center glow */
     var cg=ctx.createRadialGradient(cx,cy,0,cx,cy,rs[0].r*4);
-    cg.addColorStop(0,'rgba(255,230,140,0.2)');
-    cg.addColorStop(1,'rgba(196,154,74,0)');
+    cg.addColorStop(0,'rgba(5,150,105,0.08)');
+    cg.addColorStop(1,'rgba(5,150,105,0)');
     ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(cx,cy,rs[0].r*4,0,PI*2); ctx.fill();
     /* ambient rings */
     [0.35,0.7,1.05,1.4].forEach(function(m){
       ctx.beginPath(); ctx.arc(cx,cy,rs[n-1].r*m,0,PI*2);
-      ctx.strokeStyle='rgba(196,154,74,0.05)'; ctx.lineWidth=0.5; ctx.stroke();
+      ctx.strokeStyle='rgba(30,30,40,0.04)'; ctx.lineWidth=0.5; ctx.stroke();
     });
     rot+=0.003; morph+=0.0025;
     if(morph>=1){morph=0;cfgA=(cfgA+1)%4;}
