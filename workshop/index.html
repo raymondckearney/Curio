@@ -82,9 +82,9 @@ function loadTeams() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)
 function saveTeams(teams) { localStorage.setItem(STORAGE_KEY, JSON.stringify(teams)); }
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  :root{--font-serif:'Playfair Display',Georgia,serif;--font-sans:'DM Sans',system-ui,sans-serif;--bg:#fafaf8;--surface:#ffffff;--border:#e8e6e0;--border-light:#f0ede8;--text:#1a1a18;--text-mid:#5a5a54;--text-light:#9a9a90;--why:#1a3a5c;--why-light:#e8f0f8;--why-mid:#7a9cbf;--what:#1a4a2a;--what-light:#e8f4ec;--what-mid:#7aaf8a;--how:#5c1a1a;--how-light:#f8e8e8;--how-mid:#bf7a7a;--accent:#1a3a5c;--radius:4px;--radius-lg:8px;}
+  :root{--font-serif:'Caveat',cursive;--font-sans:'DM Sans',system-ui,sans-serif;--bg:#fafaf8;--surface:#ffffff;--border:#e8e6e0;--border-light:#f0ede8;--text:#1a1a18;--text-mid:#5a5a54;--text-light:#9a9a90;--why:#1a3a5c;--why-light:#e8f0f8;--why-mid:#7a9cbf;--what:#1a4a2a;--what-light:#e8f4ec;--what-mid:#7aaf8a;--how:#5c1a1a;--how-light:#f8e8e8;--how-mid:#bf7a7a;--accent:#059669;--radius:4px;--radius-lg:8px;}
   .wd-root{font-family:var(--font-sans);background:var(--bg);min-height:100vh;color:var(--text);font-size:14px;line-height:1.6;}
   .wd-shell{display:flex;min-height:100vh;}
   .wd-sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
