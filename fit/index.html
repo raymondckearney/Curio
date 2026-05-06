@@ -470,7 +470,7 @@ CALIBRATION: Most realistic scores fall between 45–72. A VP of Sales for a WHY
 Return ONLY a valid JSON object — no markdown, no extra text:
 
 {
-  "score": <integer 0-100>,
+  "score": <single integer 0-100, never a range or approximation>,
   "scoreRationale": "<2-3 sentences: name the dominant cognitive demands of this specific role, explain how they map to this person's primary/secondary/tertiary, and justify the exact score>",
   "dislikes": ["<role-specific thing they likely dislike 1>", "<role-specific thing they likely dislike 2>", "<role-specific thing they likely dislike 3>"],
   "struggles": ["<role-specific thing they likely struggle with 1>", "<role-specific thing they likely struggle with 2>", "<role-specific thing they likely struggle with 3>"],
@@ -527,7 +527,11 @@ Analyze the cognitive alignment between this profile and this role. Be rigorous 
           }
           const jsonMatch = raw.match(/\{[\s\S]*\}/);
           if (!jsonMatch) throw new Error("No JSON found in response");
-          const parsed = JSON.parse(jsonMatch[0]);
+          // Sanitize common model quirks before parsing
+          const sanitized = jsonMatch[0]
+            .replace(/"score"\s*:\s*(\d+)\s*[-–]\s*\d+/g, '"score": $1')  // ranges like 60-70 → 60
+            .replace(/"score"\s*:\s*~?\s*(\d+)/g, '"score": $1');           // approximations like ~65 → 65
+          const parsed = JSON.parse(sanitized);
           setResult(parsed);
         } catch (e) {
           setError("Error: " + (e.message || "Something went wrong. Check the browser console for details."));
