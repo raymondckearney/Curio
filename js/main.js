@@ -1,3 +1,7 @@
+// Always start at top of page on load
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
 // Nav scroll behavior
 const nav = document.getElementById('nav');
 window.addEventListener('scroll', () => {
