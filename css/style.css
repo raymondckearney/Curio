@@ -221,9 +221,9 @@ p  { line-height: 1.78; }
   font-size: 1.9rem;
   font-weight: 500;
   color: var(--ink-soft);
-  line-height: 1.65;
+  line-height: 1.25;
 }
-.concin-pitch { font-size: 1.15rem; font-weight: 400; color: var(--ink); line-height: 1.6; margin-bottom: 36px; }
+.concin-pitch { font-size: 1.15rem; font-weight: 400; color: var(--ink); line-height: 1.6; margin-top: 20px; margin-bottom: 36px; }
 .concin-pitch-bold { font-weight: 700; color: var(--gold); }
 .concin-ctas { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 12px; }
 .concin-approach-link {
@@ -300,7 +300,7 @@ p  { line-height: 1.78; }
   margin-bottom: 10px;
 }
 .lens-name {
-  font-size: 0.72rem;
+  font-size: 1.44rem;
   font-weight: 800;
   letter-spacing: 0.2em;
   text-transform: uppercase;
