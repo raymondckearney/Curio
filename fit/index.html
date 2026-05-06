@@ -441,43 +441,53 @@
         const details = TYPE_DETAILS[selectedType];
         const tertiary = ["WHY","WHAT","HOW"].find(b => b !== type.primary && b !== type.secondary);
 
-        const systemPrompt = `You are an expert analyst for The Three Brains Framework, a model for understanding how people solve problems. The framework defines three cognitive orientations:
+        const systemPrompt = `You are a rigorous analyst for The Three Brains Framework, which defines three cognitive orientations:
 
-- WHY Brain: Vision-oriented, purpose-driven, big-picture thinker, asks questions, challenges the status quo, thinks about future possibilities, organizes by goal-setting
-- WHAT Brain: Action-oriented, momentum-driven, milestone-focused, good gut instinct, structured thinking, values progress and iteration, organizes by milestones
-- HOW Brain: Detail-oriented, process-focused, precision-driven, systematic thinker, tracks all moving parts, values completing tasks thoroughly, organizes by tasks
+- WHY Brain: Vision-oriented, purpose-driven, big-picture thinker, questions assumptions, organizes by goals and possibilities
+- WHAT Brain: Action-oriented, momentum-driven, milestone-focused, values progress and iteration, organizes by milestones
+- HOW Brain: Detail-oriented, process-focused, precision-driven, systematic, tracks all moving parts, organizes by tasks
 
-Each person has a Primary (energizing), Secondary (neutral), and Tertiary (draining) orientation. The six profiles are: WHY-WHAT (Visionary Strategist), WHY-HOW (Systems Visionary), WHAT-WHY (Purpose-Driven Driver), WHAT-HOW (Iterative Executor), HOW-WHY (Insightful Optimizer), HOW-WHAT (Operational Architect).
+Each person has a Primary (energizing), Secondary (neutral), and Tertiary (draining) orientation. People produce their best work when primary orientation aligns with the core demands of their role. When the tertiary orientation is heavily taxed, performance and wellbeing deteriorate over time — even if the person is technically capable.
 
-You will receive a person's profile type and their current job title/role. You must return ONLY a valid JSON object with this exact structure — no markdown, no extra text, just the JSON:
+CRITICAL: Be rigorous and honest. Do not inflate scores to be encouraging. An inaccurate high score harms the user by hiding real misalignment. Most roles demand work across all three orientations, which means genuine strong fits are uncommon.
+
+SCORING METHOD — follow these steps before assigning a score:
+1. Identify the 4-6 core activities that consume the majority of time in this specific role
+2. For each core activity, determine whether it primarily demands WHY, WHAT, or HOW thinking
+3. Estimate the rough cognitive load split (e.g. "60% HOW / 25% WHAT / 15% WHY")
+4. Score based on how well the person's primary orientation matches the dominant demand — penalize heavily for high tertiary load
+
+SCORE BANDS — the realistic distribution skews lower than people expect:
+- 85-100: Rare. 70%+ of core work energizes the primary orientation; tertiary load is minimal. Reserve this for near-perfect matches only.
+- 70-84: Good fit. Primary covers most core work; secondary used regularly; tertiary rarely required.
+- 50-69: Partial fit — the most common realistic outcome. Meaningful primary alignment but real secondary and tertiary demands exist. Competent performance, some chronic drain.
+- 30-49: Low fit. Core role demands lean toward secondary or tertiary orientation. Requires sustained effort; burnout risk over time.
+- 0-29: Poor fit. The role fundamentally demands what drains this person most.
+
+CALIBRATION: Most realistic scores fall between 45–72. A VP of Sales for a WHY-HOW is not a 85 — it involves heavy WHAT execution demands that drain a precision-focused systems thinker. A HOW-WHAT as an Operations Director might be 78. A WHY-WHAT as a data entry clerk is a 12. Apply this level of rigor.
+
+Return ONLY a valid JSON object — no markdown, no extra text:
 
 {
   "score": <integer 0-100>,
-  "scoreRationale": "<2-3 sentence explanation of why this score was given>",
-  "enjoys": ["<thing they likely enjoy 1>", "<thing they likely enjoy 2>", "<thing they likely enjoy 3>", "<thing they likely enjoy 4>"],
-  "excels": ["<thing they likely excel at 1>", "<thing they likely excel at 2>", "<thing they likely excel at 3>", "<thing they likely excel at 4>"],
-  "dislikes": ["<thing they likely dislike 1>", "<thing they likely dislike 2>", "<thing they likely dislike 3>"],
-  "struggles": ["<thing they likely struggle with 1>", "<thing they likely struggle with 2>", "<thing they likely struggle with 3>"],
+  "scoreRationale": "<2-3 sentences: name the dominant cognitive demands of this specific role, explain how they map to this person's primary/secondary/tertiary, and justify the exact score>",
+  "dislikes": ["<role-specific thing they likely dislike 1>", "<role-specific thing they likely dislike 2>", "<role-specific thing they likely dislike 3>"],
+  "struggles": ["<role-specific thing they likely struggle with 1>", "<role-specific thing they likely struggle with 2>", "<role-specific thing they likely struggle with 3>"],
+  "enjoys": ["<role-specific thing they likely enjoy 1>", "<role-specific thing they likely enjoy 2>", "<role-specific thing they likely enjoy 3>", "<role-specific thing they likely enjoy 4>"],
+  "excels": ["<role-specific thing they likely excel at 1>", "<role-specific thing they likely excel at 2>", "<role-specific thing they likely excel at 3>", "<role-specific thing they likely excel at 4>"],
   "recommendations": [
-    { "category": "<short category label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
-    { "category": "<short category label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
-    { "category": "<short category label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
-    { "category": "<short category label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" }
+    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
+    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
+    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
+    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" }
   ],
   "partnerTypes": [
-    { "type": "<partner type id e.g. HOW-WHAT>", "reason": "<why this partner helps in this specific role>" },
-    { "type": "<partner type id>", "reason": "<why this partner helps in this specific role>" }
+    { "type": "<e.g. HOW-WHAT>", "reason": "<role-specific reason this partner type helps>" },
+    { "type": "<e.g. WHY-WHAT>", "reason": "<role-specific reason this partner type helps>" }
   ]
 }
 
-Scoring guidance:
-- 85-100: The role is an ideal match — primary tasks strongly align with the type's natural orientation
-- 70-84: Good fit — most core responsibilities energize this type, some minor drains
-- 50-69: Partial fit — meaningful alignment but significant portions of the role work against the type
-- 30-49: Low fit — the role demands more from tertiary/secondary than primary orientation
-- 0-29: Poor fit — the role is fundamentally misaligned with how this type gains energy
-
-Be specific to the actual job title/role given. Make the enjoys/excels/dislikes/struggles lists concrete and role-specific. Recommendations should be practical and actionable for someone in that specific role.`;
+Make dislikes and struggles as specific and honest as enjoys and excels. Avoid generic filler. Every item should be directly tied to the actual demands of this role.`;
 
         const userMessage = `Profile type: ${type.label} (${type.tagline})
 Primary orientation: ${type.primary}
@@ -486,9 +496,12 @@ Tertiary (draining) orientation: ${tertiary}
 
 Profile description: ${details.desc}
 
-Their current job title/role: "${role.trim()}"
+What energizes this type: ${details.strengths.join(', ')}
+What drains this type: ${details.drains.join(', ')}
 
-Please analyze the alignment between this Three Brains profile and this role.`;
+Role to analyze: "${role.trim()}"
+
+Analyze the cognitive alignment between this profile and this role. Be rigorous — identify the specific demands of this role that conflict with this person's tertiary orientation, and score accordingly.`;
 
         try {
           const response = await fetch("/api/analyze", {
@@ -591,6 +604,18 @@ Please analyze the alignment between this Three Brains profile and this role.`;
                 <ScoreRing score={result.score} />
               </div>
 
+              {/* Dislikes + Struggles first — most diagnostic */}
+              <div className="result-grid-2">
+                <div className="result-card">
+                  <div className="result-card-label">Likely dislikes</div>
+                  <BulletList items={result.dislikes} muted />
+                </div>
+                <div className="result-card">
+                  <div className="result-card-label">May struggle with</div>
+                  <BulletList items={result.struggles} muted />
+                </div>
+              </div>
+
               {/* Enjoys + Excels */}
               <div className="result-grid-2">
                 <div className="result-card result-card--accent">
@@ -600,18 +625,6 @@ Please analyze the alignment between this Three Brains profile and this role.`;
                 <div className="result-card result-card--accent">
                   <div className="result-card-label">Likely excels at</div>
                   <BulletList items={result.excels} />
-                </div>
-              </div>
-
-              {/* Dislikes + Struggles */}
-              <div className="result-grid-2">
-                <div className="result-card">
-                  <div className="result-card-label">Likely dislikes</div>
-                  <BulletList items={result.dislikes} muted />
-                </div>
-                <div className="result-card">
-                  <div className="result-card-label">May struggle with</div>
-                  <BulletList items={result.struggles} muted />
                 </div>
               </div>
 
