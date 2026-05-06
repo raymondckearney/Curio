@@ -201,7 +201,7 @@ p  { line-height: 1.78; }
 .concin-label::before { content: ''; display: block; width: 28px; height: 2px; background: var(--gold); border-radius: 2px; }
 .concin-word {
   font-family: var(--font-display);
-  font-size: clamp(2.8rem, 4.5vw, 4.5rem);
+  font-size: clamp(3.4rem, 5.5vw, 5.5rem);
   font-weight: 900;
   color: var(--ink);
   letter-spacing: -0.02em;
@@ -209,7 +209,7 @@ p  { line-height: 1.78; }
   margin-bottom: 14px;
 }
 .concin-pron {
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--ink-muted);
   margin-bottom: 24px;
@@ -218,12 +218,12 @@ p  { line-height: 1.78; }
 .concin-rule { border: none; border-top: 2px solid var(--border); margin: 20px 0; }
 .concin-def {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   font-weight: 500;
   color: var(--ink-soft);
   line-height: 1.65;
 }
-.concin-pitch { font-size: 0.95rem; font-weight: 400; color: var(--ink); line-height: 1.6; margin-bottom: 36px; }
+.concin-pitch { font-size: 1.15rem; font-weight: 400; color: var(--ink); line-height: 1.6; margin-bottom: 36px; }
 .concin-pitch-bold { font-weight: 700; color: var(--gold); }
 .concin-ctas { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 12px; }
 .concin-approach-link {
