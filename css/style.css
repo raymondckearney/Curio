@@ -304,7 +304,7 @@ p  { line-height: 1.78; }
   font-weight: 800;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--ink);
   margin-bottom: 6px;
 }
 .lens-subtitle { display: none; }
@@ -360,6 +360,7 @@ p  { line-height: 1.78; }
 .energy-ps-stack { display: flex; flex-direction: column; }
 .energy-ps-item {
   padding: 32px clamp(24px, 4vw, 56px);
+  padding-bottom: 0;
   flex: 1;
 }
 .energy-car-img {
