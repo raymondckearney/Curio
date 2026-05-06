@@ -69,7 +69,7 @@
   <div class="fw-glow"></div>
   <div class="container" style="position:relative;z-index:1">
     <div class="fw-header">
-      <div class="reveal"><div class="label">The Three Brains</div><h2>Every person approaches problems through a combination of three cognitive orientations.</h2></div>
+      <div class="reveal"><h2>Every person approaches problems through a combination of three cognitive orientations.</h2></div>
       <div class="fw-intro reveal reveal-d1">
         <p>Individuals have a natural orientation — a default mode for approaching complexity. These orientations are not personality types. They are <strong>cognitive operating modes.</strong></p>
         <p>Understanding which orientation a person leads with, and which they rely on secondarily or reluctantly, is the foundation for building teams that spend their energy on output rather than friction.</p>
@@ -81,7 +81,7 @@
         <div class="lens-type">HOW</div>
         <div class="lens-name">PRECISION-DRIVEN</div>
         <hr class="lens-rule" />
-        <p class="lens-italic">HOWs are oriented toward understanding before execution. They need to know how all the parts fit together before they're comfortable moving. They are energized by complexity, by systems, by the satisfaction of making something work precisely and completely.</p>
+        <p class="lens-italic">HOWs are oriented toward detail before execution. They need to know how all the parts fit together before they're comfortable moving. They are energized by complexity, by systems, by the satisfaction of making something work precisely and completely.</p>
         <span class="lens-quote">"Have we accounted for everything?"</span>
       </div>
       <div class="lens reveal reveal-d1">
@@ -90,14 +90,14 @@
         <div class="lens-name">PROGRESS-DRIVEN</div>
         <hr class="lens-rule" />
         <p class="lens-italic">WHATs are oriented toward momentum before perfection. They believe that the best way to solve a problem is to start solving it — that clarity emerges through action, not before it. They are energized by progress, by crossing things off, by the feeling that the team is moving.</p>
-        <span class="lens-quote">"What do we do next?"</span>
+        <span class="lens-quote">"What are the next steps?"</span>
       </div>
       <div class="lens reveal reveal-d2">
         <div class="lens-img"><img src="images/why-character.png" alt="WHY" /></div>
         <div class="lens-type">WHY</div>
         <div class="lens-name">PURPOSE-DRIVEN</div>
         <hr class="lens-rule" />
-        <p class="lens-italic">WHYs are oriented toward meaning before movement. They cannot comfortably begin until they understand the purpose of what they're doing. They are energized by possibility, vision, and the question that reframes everything.</p>
+        <p class="lens-italic">WHYs are oriented toward meaning before movement. They cannot comfortably begin work until they understand the purpose of what they're doing. They are energized by possibility, vision, and asking the right questions to frame the problem.</p>
         <span class="lens-quote">"Are we solving the right problem?"</span>
       </div>
     </div>
@@ -154,10 +154,9 @@
 
     <div class="app-header reveal">
       <div>
-        <div class="label">Where It Applies</div>
-        <h2>Twelve domains.<br>One framework.</h2>
+        <h2>Some potential opportunities...</h2>
       </div>
-      <p class="app-header-right">The Three Brains Framework applies wherever cognitive misalignment creates friction. These are the twelve areas where leadership teams most commonly deploy it — each with a distinct set of challenges the framework was built to solve.</p>
+      <p class="app-header-right">There are opportunities wherever cognitive misalignment creates friction. Following are some common opportunities we see — each with a distinct set of challenges we work with you to optimize.</p>
     </div>
 
     <div class="app-grid">
@@ -277,7 +276,7 @@
   <div class="container">
     <div class="label label--center reveal">Get Started</div>
     <h2 class="reveal">Ready to unlock your<br>team's full potential?</h2>
-    <p class="reveal reveal-d1">Let's start with a conversation about your team, your challenges, and how the MindPrint Framework might transform the way you work.</p>
+    <p class="reveal reveal-d1">Let's start with a conversation about your team, your challenges, and how Curio can transform the way you work.</p>
     <div class="cta-btns reveal reveal-d2">
       <a href="https://4cl0df3b3zv.typeform.com/to/SvFh4s7T" class="btn btn-gold" target="_blank" rel="noopener">Take the Assessment</a>
       <a href="mailto:hello@curio.com" class="btn btn-outline">Schedule a Conversation</a>
@@ -324,13 +323,17 @@
     [{r:32,o:0},{r:70,o:-PI/12},{r:112,o:PI/12},{r:154,o:-PI/12},{r:196,o:PI/12},{r:232,o:0}]
   ];
   var rot=0,morph=0,cfgA=0;
+  /* pre-computed per-vertex jitter so sketch wobble is stable across frames */
+  var jx=[],jy=[];
+  for(var k=0;k<36;k++){jx.push((Math.random()-0.5)*3);jy.push((Math.random()-0.5)*3);}
   function lerp(a,b,t){return a+(b-a)*t;}
   function ease(t){return t*t*(3-2*t);}
-  function hexPts(r,xo){
+  function hexPts(r,xo,ri){
     var pts=[];
     for(var i=0;i<6;i++){
       var a=PI3*i+rot+xo;
-      pts.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);
+      var b=(ri||0)*6+i;
+      pts.push([cx+r*Math.cos(a)+(jx[b]||0),cy+r*Math.sin(a)+(jy[b]||0)]);
     }
     return pts;
   }
@@ -340,8 +343,9 @@
   }
   function draw(){
     ctx.clearRect(0,0,S,S);
+    ctx.lineJoin='round'; ctx.lineCap='round';
     var rs=rings();
-    var all=rs.map(function(r){return hexPts(r.r,r.o);});
+    var all=rs.map(function(r,ri){return hexPts(r.r,r.o,ri);});
     var n=all.length;
     /* panel fills between rings — subtle ink wash */
     for(var ri=0;ri<n-1;ri++){
@@ -365,8 +369,8 @@
         ctx.beginPath();
         ctx.moveTo(p1[i][0],p1[i][1]);
         ctx.lineTo(p2[i][0],p2[i][1]);
-        ctx.strokeStyle='rgba(30,30,40,'+(0.08+(n-1-ri)*0.025)+')';
-        ctx.lineWidth=0.6;
+        ctx.strokeStyle='rgba(30,30,40,'+(0.10+(n-1-ri)*0.03)+')';
+        ctx.lineWidth=1.5;
         ctx.stroke();
       }
     }
@@ -382,10 +386,10 @@
         g.addColorStop(0.6,'rgba(5,150,105,0.06)');
         g.addColorStop(1,'rgba(5,150,105,0)');
         ctx.fillStyle=g; ctx.fill();
-        ctx.strokeStyle='rgba(5,150,105,0.55)'; ctx.lineWidth=1.5;
+        ctx.strokeStyle='rgba(5,150,105,0.65)'; ctx.lineWidth=2.5;
       } else {
-        ctx.strokeStyle='rgba(30,30,40,'+Math.max(0.05,0.35-ri*0.06)+')';
-        ctx.lineWidth=ri<2?1:0.7;
+        ctx.strokeStyle='rgba(30,30,40,'+Math.max(0.07,0.40-ri*0.06)+')';
+        ctx.lineWidth=ri<2?2.2:1.8;
       }
       ctx.stroke();
     }

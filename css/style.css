@@ -256,7 +256,7 @@ p  { line-height: 1.78; }
 
 /* ─── FRAMEWORK ─── */
 #framework {
-  padding: var(--section-y) 0 64px;
+  padding: 32px 0 64px;
   background: var(--white);
   position: relative;
   overflow: hidden;
@@ -446,7 +446,7 @@ p  { line-height: 1.78; }
 #applications { background: #FFF7ED; padding: var(--section-y) 0; }
 .app-header { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 48px; }
 .app-header h2 { color: var(--ink); font-weight: 900; }
-.app-header-right { font-size: 1rem; font-weight: 500; color: var(--ink-muted); line-height: 1.8; }
+.app-header-right { font-size: 1rem; font-weight: 500; color: var(--ink); line-height: 1.8; }
 .app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .app-card {
   border: 1.5px solid var(--border);
@@ -459,9 +459,9 @@ p  { line-height: 1.78; }
 .app-card:hover { background: var(--cream); border-color: var(--gold); transform: translateY(-3px); box-shadow: var(--shadow); }
 .app-card-title {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: var(--ink-soft);
+  color: var(--ink);
   line-height: 1.35;
   transition: color 0.25s;
 }
@@ -469,7 +469,7 @@ p  { line-height: 1.78; }
 .app-card-desc {
   font-size: 0.82rem;
   font-weight: 500;
-  color: var(--ink-muted);
+  color: var(--ink);
   line-height: 1.65;
   max-height: 0;
   overflow: hidden;
