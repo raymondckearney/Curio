@@ -312,6 +312,7 @@
   var S=480;
   el.width=S*dpr; el.height=S*dpr;
   el.style.width=S+'px'; el.style.height=S+'px';
+  el.style.cursor='crosshair';
   var ctx=el.getContext('2d');
   ctx.scale(dpr,dpr);
   var cx=S/2,cy=S/2;
@@ -326,24 +327,74 @@
   /* pre-computed per-vertex jitter so sketch wobble is stable across frames */
   var jx=[],jy=[];
   for(var k=0;k<36;k++){jx.push((Math.random()-0.5)*3);jy.push((Math.random()-0.5)*3);}
+
+  /* ── mouse ── */
+  var mx=-9999,my=-9999;
+  el.addEventListener('mousemove',function(e){
+    var r=el.getBoundingClientRect();
+    mx=(e.clientX-r.left)*(S/r.width);
+    my=(e.clientY-r.top)*(S/r.height);
+  });
+  el.addEventListener('mouseleave',function(){mx=-9999;my=-9999;});
+
+  /* ── explosion: per-ring spring-damper ── */
+  var xr=[0,0,0,0,0,0];
+  var xv=[0,0,0,0,0,0];
+  var K=0.08,C=0.28;
+
+  /* ── ripple ── */
+  var rip={active:false,t:0};
+
+  el.addEventListener('click',function(){
+    for(var i=0;i<6;i++) xv[i]=4+i*17;
+    rip.t=0; rip.active=true;
+  });
+
   function lerp(a,b,t){return a+(b-a)*t;}
   function ease(t){return t*t*(3-2*t);}
+
+  /* cursor repulsion — push vertices away from mouse */
+  function repel(px,py){
+    var dx=px-mx,dy=py-my;
+    var d2=dx*dx+dy*dy,R=88;
+    if(d2<R*R&&d2>0.1){
+      var d=Math.sqrt(d2);
+      var f=(1-d/R)*(1-d/R)*58;
+      return[px+(dx/d)*f,py+(dy/d)*f];
+    }
+    return[px,py];
+  }
+
   function hexPts(r,xo,ri){
     var pts=[];
     for(var i=0;i<6;i++){
       var a=PI3*i+rot+xo;
       var b=(ri||0)*6+i;
-      pts.push([cx+r*Math.cos(a)+(jx[b]||0),cy+r*Math.sin(a)+(jy[b]||0)]);
+      var p=repel(cx+r*Math.cos(a)+(jx[b]||0),cy+r*Math.sin(a)+(jy[b]||0));
+      pts.push(p);
     }
     return pts;
   }
+
+  function updateExplode(){
+    for(var i=0;i<6;i++){
+      xv[i]+=-K*xr[i]-C*xv[i];
+      xr[i]+=xv[i];
+      if(Math.abs(xr[i])<0.05&&Math.abs(xv[i])<0.05){xr[i]=0;xv[i]=0;}
+    }
+  }
+
   function rings(){
     var c1=CFG[cfgA],c2=CFG[(cfgA+1)%4],e=ease(morph);
-    return c1.map(function(r,i){return{r:lerp(r.r,c2[i].r,e),o:lerp(r.o,c2[i].o,e)};});
+    return c1.map(function(r,i){
+      return{r:Math.max(8,lerp(r.r,c2[i].r,e)+xr[i]),o:lerp(r.o,c2[i].o,e)};
+    });
   }
+
   function draw(){
     ctx.clearRect(0,0,S,S);
     ctx.lineJoin='round'; ctx.lineCap='round';
+    updateExplode();
     var rs=rings();
     var all=rs.map(function(r,ri){return hexPts(r.r,r.o,ri);});
     var n=all.length;
@@ -413,6 +464,14 @@
       ctx.beginPath(); ctx.arc(cx,cy,rs[n-1].r*m,0,PI*2);
       ctx.strokeStyle='rgba(30,30,40,0.04)'; ctx.lineWidth=0.5; ctx.stroke();
     });
+    /* click ripple */
+    if(rip.active){
+      var p=rip.t/55;
+      ctx.beginPath(); ctx.arc(cx,cy,p*290,0,PI*2);
+      ctx.strokeStyle='rgba(5,150,105,'+(0.5*(1-p))+')';
+      ctx.lineWidth=2.5*(1-p)+0.3; ctx.stroke();
+      if(++rip.t>55) rip.active=false;
+    }
     rot+=0.003; morph+=0.0025;
     if(morph>=1){morph=0;cfgA=(cfgA+1)%4;}
     requestAnimationFrame(draw);
