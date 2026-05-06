@@ -451,11 +451,12 @@ Each person has a Primary (energizing), Secondary (neutral), and Tertiary (drain
 
 CRITICAL: Be rigorous and honest. Do not inflate scores to be encouraging. An inaccurate high score harms the user by hiding real misalignment. Most roles demand work across all three orientations, which means genuine strong fits are uncommon.
 
-SCORING METHOD — follow these steps before assigning a score:
+SCORING METHOD — reason through these steps internally before producing output:
 1. Identify the 4-6 core activities that consume the majority of time in this specific role
 2. For each core activity, determine whether it primarily demands WHY, WHAT, or HOW thinking
 3. Estimate the rough cognitive load split (e.g. "60% HOW / 25% WHAT / 15% WHY")
 4. Score based on how well the person's primary orientation matches the dominant demand — penalize heavily for high tertiary load
+Do NOT output this reasoning. Only output the JSON.
 
 SCORE BANDS — the realistic distribution skews lower than people expect:
 - 85-100: Rare. 70%+ of core work energizes the primary orientation; tertiary load is minimal. Reserve this for near-perfect matches only.
@@ -524,8 +525,9 @@ Analyze the cognitive alignment between this profile and this role. Be rigorous 
           } else {
             raw = await readStream(response);
           }
-          const cleaned = raw.replace(/```json|```/g, "").trim();
-          const parsed = JSON.parse(cleaned);
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) throw new Error("No JSON found in response");
+          const parsed = JSON.parse(jsonMatch[0]);
           setResult(parsed);
         } catch (e) {
           setError("Error: " + (e.message || "Something went wrong. Check the browser console for details."));
