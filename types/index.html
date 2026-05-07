@@ -7,8 +7,105 @@
   <meta name="description" content="The six cognitive profiles of the Three Brains Framework — how primary and secondary orientations combine into distinct operating signatures." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@0,400;0,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    /* ── Page hero ── */
+    #types-hero {
+      padding: calc(var(--nav-h) + 80px) 0 72px;
+      background: var(--white);
+    }
+    .sixtypes-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 56px;
+      align-items: start;
+      margin-bottom: 0;
+    }
+    .sixtypes-header h2 { color: var(--ink); font-weight: 900; }
+    .sixtypes-header-right p {
+      color: var(--ink-soft);
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.85;
+    }
+
+    /* ── Type bars — light theme ── */
+    .type-bars {
+      border-top: 1.5px solid var(--rule);
+      margin-bottom: var(--section-y);
+    }
+    .t-bar {
+      border-bottom: 1.5px solid var(--rule);
+      transition: background 0.25s;
+    }
+    .t-bar:hover { background: var(--paper-warm); }
+    .t-bar-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 44px var(--pad-x);
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .t-bar-left { display: flex; flex-direction: column; gap: 8px; }
+
+    .t-type-label {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 2.2vw, 1.65rem);
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+    .t-italic {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      line-height: 1.5;
+    }
+    .t-summary {
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 2vw, 1.45rem);
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+    .t-signal {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.65;
+      color: var(--ink-soft);
+      font-style: italic;
+      border-top: 1px solid var(--rule);
+      padding-top: 16px;
+      margin: 0;
+    }
+
+    /* Left border accents */
+    .t-bar--why       { border-left: 4px solid #059669; }
+    .t-bar--why-alt   { border-left: 4px solid rgba(5,150,105,0.4); }
+    .t-bar--what      { border-left: 4px solid #2563EB; }
+    .t-bar--what-alt  { border-left: 4px solid rgba(37,99,235,0.4); }
+    .t-bar--how       { border-left: 4px solid #D97706; }
+    .t-bar--how-alt   { border-left: 4px solid rgba(217,119,6,0.4); }
+
+    /* Type label accent colors */
+    .t-bar--why       .t-type-label { color: #059669; }
+    .t-bar--why-alt   .t-type-label { color: rgba(5,150,105,0.75); }
+    .t-bar--what      .t-type-label { color: #2563EB; }
+    .t-bar--what-alt  .t-type-label { color: rgba(37,99,235,0.75); }
+    .t-bar--how       .t-type-label { color: #D97706; }
+    .t-bar--how-alt   .t-type-label { color: rgba(217,119,6,0.75); }
+
+    @media (max-width: 840px) {
+      .sixtypes-header { grid-template-columns: 1fr; gap: 28px; }
+      .t-bar-inner     { grid-template-columns: 1fr; gap: 20px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -44,10 +141,9 @@
   <a href="/#cta">Work With Us</a>
 </div>
 
-<!-- SIX TYPES -->
-<section id="impact" style="padding-top: calc(var(--nav-h) + var(--section-y));">
-  <div class="impact-glow"></div>
-  <div class="container" style="position:relative;z-index:1">
+<!-- PAGE HEADER -->
+<section id="types-hero">
+  <div class="container">
     <div class="sixtypes-header reveal">
       <div>
         <div class="label">The Six Types</div>
@@ -58,88 +154,90 @@
       </div>
     </div>
   </div>
-  <div class="type-bars">
-
-    <div class="t-bar t-bar--why reveal">
-      <div class="t-bar-inner">
-        <div class="t-bar-left">
-          <div class="t-type-label">WHY – WHAT</div>
-          <p class="t-italic">Purpose-driven, progress-oriented</p>
-        </div>
-        <div class="t-bar-right">
-          <p class="t-summary">They can't commit to a direction they don't believe in — and once they do, they move.</p>
-          <p class="t-signal">"Before we go further — are we solving the right problem here?"</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="t-bar t-bar--why-alt reveal reveal-d1">
-      <div class="t-bar-inner">
-        <div class="t-bar-left">
-          <div class="t-type-label">WHY – HOW</div>
-          <p class="t-italic">Purpose-driven, precision-oriented</p>
-        </div>
-        <div class="t-bar-right">
-          <p class="t-summary">They hold the deepest question and the finest detail simultaneously, and won't let go of either.</p>
-          <p class="t-signal">"I want to understand the whole picture before we commit to this direction."</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="t-bar t-bar--what reveal reveal-d2">
-      <div class="t-bar-inner">
-        <div class="t-bar-left">
-          <div class="t-type-label">WHAT – WHY</div>
-          <p class="t-italic">Progress-driven, purpose-oriented</p>
-        </div>
-        <div class="t-bar-right">
-          <p class="t-summary">They move toward goals with conviction — fast, direct, and without waiting for perfect information.</p>
-          <p class="t-signal">"We've been talking about this for 45 minutes. Can we just pick something and move?"</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="t-bar t-bar--what-alt reveal">
-      <div class="t-bar-inner">
-        <div class="t-bar-left">
-          <div class="t-type-label">WHAT – HOW</div>
-          <p class="t-italic">Progress-driven, precision-oriented</p>
-        </div>
-        <div class="t-bar-right">
-          <p class="t-summary">They move with urgency, course-correct in real time, and refuse to stand still.</p>
-          <p class="t-signal">"Before we leave this room, I need owners and a deadline on each of these."</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="t-bar t-bar--how reveal reveal-d1">
-      <div class="t-bar-inner">
-        <div class="t-bar-left">
-          <div class="t-type-label">HOW – WHY</div>
-          <p class="t-italic">Precision-driven, purpose-oriented</p>
-        </div>
-        <div class="t-bar-right">
-          <p class="t-summary">They understand how things work so deeply that they always find a better way.</p>
-          <p class="t-signal">"Wait — before we move on, what happens when X breaks? Because it will."</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="t-bar t-bar--how-alt reveal reveal-d2">
-      <div class="t-bar-inner">
-        <div class="t-bar-left">
-          <div class="t-type-label">HOW – WHAT</div>
-          <p class="t-italic">Precision-driven, progress-oriented</p>
-        </div>
-        <div class="t-bar-right">
-          <p class="t-summary">They see how systems will break before they break, and build things that hold.</p>
-          <p class="t-signal">"This works for now, but we need a real process here or it's going to break at scale."</p>
-        </div>
-      </div>
-    </div>
-
-  </div>
 </section>
+
+<!-- TYPE BARS -->
+<div class="type-bars">
+
+  <div class="t-bar t-bar--why reveal">
+    <div class="t-bar-inner">
+      <div class="t-bar-left">
+        <div class="t-type-label">WHY – WHAT</div>
+        <p class="t-italic">Purpose-driven, progress-oriented</p>
+      </div>
+      <div class="t-bar-right">
+        <p class="t-summary">They can't commit to a direction they don't believe in — and once they do, they move.</p>
+        <p class="t-signal">"Before we go further — are we solving the right problem here?"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="t-bar t-bar--why-alt reveal reveal-d1">
+    <div class="t-bar-inner">
+      <div class="t-bar-left">
+        <div class="t-type-label">WHY – HOW</div>
+        <p class="t-italic">Purpose-driven, precision-oriented</p>
+      </div>
+      <div class="t-bar-right">
+        <p class="t-summary">They hold the deepest question and the finest detail simultaneously, and won't let go of either.</p>
+        <p class="t-signal">"I want to understand the whole picture before we commit to this direction."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="t-bar t-bar--what reveal reveal-d2">
+    <div class="t-bar-inner">
+      <div class="t-bar-left">
+        <div class="t-type-label">WHAT – WHY</div>
+        <p class="t-italic">Progress-driven, purpose-oriented</p>
+      </div>
+      <div class="t-bar-right">
+        <p class="t-summary">They move toward goals with conviction — fast, direct, and without waiting for perfect information.</p>
+        <p class="t-signal">"We've been talking about this for 45 minutes. Can we just pick something and move?"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="t-bar t-bar--what-alt reveal">
+    <div class="t-bar-inner">
+      <div class="t-bar-left">
+        <div class="t-type-label">WHAT – HOW</div>
+        <p class="t-italic">Progress-driven, precision-oriented</p>
+      </div>
+      <div class="t-bar-right">
+        <p class="t-summary">They move with urgency, course-correct in real time, and refuse to stand still.</p>
+        <p class="t-signal">"Before we leave this room, I need owners and a deadline on each of these."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="t-bar t-bar--how reveal reveal-d1">
+    <div class="t-bar-inner">
+      <div class="t-bar-left">
+        <div class="t-type-label">HOW – WHY</div>
+        <p class="t-italic">Precision-driven, purpose-oriented</p>
+      </div>
+      <div class="t-bar-right">
+        <p class="t-summary">They understand how things work so deeply that they always find a better way.</p>
+        <p class="t-signal">"Wait — before we move on, what happens when X breaks? Because it will."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="t-bar t-bar--how-alt reveal reveal-d2">
+    <div class="t-bar-inner">
+      <div class="t-bar-left">
+        <div class="t-type-label">HOW – WHAT</div>
+        <p class="t-italic">Precision-driven, progress-oriented</p>
+      </div>
+      <div class="t-bar-right">
+        <p class="t-summary">They see how systems will break before they break, and build things that hold.</p>
+        <p class="t-signal">"This works for now, but we need a real process here or it's going to break at scale."</p>
+      </div>
+    </div>
+  </div>
+
+</div>
 
 <!-- CTA -->
 <section id="cta">
@@ -149,7 +247,7 @@
     <p class="reveal reveal-d1">Take the assessment and discover your primary and secondary orientation — and how to build a team around it.</p>
     <div class="cta-btns reveal reveal-d2">
       <a href="https://4cl0df3b3zv.typeform.com/to/SvFh4s7T" class="btn btn-gold" target="_blank" rel="noopener">Take the Assessment</a>
-      <a href="mailto:hello@curio.com" class="btn btn-outline">Schedule a Conversation</a>
+      <a href="mailto:hello@curio.com" class="btn btn-ghost">Schedule a Conversation</a>
     </div>
   </div>
 </section>
