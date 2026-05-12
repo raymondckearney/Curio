@@ -645,6 +645,7 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
   .app-card-desc   { max-height: 160px; opacity: 1; margin-top: 10px; }
 }
 @media (max-width: 560px) {
+  .hide-mobile     { display: none; }
   .concin-ctas     { flex-direction: column; align-items: flex-start; }
   .cta-btns        { flex-direction: column; align-items: center; }
   .footer-top      { grid-template-columns: 1fr; gap: 36px; }
