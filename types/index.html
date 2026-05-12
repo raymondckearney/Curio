@@ -103,9 +103,9 @@
 
     /* Label text */
     .seg-t1, .seg-t2 {
-      font-family: 'DM Sans', system-ui, sans-serif;
-      font-size: 11px;
-      font-weight: 600;
+      font-family: 'Caveat', cursive;
+      font-size: 14px;
+      font-weight: 700;
       transition: opacity 0.3s ease;
       pointer-events: none;
     }
@@ -153,13 +153,13 @@
     /* Default content */
     .wco-brand {
       font-family: 'Caveat', cursive;
-      font-size: clamp(1.1rem, 3.6vw, 1.9rem);
+      font-size: clamp(1.5rem, 4.4vw, 2.5rem);
       font-weight: 700;
       color: var(--ink);
       line-height: 1.1;
     }
     .wco-brand-sub {
-      font-size: clamp(0.42rem, 1.1vw, 0.62rem);
+      font-size: clamp(0.58rem, 1.4vw, 0.82rem);
       font-weight: 700;
       letter-spacing: 0.16em;
       text-transform: uppercase;
@@ -167,7 +167,7 @@
       margin-top: 6px;
     }
     .wco-hint {
-      font-size: clamp(0.4rem, 1vw, 0.58rem);
+      font-size: clamp(0.52rem, 1.2vw, 0.70rem);
       color: var(--ink-muted);
       margin-top: 12px;
       letter-spacing: 0.04em;
@@ -512,21 +512,21 @@
 
     /* Primary label — e.g. "HOW" */
     var t1 = svgEl('text', {
-      x: f(midPt[0]), y: f(midPt[1] - 11),
+      x: f(midPt[0]), y: f(midPt[1] - 13),
       'text-anchor': 'middle', 'dominant-baseline': 'middle',
-      'font-family': 'DM Sans, system-ui, sans-serif',
-      'font-size': '11', 'font-weight': '600',
+      'font-family': 'Caveat, cursive',
+      'font-size': '14', 'font-weight': '700',
       fill: type.color, class: 'seg-t1'
     });
     t1.textContent = type.primary;
     g.appendChild(t1);
 
-    /* Secondary label — e.g. "WHAT" (no dash, equal treatment) */
+    /* Secondary label — e.g. "WHAT" */
     var t2 = svgEl('text', {
-      x: f(midPt[0]), y: f(midPt[1] + 11),
+      x: f(midPt[0]), y: f(midPt[1] + 13),
       'text-anchor': 'middle', 'dominant-baseline': 'middle',
-      'font-family': 'DM Sans, system-ui, sans-serif',
-      'font-size': '11', 'font-weight': '600',
+      'font-family': 'Caveat, cursive',
+      'font-size': '14', 'font-weight': '700',
       fill: type.color, class: 'seg-t2'
     });
     t2.textContent = type.secondary;
