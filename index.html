@@ -322,19 +322,15 @@
   var ctx=el.getContext('2d');
   ctx.scale(dpr,dpr);
   var cx=S/2,cy=S/2;
-  var PI=Math.PI,PI3=PI/3;
+  var PI=Math.PI,TAU=PI*2,PI3=PI/3;
   var CFG=[
     [{r:30,o:0},{r:68,o:0},{r:110,o:0},{r:152,o:0},{r:194,o:0},{r:232,o:0}],
     [{r:34,o:0},{r:72,o:PI/18},{r:110,o:0},{r:150,o:-PI/18},{r:192,o:0},{r:230,o:PI/18}],
     [{r:28,o:0},{r:66,o:0},{r:108,o:PI/6},{r:152,o:0},{r:196,o:PI/6},{r:234,o:0}],
     [{r:32,o:0},{r:70,o:-PI/12},{r:112,o:PI/12},{r:154,o:-PI/12},{r:196,o:PI/12},{r:232,o:0}]
   ];
-  var rot=0,morph=0,cfgA=0;
-  /* pre-computed per-vertex jitter so sketch wobble is stable across frames */
-  var jx=[],jy=[];
-  for(var k=0;k<36;k++){jx.push((Math.random()-0.5)*3);jy.push((Math.random()-0.5)*3);}
+  var rot=0,morph=0,cfgA=0,breath=0;
 
-  /* ── mouse ── */
   var mx=-9999,my=-9999;
   el.addEventListener('mousemove',function(e){
     var r=el.getBoundingClientRect();
@@ -346,7 +342,6 @@
   function lerp(a,b,t){return a+(b-a)*t;}
   function ease(t){return t*t*(3-2*t);}
 
-  /* cursor repulsion — push vertices away from mouse */
   function repel(px,py){
     var dx=px-mx,dy=py-my;
     var d2=dx*dx+dy*dy,R=88;
@@ -358,15 +353,58 @@
     return[px,py];
   }
 
-  function hexPts(r,xo,ri){
+  function hexPts(r,xo){
     var pts=[];
     for(var i=0;i<6;i++){
       var a=PI3*i+rot+xo;
-      var b=(ri||0)*6+i;
-      var p=repel(cx+r*Math.cos(a)+(jx[b]||0),cy+r*Math.sin(a)+(jy[b]||0));
+      var p=repel(cx+r*Math.cos(a),cy+r*Math.sin(a));
       pts.push(p);
     }
     return pts;
+  }
+
+  /* Three points of a triangle at radius r, starting from base angle */
+  function triPts(r,base){
+    var pts=[];
+    for(var i=0;i<3;i++){
+      var a=PI3*2*i+base;
+      pts.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);
+    }
+    return pts;
+  }
+
+  /* Draw a hexagram (two overlapping triangles) with optional glow */
+  function drawHexagram(r,base,color,glowA,lw){
+    for(var t=0;t<2;t++){
+      var pts=triPts(r,base+t*PI3);
+      ctx.save();
+      if(glowA>0){ctx.shadowColor='rgba(5,150,105,'+glowA+')';ctx.shadowBlur=18;}
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0],pts[0][1]);
+      ctx.lineTo(pts[1][0],pts[1][1]);
+      ctx.lineTo(pts[2][0],pts[2][1]);
+      ctx.closePath();
+      ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /* Precision dial ring with tick marks */
+  function drawDial(){
+    var R=228;
+    ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);
+    ctx.strokeStyle='rgba(30,30,40,0.13)';ctx.lineWidth=0.8;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,R-13,0,TAU);
+    ctx.strokeStyle='rgba(30,30,40,0.06)';ctx.lineWidth=0.5;ctx.stroke();
+    for(var deg=0;deg<360;deg+=10){
+      var a=deg*PI/180,maj=deg%30===0;
+      var ti=maj?R-10:R-4;
+      ctx.beginPath();
+      ctx.moveTo(cx+ti*Math.cos(a),cy+ti*Math.sin(a));
+      ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));
+      ctx.strokeStyle=maj?'rgba(30,30,40,0.24)':'rgba(30,30,40,0.10)';
+      ctx.lineWidth=maj?0.9:0.5;ctx.stroke();
+    }
   }
 
   function rings(){
@@ -378,77 +416,108 @@
 
   function draw(){
     ctx.clearRect(0,0,S,S);
-    ctx.lineJoin='round'; ctx.lineCap='round';
+    ctx.lineJoin='round';ctx.lineCap='round';
+    var bs=1+0.008*Math.sin(breath);
+
+    drawDial();
+
     var rs=rings();
-    var all=rs.map(function(r,ri){return hexPts(r.r,r.o,ri);});
+    var all=rs.map(function(r){return hexPts(r.r*bs,r.o);});
     var n=all.length;
-    /* panel fills between rings — subtle ink wash */
+
+    /* panel fills between rings */
     for(var ri=0;ri<n-1;ri++){
       var p1=all[ri],p2=all[ri+1];
       for(var i=0;i<6;i++){
         var j=(i+1)%6;
         ctx.beginPath();
-        ctx.moveTo(p1[i][0],p1[i][1]);
-        ctx.lineTo(p2[i][0],p2[i][1]);
-        ctx.lineTo(p2[j][0],p2[j][1]);
-        ctx.lineTo(p1[j][0],p1[j][1]);
+        ctx.moveTo(p1[i][0],p1[i][1]);ctx.lineTo(p2[i][0],p2[i][1]);
+        ctx.lineTo(p2[j][0],p2[j][1]);ctx.lineTo(p1[j][0],p1[j][1]);
         ctx.closePath();
         ctx.fillStyle=ri%2===0?'rgba(30,30,40,'+(0.025+ri*0.006)+')':'rgba(5,150,105,'+(0.018+ri*0.004)+')';
         ctx.fill();
       }
     }
+
     /* radial spokes */
     for(var ri=0;ri<n-1;ri++){
       var p1=all[ri],p2=all[ri+1];
       for(var i=0;i<6;i++){
         ctx.beginPath();
-        ctx.moveTo(p1[i][0],p1[i][1]);
-        ctx.lineTo(p2[i][0],p2[i][1]);
+        ctx.moveTo(p1[i][0],p1[i][1]);ctx.lineTo(p2[i][0],p2[i][1]);
         ctx.strokeStyle='rgba(30,30,40,'+(0.10+(n-1-ri)*0.03)+')';
-        ctx.lineWidth=1.5;
-        ctx.stroke();
+        ctx.lineWidth=1.5;ctx.stroke();
       }
     }
-    /* hexagon outlines outer → inner */
+
+    /* hex outlines outer → inner */
     for(var ri=n-1;ri>=0;ri--){
       var pts=all[ri];
       ctx.beginPath();
       for(var i=0;i<6;i++){i===0?ctx.moveTo(pts[i][0],pts[i][1]):ctx.lineTo(pts[i][0],pts[i][1]);}
       ctx.closePath();
       if(ri===0){
-        var g=ctx.createRadialGradient(cx,cy,0,cx,cy,rs[0].r*1.1);
-        g.addColorStop(0,'rgba(5,150,105,0.12)');
-        g.addColorStop(0.6,'rgba(5,150,105,0.06)');
-        g.addColorStop(1,'rgba(5,150,105,0)');
-        ctx.fillStyle=g; ctx.fill();
-        ctx.strokeStyle='rgba(5,150,105,0.65)'; ctx.lineWidth=2.5;
+        ctx.save();
+        ctx.shadowColor='rgba(5,150,105,0.55)';ctx.shadowBlur=14;
+        var gg=ctx.createRadialGradient(cx,cy,0,cx,cy,rs[0].r*1.2);
+        gg.addColorStop(0,'rgba(5,150,105,0.15)');
+        gg.addColorStop(0.6,'rgba(5,150,105,0.07)');
+        gg.addColorStop(1,'rgba(5,150,105,0)');
+        ctx.fillStyle=gg;ctx.fill();
+        ctx.strokeStyle='rgba(5,150,105,0.82)';ctx.lineWidth=2.5;ctx.stroke();
+        ctx.restore();
       } else {
         ctx.strokeStyle='rgba(30,30,40,'+Math.max(0.07,0.40-ri*0.06)+')';
-        ctx.lineWidth=ri<2?2.2:1.8;
+        ctx.lineWidth=ri<2?2.2:1.8;ctx.stroke();
       }
-      ctx.stroke();
     }
-    /* vertex dots */
+
+    /* outer hexagram — slowly counter-rotating, subtle frame */
+    drawHexagram(rs[n-1].r*bs*1.07,-rot*0.55,'rgba(30,30,40,0.16)',0,1.1);
+
+    /* inner hexagram — forward-rotating, green glow */
+    drawHexagram(rs[1].r*bs*1.14,rot*0.85,'rgba(5,150,105,0.72)',0.88,1.8);
+
+    /* vertex dots with glow on innermost ring */
     all.forEach(function(pts,ri){
       var dr=ri===0?3:ri===1?2:1.5;
       var a=Math.max(0.15,0.7-ri*0.1);
       var clr=ri===0?'rgba(5,150,105,'+a+')':'rgba(30,30,40,'+a+')';
       pts.forEach(function(p){
-        ctx.beginPath(); ctx.arc(p[0],p[1],dr,0,PI*2);
-        ctx.fillStyle=clr; ctx.fill();
+        if(ri===0){
+          ctx.save();
+          ctx.shadowColor='rgba(5,150,105,0.72)';ctx.shadowBlur=10;
+          ctx.beginPath();ctx.arc(p[0],p[1],dr,0,TAU);
+          ctx.fillStyle=clr;ctx.fill();
+          ctx.restore();
+        } else {
+          ctx.beginPath();ctx.arc(p[0],p[1],dr,0,TAU);
+          ctx.fillStyle=clr;ctx.fill();
+        }
       });
     });
-    /* center glow */
+
+    /* ambient center glow */
     var cg=ctx.createRadialGradient(cx,cy,0,cx,cy,rs[0].r*4);
-    cg.addColorStop(0,'rgba(5,150,105,0.08)');
+    cg.addColorStop(0,'rgba(5,150,105,0.10)');
+    cg.addColorStop(0.4,'rgba(5,150,105,0.04)');
     cg.addColorStop(1,'rgba(5,150,105,0)');
-    ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(cx,cy,rs[0].r*4,0,PI*2); ctx.fill();
+    ctx.fillStyle=cg;ctx.beginPath();ctx.arc(cx,cy,rs[0].r*4,0,TAU);ctx.fill();
+
+    /* center dot — strong glow anchor */
+    ctx.save();
+    ctx.shadowColor='rgba(5,150,105,0.95)';ctx.shadowBlur=26;
+    ctx.beginPath();ctx.arc(cx,cy,5,0,TAU);
+    ctx.fillStyle='rgba(5,150,105,1)';ctx.fill();
+    ctx.restore();
+
     /* ambient rings */
     [0.35,0.7,1.05,1.4].forEach(function(m){
-      ctx.beginPath(); ctx.arc(cx,cy,rs[n-1].r*m,0,PI*2);
-      ctx.strokeStyle='rgba(30,30,40,0.04)'; ctx.lineWidth=0.5; ctx.stroke();
+      ctx.beginPath();ctx.arc(cx,cy,rs[n-1].r*m*bs,0,TAU);
+      ctx.strokeStyle='rgba(30,30,40,0.04)';ctx.lineWidth=0.5;ctx.stroke();
     });
-    rot+=0.003; morph+=0.0025;
+
+    rot+=0.003;morph+=0.0025;breath+=0.012;
     if(morph>=1){morph=0;cfgA=(cfgA+1)%4;}
     requestAnimationFrame(draw);
   }
