@@ -444,7 +444,7 @@ p  { line-height: 1.78; }
 }
 
 /* ─── APPLICATIONS ─── */
-#applications { background: #FFF7ED; padding: var(--section-y) 0; }
+#applications { background: #F0FDF4; padding: var(--section-y) 0; }
 .app-header { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 48px; }
 .app-header h2 { color: var(--ink); font-weight: 900; }
 .app-header-right { font-size: 1rem; font-weight: 500; color: var(--ink); line-height: 1.8; }
@@ -481,18 +481,13 @@ p  { line-height: 1.78; }
 .app-card:hover .app-card-desc { max-height: 160px; opacity: 1; margin-top: 10px; }
 
 /* ─── WHY CURIO ─── */
-#why-curio { background: #fff; padding: var(--section-y) 0; }
+#why-curio { background: #fff; padding: 48px 0 var(--section-y); }
 
-.scenario-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-bottom: 80px; }
-.scenario-col { display: flex; flex-direction: column; }
-
-.sc-desc {
-  font-family: var(--font-display);
-  font-size: clamp(1.1rem, 1.9vw, 1.45rem);
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.3;
-  margin-bottom: 14px;
+.scenario-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0 56px;
+  margin-bottom: 80px;
 }
 
 .sc-label {
@@ -501,24 +496,28 @@ p  { line-height: 1.78; }
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--gold);
-  margin-bottom: 18px;
+  border-top: 2px solid var(--gold);
+  padding-top: 18px;
+  margin-bottom: 16px;
 }
 
-#why-curio .scenario-card {
-  flex: 1;
-  background: #fff;
-  border: 1.5px solid var(--border);
-  border-top: 4px solid var(--gold);
-  border-radius: var(--radius-card);
-  padding: 36px 32px 40px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
-  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+.sc-head {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2vw, 1.85rem);
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.18;
+  margin-bottom: 18px;
+  align-self: start;
 }
-#why-curio .scenario-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 24px 56px rgba(0,0,0,0.11), 0 0 0 2px rgba(5,150,105,0.18);
+
+.sc-body {
+  font-size: 0.9375rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  line-height: 1.82;
+  align-self: start;
 }
-#why-curio .scenario-card p { font-size: 1rem; color: var(--ink-soft); line-height: 1.82; }
 
 .wc-footer { max-width: 720px; margin: 0 auto; text-align: center; }
 .wc-footer h2 { color: var(--ink); font-weight: 900; margin-bottom: 22px; }
@@ -794,7 +793,7 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
   }
   .pv-detail { max-height: 600px; opacity: 1; margin-top: 28px; }
   .pv-hint   { display: none; }
-  .scenario-cols { grid-template-columns: 1fr; }
+  .scenario-row { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
   .hide-mobile     { display: none; }
@@ -802,6 +801,5 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
   .cta-btns        { flex-direction: column; align-items: center; }
   .footer-top      { grid-template-columns: 1fr; gap: 36px; }
   .footer-bottom   { flex-direction: column; gap: 10px; text-align: center; }
-  .scenario-cards  { grid-template-columns: 1fr; }
   .app-grid        { grid-template-columns: 1fr; }
 }

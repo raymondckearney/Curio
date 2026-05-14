@@ -18,11 +18,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/style.css" />
   <style>
-    #fw-hero { padding: calc(var(--nav-h) + 80px) 0 64px; }
-    .fw-hero-inner { max-width: 760px; }
-    .fw-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; }
+    #fw-hero { padding: calc(var(--nav-h) + 80px) 0 72px; }
+    .fw-hero-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
     .fw-page-title { font-family: var(--font-display); font-size: clamp(3rem, 6vw, 5rem); font-weight: 900; color: var(--ink); line-height: 1.05; margin-bottom: 22px; }
-    .fw-page-sub { font-size: 1.1rem; font-weight: 500; color: var(--ink-soft); line-height: 1.78; max-width: 580px; }
+    .fw-page-sub { font-size: 1.1rem; font-weight: 500; color: var(--ink-soft); line-height: 1.78; }
+    .fw-hero-img img { width: 100%; height: auto; border-radius: 16px; }
+    @media (max-width: 700px) { .fw-hero-inner { grid-template-columns: 1fr; gap: 36px; } .fw-hero-img { display: none; } }
   </style>
 </head>
 <body>
@@ -32,13 +33,12 @@
   <div class="container nav-inner">
     <a href="/" class="nav-logo">Curio<span class="dot">.</span></a>
     <ul class="nav-links">
+      <li><a href="/#applications">Applications</a></li>
       <li><a href="/framework/" class="active">The Framework</a></li>
       <li><a href="/types/">The Six Types</a></li>
-      <li><a href="/#applications">Applications</a></li>
       <li><a href="/#cta">Work With Us</a></li>
     </ul>
     <div class="nav-right">
-      <a href="https://4cl0df3b3zv.typeform.com/to/SvFh4s7T" class="btn btn-gold" target="_blank" rel="noopener">Take the Assessment</a>
       <button class="hamburger" id="hamburger" aria-label="Open menu">
         <span></span><span></span><span></span>
       </button>
@@ -53,19 +53,23 @@
       <path d="M18 6L6 18M6 6l12 12"/>
     </svg>
   </button>
+  <a href="/#applications">Applications</a>
   <a href="/framework/">The Framework</a>
   <a href="/types/">The Six Types</a>
-  <a href="/#applications">Applications</a>
   <a href="/#cta">Work With Us</a>
 </div>
 
 <!-- PAGE HEADER -->
 <section id="fw-hero">
   <div class="container">
-    <div class="fw-hero-inner reveal">
-      <div class="fw-label">The Framework</div>
-      <h1 class="fw-page-title">MindPrint<br>Framework</h1>
-      <p class="fw-page-sub">understanding how people are wired to solve problems and how their energy is spent to facilitate strategic harmony</p>
+    <div class="fw-hero-inner">
+      <div class="fw-hero-text reveal">
+        <h1 class="fw-page-title">MindPrint<br>Framework</h1>
+        <p class="fw-page-sub">understanding how people are wired to solve problems and how their energy is spent to facilitate strategic harmony</p>
+      </div>
+      <div class="fw-hero-img reveal reveal-d1">
+        <img src="/images/framework-hero.png" alt="MindPrint Framework" />
+      </div>
     </div>
   </div>
 </section>
