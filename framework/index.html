@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HYNDBMVCZ8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HYNDBMVCZ8');
+  </script>
+  <title>The Framework — Curio</title>
+  <meta name="description" content="The MindPrint Framework — three cognitive orientations and the energy model that powers them." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    #fw-hero { padding: calc(var(--nav-h) + 72px) 0 56px; }
+    .fw-hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 56px;
+      align-items: start;
+    }
+    .fw-hero-inner h2 { color: var(--ink); font-weight: 900; }
+    .fw-hero-desc { color: var(--ink-soft); font-size: 1rem; font-weight: 500; line-height: 1.85; }
+    @media (max-width: 700px) { .fw-hero-inner { grid-template-columns: 1fr; gap: 24px; } }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">Curio<span class="dot">.</span></a>
+    <ul class="nav-links">
+      <li><a href="/framework/" class="active">The Framework</a></li>
+      <li><a href="/types/">The Six Types</a></li>
+      <li><a href="/#applications">Applications</a></li>
+      <li><a href="/#cta">Work With Us</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="https://4cl0df3b3zv.typeform.com/to/SvFh4s7T" class="btn btn-gold" target="_blank" rel="noopener">Take the Assessment</a>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobileNav">
+  <button class="mobile-close" id="mobileClose" aria-label="Close menu">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M18 6L6 18M6 6l12 12"/>
+    </svg>
+  </button>
+  <a href="/framework/">The Framework</a>
+  <a href="/types/">The Six Types</a>
+  <a href="/#applications">Applications</a>
+  <a href="/#cta">Work With Us</a>
+</div>
+
+<!-- PAGE HEADER -->
+<section id="fw-hero">
+  <div class="container">
+    <div class="fw-hero-inner reveal">
+      <h2>Three cognitive orientations. One powerful framework.</h2>
+      <p class="fw-hero-desc">Every person approaches problems through a natural combination of HOW, WHAT, and WHY thinking. Understanding which orientation someone leads with — and which they rely on secondarily or reluctantly — is the foundation for building teams that spend their energy on output rather than friction.</p>
+    </div>
+  </div>
+</section>
+
+<!-- THE THREE ORIENTATIONS -->
+<section id="framework">
+  <div class="fw-glow"></div>
+  <div class="container" style="position:relative;z-index:1">
+    <div class="fw-header">
+      <div class="reveal"><h2>Every person approaches problems through a combination of three cognitive orientations.</h2></div>
+      <div class="fw-intro reveal reveal-d1">
+        <p>Individuals have a natural orientation — a default mode for approaching complexity. These orientations are not personality types. They are <strong>cognitive operating modes.</strong></p>
+        <p>Understanding which orientation a person leads with, and which they rely on secondarily or reluctantly, is the foundation for building teams that spend their energy on output rather than friction.</p>
+      </div>
+    </div>
+    <div class="lenses">
+      <div class="lens reveal">
+        <div class="lens-img"><img src="/images/how-character.png" alt="HOW" /></div>
+        <div class="lens-type">HOW</div>
+        <div class="lens-name">PRECISION-DRIVEN</div>
+        <hr class="lens-rule" />
+        <p class="lens-italic">HOWs are oriented toward detail before execution. They need to know how all the parts fit together before they're comfortable moving. They are energized by complexity, by systems, by the satisfaction of making something work precisely and completely.</p>
+        <span class="lens-quote">"Have we accounted for everything?"</span>
+      </div>
+      <div class="lens reveal reveal-d1">
+        <div class="lens-img"><img src="/images/what-character.png" alt="WHAT" /></div>
+        <div class="lens-type">WHAT</div>
+        <div class="lens-name">PROGRESS-DRIVEN</div>
+        <hr class="lens-rule" />
+        <p class="lens-italic">WHATs are oriented toward momentum before perfection. They believe that the best way to solve a problem is to start solving it — that clarity emerges through action, not before it. They are energized by progress, by crossing things off, by the feeling that the team is moving.</p>
+        <span class="lens-quote">"What are the next steps?"</span>
+      </div>
+      <div class="lens reveal reveal-d2">
+        <div class="lens-img"><img src="/images/why-character.png" alt="WHY" /></div>
+        <div class="lens-type">WHY</div>
+        <div class="lens-name">PURPOSE-DRIVEN</div>
+        <hr class="lens-rule" />
+        <p class="lens-italic">WHYs are oriented toward meaning before movement. They cannot comfortably begin work until they understand the purpose of what they're doing and the goal to achieve. They are energized by possibility, vision, and asking the right questions to frame the problem.</p>
+        <span class="lens-quote">"Are we solving the right problem?"</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ENERGY MODEL -->
+<section id="energy">
+  <div class="container">
+    <div class="energy-header reveal">
+      <h2>Each person operates in all three orientations — but not equally.</h2>
+      <p class="energy-subtext">Strategic harmony isn't just about skills, it's about energy and fit. When the right people are doing the right work, the team doesn't just perform better, they thrive. When people and problems are aligned teams operate at their best and that impacts results, outcomes and individual satisfaction.</p>
+    </div>
+  </div>
+
+  <!-- Primary + Secondary | Car -->
+  <div class="energy-ps-car-section">
+    <div class="energy-ps-stack">
+      <div class="energy-ps-item energy-ps-item--primary reveal">
+        <div class="e-type">Primary</div>
+        <div class="e-subtitle">Natural Inclination</div>
+        <div class="e-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Energizing</div>
+        <p>The primary orientation is a person's natural home base — the instinctive lens through which problems are approached without effort or deliberation. Thinking is faster here, engagement runs deeper, and output reflects genuine capability. Work that aligns with the primary orientation doesn't deplete energy; it generates it.</p>
+      </div>
+      <div class="energy-ps-item energy-ps-item--secondary reveal reveal-d1">
+        <div class="e-type">Secondary</div>
+        <div class="e-subtitle">Supporting Approach</div>
+        <div class="e-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/></svg>Neutral</div>
+        <p>The secondary orientation is the space where the primary finds its character. Neither energizing nor draining, it functions as neutral ground — a comfortable range in which a person operates with competence and ease. More than a modifier, the secondary shapes how the primary manifests: two people with the same primary brain can think and work quite differently depending on their secondary.</p>
+      </div>
+    </div>
+    <div class="energy-car-img reveal reveal-d1">
+      <img src="/images/mindprint-car.png" alt="The MindPrint — Primary drives, Secondary influences" />
+    </div>
+  </div>
+
+  <!-- Boulder image — explains tertiary visually -->
+  <div class="energy-tertiary-section">
+    <div class="energy-boulder-img reveal">
+      <img src="/images/tertiary-boulder.png" alt="Tertiary — the draining weight" />
+    </div>
+    <div class="energy-tertiary-text reveal reveal-d1">
+      <div class="e-type">Tertiary</div>
+      <div class="e-subtitle">Unnatural Alignment</div>
+      <div class="e-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l-7 7 7 7"/></svg>Draining</div>
+      <p>The tertiary orientation is where things break down. It is the mode of thinking that feels most unnatural, requires the most effort, and returns the least. Time spent here is genuinely draining — and because the tertiary doesn't come naturally, its value is often invisible to the person operating in it. They may not see why it matters, which compounds the drain.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="container">
+    <div class="label label--center reveal">Get Started</div>
+    <h2 class="reveal">Find your team's type.</h2>
+    <p class="reveal reveal-d1">Take the assessment and discover your team's cognitive composition — and what to build around it.</p>
+    <div class="cta-btns reveal reveal-d2">
+      <a href="https://4cl0df3b3zv.typeform.com/to/SvFh4s7T" class="btn btn-gold" target="_blank" rel="noopener">Take the Assessment</a>
+      <a href="mailto:hello@curio.com" class="btn btn-ghost">Schedule a Conversation</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="/" class="nav-logo">Curio<span class="dot">.</span></a>
+        <p>Curio is the consulting practice behind the MindPrint Framework™ — helping leaders and teams unlock existing potential and optimize work for innovation, happiness, and growth.</p>
+      </div>
+      <div class="footer-col"><h5>The Framework</h5><ul><li><a href="/framework/">The Three Orientations</a></li><li><a href="/framework/#energy">The Energy Model</a></li><li><a href="/types/">The Six Types</a></li></ul></div>
+      <div class="footer-col"><h5>How We Work</h5><ul><li><a href="/#approach">Discovery</a></li><li><a href="/#approach">Alignment</a></li><li><a href="/#approach">Optimization</a></li></ul></div>
+      <div class="footer-col"><h5>Connect</h5><ul><li><a href="/#cta">Work With Us</a></li><li><a href="mailto:hello@curio.com">hello@curio.com</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span id="year"></span> Curio. All rights reserved.</p>
+      <p>The MindPrint Framework™</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+</body>
+</html>
