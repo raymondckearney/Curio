@@ -493,8 +493,17 @@ p  { line-height: 1.78; }
 .scenario-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0 56px;
+  grid-template-rows: auto auto auto;
+  column-gap: 56px;
+  row-gap: 0;
   margin-bottom: 80px;
+}
+
+/* Each item spans all 3 parent rows; subgrid aligns label/head/body across columns */
+.scenario-item {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
 }
 
 .sc-label {
@@ -505,7 +514,8 @@ p  { line-height: 1.78; }
   color: var(--gold);
   border-top: 2px solid var(--gold);
   padding-top: 18px;
-  margin-bottom: 16px;
+  padding-bottom: 14px;
+  align-self: start;
 }
 
 .sc-head {
@@ -514,7 +524,7 @@ p  { line-height: 1.78; }
   font-weight: 800;
   color: var(--ink);
   line-height: 1.18;
-  margin-bottom: 18px;
+  padding-bottom: 18px;
   align-self: start;
 }
 
@@ -800,7 +810,17 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
   }
   .pv-detail { max-height: 600px; opacity: 1; margin-top: 28px; }
   .pv-hint   { display: none; }
-  .scenario-row { grid-template-columns: 1fr; }
+  /* Why Curio: reflow to stacked readable blocks on mobile */
+  .scenario-row { display: block; }
+  .scenario-item {
+    display: block;
+    padding: 32px 0 32px 24px;
+    border-left: 3px solid var(--gold);
+    margin-bottom: 28px;
+  }
+  .scenario-item:last-child { margin-bottom: 0; }
+  .sc-label { border-top: none; padding-top: 0; padding-bottom: 6px; }
+  .sc-head { padding-bottom: 10px; }
 }
 @media (max-width: 560px) {
   .hide-mobile     { display: none; }
