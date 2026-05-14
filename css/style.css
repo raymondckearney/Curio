@@ -483,6 +483,13 @@ p  { line-height: 1.78; }
 /* ─── WHY CURIO ─── */
 #why-curio { background: #fff; padding: 48px 0 var(--section-y); }
 
+.wc-section-title {
+  font-size: clamp(2rem, 3.5vw, 3.25rem);
+  font-weight: 900;
+  color: var(--ink);
+  margin-bottom: 56px;
+}
+
 .scenario-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
