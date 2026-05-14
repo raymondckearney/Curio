@@ -465,6 +465,18 @@
       const resultRef = useRef(null);
 
       useEffect(() => {
+        // Restore state after iOS print-triggered page reload
+        const saved = sessionStorage.getItem('curio-print-state');
+        if (saved) {
+          try {
+            const s = JSON.parse(saved);
+            if (s.result) { setResult(s.result); setRole(s.role); setSelectedType(s.selectedType); }
+          } catch {}
+          sessionStorage.removeItem('curio-print-state');
+        }
+      }, []);
+
+      useEffect(() => {
         if (result && resultRef.current) {
           resultRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
         }
@@ -604,8 +616,14 @@ Analyze the cognitive alignment between this profile and this role. Be rigorous 
       }
 
       function generatePDF() {
+        sessionStorage.setItem('curio-print-state', JSON.stringify({ result, role, selectedType }));
         const el = document.getElementById('print-date');
         if (el) el.textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const afterPrint = () => {
+          if (resultRef.current) resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          window.removeEventListener('afterprint', afterPrint);
+        };
+        window.addEventListener('afterprint', afterPrint);
         window.print();
       }
 
