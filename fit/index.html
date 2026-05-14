@@ -298,6 +298,47 @@
     .pdf-btn:hover { background: #047857; }
     .action-row { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; }
 
+    /* Print header (hidden on screen) */
+    .print-header { display: none; }
+
+    @media print {
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { margin: 14mm 12mm; size: A4 portrait; }
+      body { font-size: 9pt; }
+      .nav,
+      .page-label,
+      .page-title,
+      .page-subtitle,
+      .page-rule,
+      .step-block,
+      .analyze-btn,
+      .error-box,
+      .results-rule,
+      .action-row { display: none !important; }
+      .page { padding: 0; max-width: 100%; }
+      .print-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2.5px solid #059669;
+        padding-bottom: 12px;
+        margin-bottom: 18px;
+      }
+      .print-logo {
+        font-family: 'Caveat', cursive;
+        font-size: 22pt; font-weight: 700; line-height: 1; color: #1C1917;
+      }
+      .print-logo span { color: #059669; }
+      .print-meta { text-align: right; font-size: 7.5pt; color: #78716C; }
+      .print-meta strong { display: block; font-size: 8.5pt; color: #1C1917; margin-bottom: 2px; }
+      .score-header { margin-bottom: 14px; gap: 20px; }
+      .result-grid-2 { gap: 10px; margin-bottom: 10px; }
+      .result-card { padding: 14px 16px; page-break-inside: avoid; }
+      .rec-card { padding: 8px 0; }
+      .partner-grid { gap: 8px; }
+      .partner-card { padding: 10px 12px; }
+    }
+
     @media (max-width: 600px) {
       .type-grid { grid-template-columns: 1fr 1fr; }
       .result-grid-2 { grid-template-columns: 1fr; }
@@ -563,115 +604,9 @@ Analyze the cognitive alignment between this profile and this role. Be rigorous 
       }
 
       function generatePDF() {
-        const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        const pct = Math.round(result.score);
-        const color = pct >= 75 ? '#059669' : pct >= 50 ? '#34D399' : '#A8A29E';
-        const label = pct >= 80 ? 'Strong fit' : pct >= 60 ? 'Good fit' : pct >= 40 ? 'Partial fit' : 'Low fit';
-        const labelBg = pct >= 80 ? 'rgba(5,150,105,0.08)' : pct >= 60 ? 'rgba(52,211,153,0.08)' : 'rgba(168,162,158,0.1)';
-        const labelBorder = pct >= 80 ? 'rgba(5,150,105,0.3)' : pct >= 60 ? 'rgba(52,211,153,0.3)' : '#E7E5E4';
-        const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        const r = 36, circ = 2 * Math.PI * r, dash = (pct / 100) * circ;
-        const currentType = TYPES.find(t => t.id === selectedType);
-
-        const bulletRows = (items, dotColor) => items.map(item =>
-          `<div class="bullet"><span class="dot" style="background:${dotColor}"></span><span class="btext">${esc(item)}</span></div>`
-        ).join('');
-
-        const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Role Alignment — ${esc(role)} — Curio</title>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:1.5;background:#fff}
-.wrap{max-width:700px;margin:0 auto;padding:26px 30px}
-.hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #059669;padding-bottom:11px;margin-bottom:16px}
-.logo{font-family:'Caveat',cursive;font-size:21pt;font-weight:700;color:#1C1917;line-height:1}
-.logo em{color:#059669;font-style:normal}
-.hdr-right{text-align:right;font-size:7pt;color:#78716C}
-.hdr-right strong{display:block;font-size:8pt;color:#1C1917;margin-bottom:1px}
-.score-row{display:flex;align-items:center;gap:18px;padding:13px 15px;background:#FAFAF9;border:1px solid #E7E5E4;border-radius:6px;margin-bottom:9px}
-.sinfo{flex:1}
-.tlabel{font-size:6.5pt;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#059669;margin-bottom:3px}
-.rname{font-family:'Caveat',cursive;font-size:17pt;font-weight:700;color:#1C1917;line-height:1.1;margin-bottom:6px}
-.rationale{font-size:7.5pt;color:#57534E;line-height:1.6}
-.sring{flex-shrink:0;text-align:center}
-.fit-lbl{font-size:6pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;border-radius:100px;display:inline-block;margin-top:4px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}
-.card{background:#FAFAF9;border:1px solid #E7E5E4;border-radius:5px;padding:11px 13px}
-.ca{border-left:2px solid #059669}
-.clabel{font-size:6pt;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:#059669;margin-bottom:7px}
-.bullet{display:flex;gap:6px;align-items:flex-start;margin-bottom:3px}
-.dot{width:4px;height:4px;border-radius:50%;margin-top:5px;flex-shrink:0}
-.btext{font-size:7.5pt;color:#57534E;line-height:1.45}
-.rec{padding:6px 0;border-bottom:1px solid #E7E5E4}
-.rec:last-child{border-bottom:none;padding-bottom:0}
-.rcat{font-size:6pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#059669;margin-bottom:1px}
-.raction{font-family:'Caveat',cursive;font-size:10.5pt;color:#1C1917;line-height:1.2;margin-bottom:1px}
-.rrat{font-size:7pt;color:#78716C;line-height:1.45}
-.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.pcard{background:#fff;border:1px solid #E7E5E4;border-radius:4px;padding:8px 10px}
-.pcombo{font-size:6.5pt;font-weight:700;letter-spacing:0.1em;color:#059669;margin-bottom:1px}
-.ptagline{font-style:italic;font-size:7pt;color:#57534E;margin-bottom:2px}
-.preason{font-size:7pt;color:#78716C;line-height:1.4}
-.footer{margin-top:13px;padding-top:9px;border-top:1px solid #E7E5E4;display:flex;justify-content:space-between;align-items:center;font-size:6.5pt;color:#A8A29E}
-.flogo{font-family:'Caveat',cursive;font-size:13pt;font-weight:700;color:#1C1917}
-.flogo em{color:#059669;font-style:normal}
-@media print{@page{margin:12mm 10mm;size:A4 portrait}body{font-size:8pt}.wrap{padding:0;max-width:100%}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="hdr">
-    <div class="logo">Curio<em>.</em></div>
-    <div class="hdr-right"><strong>Role Alignment Analysis</strong>${esc(today)}</div>
-  </div>
-  <div class="score-row">
-    <div class="sinfo">
-      <div class="tlabel">${esc(currentType.label)} &middot; ${esc(currentType.tagline)}</div>
-      <div class="rname">${esc(role)}</div>
-      <div class="rationale">${esc(result.scoreRationale)}</div>
-    </div>
-    <div class="sring">
-      <svg width="86" height="86" viewBox="0 0 86 86">
-        <circle cx="43" cy="43" r="${r}" fill="none" stroke="#E7E5E4" stroke-width="6"/>
-        <circle cx="43" cy="43" r="${r}" fill="none" stroke="${color}" stroke-width="6"
-          stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
-          stroke-linecap="round" transform="rotate(-90 43 43)"/>
-        <text x="43" y="38" text-anchor="middle" font-size="19" font-weight="700" fill="${color}" font-family="Caveat,cursive">${pct}%</text>
-        <text x="43" y="52" text-anchor="middle" font-size="7" fill="#A8A29E" font-family="DM Sans,sans-serif" letter-spacing="1">MATCH</text>
-      </svg>
-      <div class="fit-lbl" style="color:${color};background:${labelBg};border:1px solid ${labelBorder}">${esc(label)}</div>
-    </div>
-  </div>
-  <div class="g2">
-    <div class="card"><div class="clabel">Likely dislikes</div>${bulletRows(result.dislikes,'#A8A29E')}</div>
-    <div class="card"><div class="clabel">May struggle with</div>${bulletRows(result.struggles,'#A8A29E')}</div>
-  </div>
-  <div class="g2">
-    <div class="card ca"><div class="clabel">Likely enjoys</div>${bulletRows(result.enjoys,'#059669')}</div>
-    <div class="card ca"><div class="clabel">Likely excels at</div>${bulletRows(result.excels,'#059669')}</div>
-  </div>
-  <div class="card" style="margin-bottom:7px">
-    <div class="clabel">Recommendations</div>
-    ${result.recommendations.map(rec => `<div class="rec"><div class="rcat">${esc(rec.category)}</div><div class="raction">${esc(rec.action)}</div><div class="rrat">${esc(rec.rationale)}</div></div>`).join('')}
-  </div>
-  ${result.partnerTypes && result.partnerTypes.length > 0 ? `<div class="card"><div class="clabel">Ideal collaborators for this role</div><div class="pgrid">${result.partnerTypes.map(p => { const pt = TYPES.find(t => t.id === p.type); return '<div class="pcard"><div class="pcombo">' + esc(p.type) + '</div>' + (pt ? '<div class="ptagline">' + esc(pt.tagline) + '</div>' : '') + '<div class="preason">' + esc(p.reason) + '</div></div>'; }).join('')}</div></div>` : ''}
-  <div class="footer">
-    <div><div class="flogo">Curio<em>.</em></div><div>MindPrint Framework™ &nbsp;&middot;&nbsp; Role Alignment Analysis</div></div>
-    <div style="text-align:right">choosecurio.com &nbsp;&middot;&nbsp; Generated ${esc(today)}</div>
-  </div>
-</div>
-<script>document.fonts.ready.then(function(){ setTimeout(function(){ window.print(); }, 350); });<\/script>
-</body>
-</html>`;
-
-        const win = window.open('', '_blank');
-        if (!win) { alert('Please allow pop-ups for this site to download the PDF.'); return; }
-        win.document.write(html);
-        win.document.close();
+        const el = document.getElementById('print-date');
+        if (el) el.textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        window.print();
       }
 
       const type = TYPES.find(t => t.id === selectedType);
@@ -731,6 +666,14 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
           {/* Results */}
           {result && (
             <div ref={resultRef}>
+              {/* Print-only branded header */}
+              <div className="print-header">
+                <div className="print-logo">Curio<span>.</span></div>
+                <div className="print-meta">
+                  <strong>Role Alignment Analysis</strong>
+                  <span id="print-date"></span>
+                </div>
+              </div>
               <div className="results-rule" />
 
               {/* Score */}
