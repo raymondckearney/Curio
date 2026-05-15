@@ -466,6 +466,7 @@ p  { line-height: 1.78; }
   margin-bottom: 20px;
 }
 .mp-intro-body:last-child { margin-bottom: 0; }
+.mp-intro-cta { margin-top: 36px; }
 .mp-orient { color: var(--gold); font-weight: 700; }
 .mp-intro-img {
   display: flex;
@@ -515,7 +516,7 @@ p  { line-height: 1.78; }
 .app-card:hover .app-card-desc { max-height: 160px; opacity: 1; margin-top: 10px; }
 
 /* ─── WHY CURIO ─── */
-#why-curio { background: #fff; padding: 48px 0 var(--section-y); }
+#why-curio { background: var(--paper-warm); padding: 48px 0 var(--section-y); }
 
 .wc-section-title {
   font-size: clamp(2rem, 3.5vw, 3.25rem);
