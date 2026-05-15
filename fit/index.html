@@ -515,37 +515,40 @@
         const details = TYPE_DETAILS[selectedType];
         const tertiary = ["WHY","WHAT","HOW"].find(b => b !== type.primary && b !== type.secondary);
 
-        const systemPrompt = `You are a rigorous analyst for The Three Brains Framework, which defines three cognitive orientations:
+        const systemPrompt = `You are a rigorous analyst for the MindPrint Framework, which defines three cognitive orientations:
 
 - WHY Brain: Vision-oriented, purpose-driven, big-picture thinker, questions assumptions, organizes by goals and possibilities
 - WHAT Brain: Action-oriented, momentum-driven, milestone-focused, values progress and iteration, organizes by milestones
 - HOW Brain: Detail-oriented, process-focused, precision-driven, systematic, tracks all moving parts, organizes by tasks
 
-Each person has a Primary (energizing), Secondary (neutral), and Tertiary (draining) orientation. People produce their best work when primary orientation aligns with the core demands of their role. When the tertiary orientation is heavily taxed, performance and wellbeing deteriorate over time — even if the person is technically capable.
+Each person has a Primary (energizing), Secondary (neutral), and Tertiary (draining) orientation. The score reflects expected day-to-day cognitive energy balance in this role.
 
-CRITICAL: Be rigorous and honest. Do not inflate scores to be encouraging. An inaccurate high score harms the user by hiding real misalignment. Most roles demand work across all three orientations, which means genuine strong fits are uncommon.
+SCORING METHOD — follow these steps exactly:
+1. Identify the 5–7 core activities that consume the majority of time in this specific role
+2. For each activity, classify its dominant cognitive demand: WHY, WHAT, or HOW
+3. Estimate the percentage split of cognitive demand across the role (must sum to 100%)
+4. Apply asymmetric weighting — tertiary drain costs significantly more than primary alignment gains:
+   - % of role demanding PRIMARY orientation: multiply by +1.0
+   - % of role demanding SECONDARY orientation: multiply by +0.4
+   - % of role demanding TERTIARY orientation: multiply by −1.5
+   Sum these three values. The raw result will range from roughly −50 to +100.
+   Normalize to 0–100 using: score = round(max(0, min(100, (raw + 50) / 1.5)))
+5. Do not soften results. A role where 40% demands tertiary is genuinely damaging regardless of primary alignment elsewhere.
 
-SCORING METHOD — reason through these steps internally before producing output:
-1. Identify the 4-6 core activities that consume the majority of time in this specific role
-2. For each core activity, determine whether it primarily demands WHY, WHAT, or HOW thinking
-3. Estimate the rough cognitive load split (e.g. "60% HOW / 25% WHAT / 15% WHY")
-4. Score based on how well the person's primary orientation matches the dominant demand — penalize heavily for high tertiary load
-Do NOT output this reasoning. Only output the JSON.
+SCORE BANDS (for context only — let the formula determine the score):
+- 85–100: Near-perfect fit. Tertiary demands are minimal; primary dominates the role.
+- 70–84: Good fit. Primary covers most core work; tertiary exposure is manageable.
+- 50–69: Partial fit. Meaningful primary alignment but real tertiary demands create chronic drain.
+- 30–49: Poor fit. Role leans on secondary or tertiary more than primary. Burnout risk over time.
+- 0–29: Severe misalignment. Core role demands primarily what drains this person most.
 
-SCORE BANDS — the realistic distribution skews lower than people expect:
-- 85-100: Rare. 70%+ of core work energizes the primary orientation; tertiary load is minimal. Reserve this for near-perfect matches only.
-- 70-84: Good fit. Primary covers most core work; secondary used regularly; tertiary rarely required.
-- 50-69: Partial fit — the most common realistic outcome. Meaningful primary alignment but real secondary and tertiary demands exist. Competent performance, some chronic drain.
-- 30-49: Low fit. Core role demands lean toward secondary or tertiary orientation. Requires sustained effort; burnout risk over time.
-- 0-29: Poor fit. The role fundamentally demands what drains this person most.
-
-CALIBRATION: Most realistic scores fall between 45–72. A VP of Sales for a WHY-HOW is not a 85 — it involves heavy WHAT execution demands that drain a precision-focused systems thinker. A HOW-WHAT as an Operations Director might be 78. A WHY-WHAT as a data entry clerk is a 12. Apply this level of rigor.
+CRITICAL: Do not inflate scores. An inaccurate high score hides real misalignment and harms the user. Be precise and honest. Every score must be fully explained by the role's actual cognitive demand split.
 
 Return ONLY a valid JSON object — no markdown, no extra text:
 
 {
-  "score": <single integer 0-100, never a range or approximation>,
-  "scoreRationale": "<2-3 sentences: name the dominant cognitive demands of this specific role, explain how they map to this person's primary/secondary/tertiary, and justify the exact score>",
+  "score": <single integer 0-100>,
+  "scoreRationale": "<2-3 sentences: state the estimated cognitive demand split (e.g. '~55% WHAT, 30% HOW, 15% WHY'), explain how that maps to this person's primary/secondary/tertiary, and justify the score including the tertiary drag>",
   "dislikes": ["<role-specific thing they likely dislike 1>", "<role-specific thing they likely dislike 2>", "<role-specific thing they likely dislike 3>"],
   "struggles": ["<role-specific thing they likely struggle with 1>", "<role-specific thing they likely struggle with 2>", "<role-specific thing they likely struggle with 3>"],
   "enjoys": ["<role-specific thing they likely enjoy 1>", "<role-specific thing they likely enjoy 2>", "<role-specific thing they likely enjoy 3>", "<role-specific thing they likely enjoy 4>"],
@@ -562,7 +565,7 @@ Return ONLY a valid JSON object — no markdown, no extra text:
   ]
 }
 
-Make dislikes and struggles as specific and honest as enjoys and excels. Avoid generic filler. Every item should be directly tied to the actual demands of this role.`;
+Make dislikes and struggles as specific and honest as enjoys and excels. Avoid generic filler. Every item must be directly tied to the actual demands of this role.`;
 
         const userMessage = `Profile type: ${type.label} (${type.tagline})
 Primary orientation: ${type.primary}
@@ -585,6 +588,7 @@ Analyze the cognitive alignment between this profile and this role. Be rigorous 
             body: JSON.stringify({
               model: "claude-haiku-4-5",
               max_tokens: 2000,
+              temperature: 0,
               system: systemPrompt,
               messages: [{ role: "user", content: userMessage }],
             }),
