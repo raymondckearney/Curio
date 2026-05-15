@@ -517,8 +517,7 @@ p  { line-height: 1.78; }
 .app-card:hover .app-card-desc { max-height: 160px; opacity: 1; margin-top: 10px; }
 
 /* ─── WHY CURIO ─── */
-#why-curio { background: #0F172A; padding: 48px 0 44px; }
-#wc-cta { background: var(--paper-warm); padding: 0 0 60px; }
+#why-curio { background: #0F172A; padding: 48px 0 60px; }
 
 .wc-section-title {
   font-size: clamp(2rem, 3.5vw, 3.25rem);
@@ -533,7 +532,7 @@ p  { line-height: 1.78; }
   grid-template-rows: auto auto auto;
   column-gap: 56px;
   row-gap: 0;
-  margin-bottom: 0;
+  margin-bottom: 44px;
 }
 
 /* Each item spans all 3 parent rows; subgrid aligns label/head/body across columns */
@@ -574,8 +573,8 @@ p  { line-height: 1.78; }
 }
 
 .wc-footer { max-width: 900px; margin: 0 auto; text-align: center; }
-.wc-footer h2 { color: var(--ink); font-weight: 900; margin-bottom: 22px; }
-.wc-sub { font-size: 1.05rem; font-weight: 500; color: var(--ink-soft); line-height: 1.78; margin-bottom: 36px; }
+.wc-footer h2 { color: #fff; font-weight: 900; margin-bottom: 22px; }
+.wc-sub { font-size: 1.05rem; font-weight: 500; color: rgba(255,255,255,0.62); line-height: 1.78; margin-bottom: 36px; }
 .wc-fw-link { display: inline-flex; }
 
 /* ─── APPROACH (CHEVRON) ─── */
