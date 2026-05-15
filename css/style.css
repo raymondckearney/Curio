@@ -342,10 +342,10 @@ p  { line-height: 1.78; }
 }
 
 /* ─── ENERGY MODEL ─── */
-#energy { background: var(--white); padding-top: var(--section-y); padding-bottom: var(--section-y); }
-.energy-header { margin-bottom: 56px; max-width: 720px; margin-left: auto; margin-right: auto; text-align: center; }
+#energy { background: var(--white); padding-top: 72px; padding-bottom: var(--section-y); }
+.energy-header { margin-bottom: 36px; max-width: 860px; margin-left: auto; margin-right: auto; text-align: center; }
 .energy-header h2 { margin-bottom: 0; color: var(--ink); font-weight: 700; }
-.energy-subtext { font-size: 1rem; font-weight: 400; color: var(--ink-soft); line-height: 1.8; margin-top: 20px; }
+.energy-subtext { font-size: 1rem; font-weight: 400; color: var(--ink-soft); line-height: 1.8; margin-top: 14px; }
 
 /* Primary + Secondary stack | Car image */
 .energy-ps-car-section {
