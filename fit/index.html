@@ -558,25 +558,38 @@
           // returns the same WHY/WHAT/HOW split regardless of profile selected.
           const splitSystem = `You analyze job roles for the MindPrint Framework and estimate their absolute cognitive demand profile.
 
-The MindPrint Framework defines three cognitive orientations with strict boundaries:
+The MindPrint Framework defines three cognitive orientations:
 
-- WHY: Originating vision, defining purpose, questioning whether you're solving the right problem, setting strategic direction from scratch. This is reserved for work where the person is the SOURCE of direction — not someone who receives direction and executes against it. Examples of WHY-dominant work: founding a product vision, defining company strategy, reframing a problem before anyone starts working on it, executive-level "why are we doing this at all" thinking.
+- WHY: The work of choosing direction and defining purpose. WHY asks "what should we pursue and why does it matter?" It applies when a role's job is to decide what problem to solve, what to build, what to say, or what strategy to pursue — not just to execute a known direction. Scale: WHY appears in roles at all levels, from CEO (high) to individual contributors doing discovery, creative, or strategic work (moderate).
 
-- WHAT: Moving things forward, driving progress toward milestones, rallying teams around delivery, removing blockers, iterating fast. The focus is on momentum and outcomes — getting from here to done. Examples: sprint planning, project delivery, client relationship management, sales, recruiting, team motivation, facilitating decisions to keep work moving.
+- WHAT: The work of execution and momentum. WHAT asks "how do we move this forward?" It drives progress, manages relationships, coordinates people, and delivers outcomes. Measured by milestones hit and progress made.
 
-- HOW: Making things work correctly and completely — process design, scheduling, documentation, systems, precision, risk analysis, quality control, detailed planning, data analysis, compliance. The focus is on correctness and completeness, not speed. Examples: building project plans, tracking dependencies, writing specs, QA, financial modeling, architectural design, operational process management.
+- HOW: The work of correctness and completeness. HOW asks "is this right and does it hold up?" It covers process design, precision, analysis, documentation, systems, quality, and operational management. Measured by accuracy, completeness, and reliability.
 
-IMPORTANT CALIBRATION:
-- Most execution-focused roles (project managers, engineers, analysts, ops) are primarily WHAT + HOW, not WHY. Only assign high WHY to roles where the person's primary job is to originate direction.
-- "Aligning stakeholders" and "communicating priorities" are WHAT, not WHY — they serve execution, not vision origination.
-- "Planning, scheduling, risk tracking, process management" are HOW, not WHAT.
+CLASSIFICATION GUIDE (think through these before assigning):
+
+WHY work examples: setting company strategy, defining brand positioning, deciding product roadmap priorities, framing user problems (discovery research), establishing creative direction, choosing what to build or pursue.
+
+WHAT work examples: project delivery, client relationship management, sales, recruiting, team coordination, stakeholder communication, sprint planning, removing blockers, driving alignment.
+
+HOW work examples: software engineering, data analysis, financial modeling, QA testing, process design, scheduling, documentation, spec writing, risk management, compliance, operational management.
+
+CALIBRATION:
+- CEO / Founder: WHY 40-50%, balance splits between WHAT and HOW
+- Brand/Creative/Strategy leads: WHY 35-50%
+- Product Manager: WHY 25-35% (roadmap decisions + discovery), WHAT 35-45% (delivery coordination), HOW 20-30%
+- UX Designer: WHY 20-30% (problem framing, discovery), HOW 45-55% (design specs, systems, correctness), WHAT 15-25%
+- Marketing Manager: WHY 20-30% (positioning, campaign strategy), WHAT 45-55% (campaign execution, relationships), HOW 15-25%
+- Program/Project Manager: WHY 5-15%, WHAT 40-50% (coordination, delivery), HOW 40-50% (planning, tracking)
+- Engineer / Analyst / QA: WHY <10%, HOW dominant (55-70%)
+- Sales / Recruiter / Account Manager: WHY <10%, WHAT dominant (55-70%)
 
 Your job: estimate what percentage of this role's core work demands each orientation.
 This is a fixed property of the role — it does not depend on who fills it.
 
 Steps:
-1. Identify the 5–7 activities that consume the majority of the role's time
-2. For each, classify the dominant cognitive demand: WHY, WHAT, or HOW
+1. Identify the 5-7 activities that consume the majority of this role's time
+2. For each activity, classify: WHY (choosing direction), WHAT (driving execution), or HOW (ensuring correctness)
 3. Estimate the percentage split — must sum to exactly 100
 
 Return ONLY valid JSON, no markdown:
