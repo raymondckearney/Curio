@@ -537,18 +537,20 @@
 
 Each person has a Primary (energizing), Secondary (neutral), and Tertiary (draining) orientation.
 
-YOUR PRIMARY JOB is to accurately estimate the cognitive demand split for this specific role. The score is calculated automatically from your split — so the accuracy of the split is everything.
+YOUR PRIMARY JOB is to accurately estimate the cognitive demand split for this specific role. The split must reflect what the role inherently demands of ANY person who fills it — it is a fixed property of the role, not of the person. Do not adjust the percentages based on the person's profile. The same role should always produce the same demandSplit regardless of which profile is being analyzed.
 
 SCORING METHOD — follow these steps:
 1. Identify the 5–7 core activities that consume the majority of time in this specific role
 2. For each activity, classify its dominant cognitive demand: WHY, WHAT, or HOW
-3. Estimate the percentage of the role each orientation demands — must sum to exactly 100
-4. Estimate roleMinTertiary: the structural minimum tertiary load ANY profile would face in this role — the floor that cannot be delegated or designed away (e.g. cross-functional meetings, reporting, compliance, coordination)
+3. Estimate the absolute percentage each orientation occupies in the role — must sum to exactly 100
+   Express this in WHY/WHAT/HOW terms, NOT in primary/secondary/tertiary terms
+4. Estimate roleMinTertiary: the minimum % of the person's tertiary orientation this role structurally requires of any profile — work that cannot be delegated or designed away
 
 CALIBRATION RULES:
-- Most real roles have 15–35% tertiary built in structurally. Only assign <10% tertiary if the role is genuinely isolated and self-directed.
-- Do not soften the split to make a score look better. An honest split that yields a low score is more valuable than a flattering split.
-- roleMinTertiary should always be ≤ the tertiary value in demandSplit.
+- The demandSplit is a property of the role. It does not change based on who fills it.
+- Most real roles have some demand across all three orientations. Only assign <5% to any orientation if that type of thinking is genuinely absent from the role.
+- Do not soften the split to make a score look better. An honest split that yields a low score is more valuable than a flattering one.
+- roleMinTertiary reflects structural drag — meetings, reporting, cross-functional coordination, compliance — that hits whoever fills the role.
 
 SCORE BANDS (for context — the formula determines the score):
 - 75–100: Strong fit. Primary dominates; tertiary exposure is minimal.
@@ -560,9 +562,9 @@ SCORE BANDS (for context — the formula determines the score):
 Return ONLY a valid JSON object — no markdown, no extra text:
 
 {
-  "demandSplit": { "primary": <integer>, "secondary": <integer>, "tertiary": <integer> },
+  "demandSplit": { "why": <integer>, "what": <integer>, "how": <integer> },
   "roleMinTertiary": <integer 0–100>,
-  "scoreRationale": "<2–3 sentences: state the demand split explicitly (e.g. '~55% WHAT, 30% HOW, 15% WHY'), explain how it maps to this person's primary/secondary/tertiary, and note the structural tertiary floor>",
+  "scoreRationale": "<2–3 sentences: state the absolute demand split (e.g. '~55% WHAT, 30% WHY, 15% HOW — this is the role's inherent demand'), explain how those percentages map to this person's primary/secondary/tertiary, and note the structural tertiary floor>",
   "enjoys": ["<role-specific thing they likely enjoy 1>", "<role-specific thing they likely enjoy 2>", "<role-specific thing they likely enjoy 3>", "<role-specific thing they likely enjoy 4>"],
   "excels": ["<role-specific thing they likely excel at 1>", "<role-specific thing they likely excel at 2>", "<role-specific thing they likely excel at 3>", "<role-specific thing they likely excel at 4>"],
   "dislikes": ["<role-specific thing they likely dislike 1>", "<role-specific thing they likely dislike 2>", "<role-specific thing they likely dislike 3>"],
@@ -621,8 +623,12 @@ Analyze the cognitive alignment between this profile and this role. Be rigorous 
           if (!jsonMatch) throw new Error("No JSON found in response");
           const parsed = JSON.parse(jsonMatch[0]);
           if (!parsed.demandSplit) throw new Error("No demand split returned");
-          // Calculate score in JS using MindPrint formula — keeps math precise and consistent
-          const { primary: dp, secondary: ds, tertiary: dt } = parsed.demandSplit;
+          // Map absolute role demand (WHY/WHAT/HOW) onto this profile's primary/secondary/tertiary
+          // Same role always produces the same split; score varies by profile, not by re-deriving the split
+          const splitMap = { WHY: parsed.demandSplit.why, WHAT: parsed.demandSplit.what, HOW: parsed.demandSplit.how };
+          const dp = splitMap[type.primary]   || 0;
+          const ds = splitMap[type.secondary] || 0;
+          const dt = splitMap[tertiary]       || 0;
           const rawScore = dp * 1.25 + ds * 0.8 + dt * (-1.5);
           const linear = Math.max(0, Math.min(1, (rawScore + 150) / 275));
           parsed.score = Math.round(Math.pow(linear, 1.5) * 100);
