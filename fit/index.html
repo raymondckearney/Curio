@@ -271,6 +271,20 @@
     }
     .partner-reason { font-size: 0.85rem; color: #78716C; line-height: 1.65; }
 
+    /* Tertiary floor note */
+    .tertiary-floor-note {
+      margin-top: 14px; padding: 10px 14px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 6px;
+      font-size: 0.85rem; color: #78716C; line-height: 1.6;
+    }
+    .tf-label {
+      display: block;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.13em;
+      text-transform: uppercase; color: #D97706; margin-bottom: 4px;
+    }
+
     /* Reset button */
     .reset-btn {
       width: 100%; padding: 16px 24px; margin-top: 32px;
@@ -416,10 +430,10 @@
       const circ = 2 * Math.PI * r;
       const pct = Math.round(score);
       const dash = (pct / 100) * circ;
-      const color = pct >= 75 ? "#059669" : pct >= 50 ? "#34D399" : "#A8A29E";
-      const label = pct >= 80 ? "Strong fit" : pct >= 60 ? "Good fit" : pct >= 40 ? "Partial fit" : "Low fit";
-      const labelBg = pct >= 80 ? "rgba(5,150,105,0.08)" : pct >= 60 ? "rgba(52,211,153,0.08)" : "rgba(168,162,158,0.1)";
-      const labelBorder = pct >= 80 ? "rgba(5,150,105,0.3)" : pct >= 60 ? "rgba(52,211,153,0.3)" : "#E7E5E4";
+      const color = pct >= 75 ? "#059669" : pct >= 60 ? "#34D399" : pct >= 40 ? "#F59E0B" : "#EF4444";
+      const label = pct >= 75 ? "Strong fit" : pct >= 60 ? "Good fit" : pct >= 40 ? "Partial fit" : pct >= 20 ? "Poor fit" : "Severe mismatch";
+      const labelBg = pct >= 75 ? "rgba(5,150,105,0.08)" : pct >= 60 ? "rgba(52,211,153,0.08)" : pct >= 40 ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)";
+      const labelBorder = pct >= 75 ? "rgba(5,150,105,0.3)" : pct >= 60 ? "rgba(52,211,153,0.3)" : pct >= 40 ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.3)";
 
       return (
         <div className="score-ring-wrap">
@@ -521,43 +535,43 @@
 - WHAT Brain: Action-oriented, momentum-driven, milestone-focused, values progress and iteration, organizes by milestones
 - HOW Brain: Detail-oriented, process-focused, precision-driven, systematic, tracks all moving parts, organizes by tasks
 
-Each person has a Primary (energizing), Secondary (neutral), and Tertiary (draining) orientation. The score reflects expected day-to-day cognitive energy balance in this role.
+Each person has a Primary (energizing), Secondary (neutral), and Tertiary (draining) orientation.
 
-SCORING METHOD — follow these steps exactly:
+YOUR PRIMARY JOB is to accurately estimate the cognitive demand split for this specific role. The score is calculated automatically from your split — so the accuracy of the split is everything.
+
+SCORING METHOD — follow these steps:
 1. Identify the 5–7 core activities that consume the majority of time in this specific role
 2. For each activity, classify its dominant cognitive demand: WHY, WHAT, or HOW
-3. Estimate the percentage split of cognitive demand across the role (must sum to 100%)
-4. Apply asymmetric weighting — tertiary drain costs significantly more than primary alignment gains:
-   - % of role demanding PRIMARY orientation: multiply by +1.0
-   - % of role demanding SECONDARY orientation: multiply by +0.4
-   - % of role demanding TERTIARY orientation: multiply by −1.5
-   Sum these three values. The raw result will range from roughly −50 to +100.
-   Normalize to 0–100 using: score = round(max(0, min(100, (raw + 50) / 1.5)))
-5. Do not soften results. A role where 40% demands tertiary is genuinely damaging regardless of primary alignment elsewhere.
+3. Estimate the percentage of the role each orientation demands — must sum to exactly 100
+4. Estimate roleMinTertiary: the structural minimum tertiary load ANY profile would face in this role — the floor that cannot be delegated or designed away (e.g. cross-functional meetings, reporting, compliance, coordination)
 
-SCORE BANDS (for context only — let the formula determine the score):
-- 85–100: Near-perfect fit. Tertiary demands are minimal; primary dominates the role.
-- 70–84: Good fit. Primary covers most core work; tertiary exposure is manageable.
-- 50–69: Partial fit. Meaningful primary alignment but real tertiary demands create chronic drain.
-- 30–49: Poor fit. Role leans on secondary or tertiary more than primary. Burnout risk over time.
-- 0–29: Severe misalignment. Core role demands primarily what drains this person most.
+CALIBRATION RULES:
+- Most real roles have 15–35% tertiary built in structurally. Only assign <10% tertiary if the role is genuinely isolated and self-directed.
+- Do not soften the split to make a score look better. An honest split that yields a low score is more valuable than a flattering split.
+- roleMinTertiary should always be ≤ the tertiary value in demandSplit.
 
-CRITICAL: Do not inflate scores. An inaccurate high score hides real misalignment and harms the user. Be precise and honest. Every score must be fully explained by the role's actual cognitive demand split.
+SCORE BANDS (for context — the formula determines the score):
+- 75–100: Strong fit. Primary dominates; tertiary exposure is minimal.
+- 60–74: Good fit. Meaningful primary alignment; manageable tertiary drain.
+- 40–59: Partial fit. Real primary alignment but material tertiary creates chronic drain.
+- 20–39: Poor fit. Role leans on secondary or tertiary. Burnout risk over time.
+- 0–19: Severe misalignment. Core role demands primarily what drains this person.
 
 Return ONLY a valid JSON object — no markdown, no extra text:
 
 {
-  "score": <single integer 0-100>,
-  "scoreRationale": "<2-3 sentences: state the estimated cognitive demand split (e.g. '~55% WHAT, 30% HOW, 15% WHY'), explain how that maps to this person's primary/secondary/tertiary, and justify the score including the tertiary drag>",
-  "dislikes": ["<role-specific thing they likely dislike 1>", "<role-specific thing they likely dislike 2>", "<role-specific thing they likely dislike 3>"],
-  "struggles": ["<role-specific thing they likely struggle with 1>", "<role-specific thing they likely struggle with 2>", "<role-specific thing they likely struggle with 3>"],
+  "demandSplit": { "primary": <integer>, "secondary": <integer>, "tertiary": <integer> },
+  "roleMinTertiary": <integer 0–100>,
+  "scoreRationale": "<2–3 sentences: state the demand split explicitly (e.g. '~55% WHAT, 30% HOW, 15% WHY'), explain how it maps to this person's primary/secondary/tertiary, and note the structural tertiary floor>",
   "enjoys": ["<role-specific thing they likely enjoy 1>", "<role-specific thing they likely enjoy 2>", "<role-specific thing they likely enjoy 3>", "<role-specific thing they likely enjoy 4>"],
   "excels": ["<role-specific thing they likely excel at 1>", "<role-specific thing they likely excel at 2>", "<role-specific thing they likely excel at 3>", "<role-specific thing they likely excel at 4>"],
+  "dislikes": ["<role-specific thing they likely dislike 1>", "<role-specific thing they likely dislike 2>", "<role-specific thing they likely dislike 3>"],
+  "struggles": ["<role-specific thing they likely struggle with 1>", "<role-specific thing they likely struggle with 2>", "<role-specific thing they likely struggle with 3>"],
   "recommendations": [
-    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
-    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
-    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" },
-    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1-2 sentences>" }
+    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1–2 sentences>" },
+    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1–2 sentences>" },
+    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1–2 sentences>" },
+    { "category": "<short label>", "action": "<concrete recommendation>", "rationale": "<why this helps, 1–2 sentences>" }
   ],
   "partnerTypes": [
     { "type": "<e.g. HOW-WHAT>", "reason": "<role-specific reason this partner type helps>" },
@@ -565,7 +579,7 @@ Return ONLY a valid JSON object — no markdown, no extra text:
   ]
 }
 
-Make dislikes and struggles as specific and honest as enjoys and excels. Avoid generic filler. Every item must be directly tied to the actual demands of this role.`;
+Every item in enjoys, excels, dislikes, and struggles must be directly tied to the actual demands of this role. No generic filler.`;
 
         const userMessage = `Profile type: ${type.label} (${type.tagline})
 Primary orientation: ${type.primary}
@@ -605,11 +619,13 @@ Analyze the cognitive alignment between this profile and this role. Be rigorous 
           }
           const jsonMatch = raw.match(/\{[\s\S]*\}/);
           if (!jsonMatch) throw new Error("No JSON found in response");
-          // Sanitize common model quirks before parsing
-          const sanitized = jsonMatch[0]
-            .replace(/"score"\s*:\s*(\d+)\s*[-–]\s*\d+/g, '"score": $1')  // ranges like 60-70 → 60
-            .replace(/"score"\s*:\s*~?\s*(\d+)/g, '"score": $1');           // approximations like ~65 → 65
-          const parsed = JSON.parse(sanitized);
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (!parsed.demandSplit) throw new Error("No demand split returned");
+          // Calculate score in JS using MindPrint formula — keeps math precise and consistent
+          const { primary: dp, secondary: ds, tertiary: dt } = parsed.demandSplit;
+          const rawScore = dp * 1.25 + ds * 0.8 + dt * (-1.5);
+          const linear = Math.max(0, Math.min(1, (rawScore + 150) / 275));
+          parsed.score = Math.round(Math.pow(linear, 1.5) * 100);
           setResult(parsed);
         } catch (e) {
           setError("Error: " + (e.message || "Something went wrong. Check the browser console for details."));
@@ -622,10 +638,10 @@ Analyze the cognitive alignment between this profile and this role. Be rigorous 
       function generatePDF() {
         const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const pct = Math.round(result.score);
-        const color = pct >= 75 ? '#059669' : pct >= 50 ? '#34D399' : '#A8A29E';
-        const label = pct >= 80 ? 'Strong fit' : pct >= 60 ? 'Good fit' : pct >= 40 ? 'Partial fit' : 'Low fit';
-        const labelBg = pct >= 80 ? 'rgba(5,150,105,0.08)' : pct >= 60 ? 'rgba(52,211,153,0.08)' : 'rgba(168,162,158,0.1)';
-        const labelBorder = pct >= 80 ? 'rgba(5,150,105,0.3)' : pct >= 60 ? 'rgba(52,211,153,0.3)' : '#E7E5E4';
+        const color = pct >= 75 ? '#059669' : pct >= 60 ? '#34D399' : pct >= 40 ? '#F59E0B' : '#EF4444';
+        const label = pct >= 75 ? 'Strong fit' : pct >= 60 ? 'Good fit' : pct >= 40 ? 'Partial fit' : pct >= 20 ? 'Poor fit' : 'Severe mismatch';
+        const labelBg = pct >= 75 ? 'rgba(5,150,105,0.08)' : pct >= 60 ? 'rgba(52,211,153,0.08)' : pct >= 40 ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)';
+        const labelBorder = pct >= 75 ? 'rgba(5,150,105,0.3)' : pct >= 60 ? 'rgba(52,211,153,0.3)' : pct >= 40 ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)';
         const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         const r = 36, circ = 2 * Math.PI * r, dash = (pct / 100) * circ;
         const currentType = TYPES.find(t => t.id === selectedType);
@@ -706,13 +722,14 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
       <div class="fit-lbl" style="color:${color};background:${labelBg};border:1px solid ${labelBorder}">${esc(label)}</div>
     </div>
   </div>
-  <div class="g2">
-    <div class="card"><div class="clabel">Likely dislikes</div>${bulletRows(result.dislikes,'#A8A29E')}</div>
-    <div class="card"><div class="clabel">May struggle with</div>${bulletRows(result.struggles,'#A8A29E')}</div>
-  </div>
+  ${result.roleMinTertiary > 0 ? `<div style="margin-bottom:7px;padding:8px 11px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:5px"><div style="font-size:6pt;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:#D97706;margin-bottom:2px">Role tertiary floor</div><div style="font-size:7.5pt;color:#78716C;line-height:1.5">~${result.roleMinTertiary}% of this role's demands are structurally tertiary for any profile — inherent to the role, not the person.</div></div>` : ''}
   <div class="g2">
     <div class="card ca"><div class="clabel">Likely enjoys</div>${bulletRows(result.enjoys,'#059669')}</div>
     <div class="card ca"><div class="clabel">Likely excels at</div>${bulletRows(result.excels,'#059669')}</div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="clabel">Likely dislikes</div>${bulletRows(result.dislikes,'#A8A29E')}</div>
+    <div class="card"><div class="clabel">May struggle with</div>${bulletRows(result.struggles,'#A8A29E')}</div>
   </div>
   <div class="card" style="margin-bottom:7px">
     <div class="clabel">Recommendations</div>
@@ -812,23 +829,17 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
                   <div className="score-type-label">{type && type.label} &middot; {type && type.tagline}</div>
                   <div className="score-role">{role}</div>
                   <div className="score-rationale">{result.scoreRationale}</div>
+                  {result.roleMinTertiary > 0 && (
+                    <div className="tertiary-floor-note">
+                      <span className="tf-label">Role tertiary floor</span>
+                      ~{result.roleMinTertiary}% of this role's demands are structurally tertiary for any profile — inherent to the role, not the person.
+                    </div>
+                  )}
                 </div>
                 <ScoreRing score={result.score} />
               </div>
 
-              {/* Dislikes + Struggles first — most diagnostic */}
-              <div className="result-grid-2">
-                <div className="result-card">
-                  <div className="result-card-label">Likely dislikes</div>
-                  <BulletList items={result.dislikes} muted />
-                </div>
-                <div className="result-card">
-                  <div className="result-card-label">May struggle with</div>
-                  <BulletList items={result.struggles} muted />
-                </div>
-              </div>
-
-              {/* Enjoys + Excels */}
+              {/* Enjoys + Excels first */}
               <div className="result-grid-2">
                 <div className="result-card result-card--accent">
                   <div className="result-card-label">Likely enjoys</div>
@@ -837,6 +848,18 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
                 <div className="result-card result-card--accent">
                   <div className="result-card-label">Likely excels at</div>
                   <BulletList items={result.excels} />
+                </div>
+              </div>
+
+              {/* Dislikes + Struggles */}
+              <div className="result-grid-2">
+                <div className="result-card">
+                  <div className="result-card-label">Likely dislikes</div>
+                  <BulletList items={result.dislikes} muted />
+                </div>
+                <div className="result-card">
+                  <div className="result-card-label">May struggle with</div>
+                  <BulletList items={result.struggles} muted />
                 </div>
               </div>
 
