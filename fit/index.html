@@ -582,9 +582,8 @@ Steps:
 Return ONLY valid JSON, no markdown:
 { "why": <integer>, "what": <integer>, "how": <integer> }`;
 
-          const splitRaw = await callAPI(splitSystem, `Role: "${role.trim()}"`, 120);
-          console.log("splitRaw:", JSON.stringify(splitRaw));
-          const splitMatch = splitRaw.match(/\{[\s\S]*\}/);
+          const splitRaw = await callAPI(splitSystem, `Role: "${role.trim()}"`, 600);
+          const splitMatch = splitRaw.match(/\{[\s\S]*?\}/);
           if (!splitMatch) throw new Error(`No demand split returned. Raw: ${splitRaw.slice(0,200)}`);
           const demandSplit = JSON.parse(splitMatch[0]);
           if (typeof demandSplit.why !== "number") throw new Error("Invalid demand split");
