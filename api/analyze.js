@@ -22,12 +22,26 @@ export default async function handler(req) {
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
-      // Force streaming so tokens flow immediately — prevents idle timeout
       body: JSON.stringify({ ...body, stream: true }),
     });
 
+    if (!upstream.ok) {
+      const errText = await upstream.text();
+      let message;
+      try {
+        const errJson = JSON.parse(errText);
+        message = errJson.error?.message || errText;
+      } catch {
+        message = errText;
+      }
+      return new Response(JSON.stringify({ error: message }), {
+        status: upstream.status,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(upstream.body, {
-      status: upstream.status,
+      status: 200,
       headers: {
         ...CORS,
         "Content-Type": "text/event-stream",
