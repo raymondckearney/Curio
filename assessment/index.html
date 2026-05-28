@@ -22,7 +22,29 @@
       background: #0F172A;
       padding: calc(var(--nav-h) + 64px) 0 56px;
       text-align: center;
+      position: relative;
     }
+    .assessment-back {
+      position: absolute;
+      top: calc(var(--nav-h) + 20px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 48px);
+      max-width: 1200px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .assessment-back a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .assessment-back a:hover { color: rgba(255,255,255,0.9); }
     .assessment-eyebrow {
       font-size: 0.78rem;
       font-weight: 600;
@@ -97,6 +119,12 @@
 
 <!-- HERO -->
 <section id="assessment-hero">
+  <div class="assessment-back">
+    <a href="javascript:history.back()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Go back
+    </a>
+  </div>
   <div class="container">
     <p class="assessment-eyebrow">MindPrint™ Assessment</p>
     <h1 class="assessment-title">Discover your profile.</h1>
