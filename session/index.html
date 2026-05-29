@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Curio · Session</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#2D7D6F;--teal-l:#3A9E8E;--teal-d:#1F5C52;--teal-p:#EAF4F2;
+  --navy:#1C2B3A;--navy-m:#2C3E55;--white:#FFFFFF;--off:#F8F8F7;
+  --rule:#E8E5E0;--muted:#8A8580;--border:#E2DDD8;
+  --charcoal:#2A2A2A;--gold:#C8883A;--gold-d:#8A5C1A;--gold-p:#FFF8EE;
+  --how:#3B6E5C;--what:#7A4E2D;--why:#3B5E8C;
+  --push-bg:#FFF8E6;--push-border:#E8B84B;--push-text:#5A3E00;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{font-size:16px;}
+body{font-family:"DM Sans",sans-serif;background:var(--white);color:var(--charcoal);min-height:100vh;overscroll-behavior:none;}
+.topbar{background:var(--white);border-bottom:1px solid var(--rule);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:fixed;top:0;left:0;right:0;z-index:200;}
+.logo{font-family:"Caveat",cursive;font-size:22px;font-weight:700;color:var(--navy);}
+.logo span{color:var(--teal);}
+.participant-chip{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);}
+.participant-chip strong{color:var(--navy);}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--rule);display:flex;z-index:200;height:60px;}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:color .15s;padding:8px 4px;font-family:"DM Sans",sans-serif;}
+.bnav-item.active{color:var(--teal);}
+.bnav-icon{font-size:18px;line-height:1;}
+.bnav-label{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+.push-banner{position:fixed;top:52px;left:0;right:0;background:var(--push-bg);border-bottom:2px solid var(--push-border);padding:12px 20px;z-index:190;display:none;}
+.push-banner.visible{display:flex;align-items:flex-start;gap:12px;}
+.push-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.push-content{flex:1;}
+.push-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--push-text);margin-bottom:4px;opacity:.7;}
+.push-text{font-size:14px;color:var(--push-text);line-height:1.5;font-weight:500;}
+.push-close{background:none;border:none;font-size:18px;color:var(--push-text);cursor:pointer;opacity:.5;flex-shrink:0;padding:0 4px;}
+.main{padding:68px 0 76px;min-height:100vh;}
+.screen{display:none;padding:24px 20px 0;}
+.screen.active{display:block;}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;}
+.screen-title{font-family:"Caveat",cursive;font-size:34px;font-weight:700;color:var(--navy);line-height:1.1;margin-bottom:6px;}
+.screen-meta{font-size:13px;color:var(--muted);padding-bottom:18px;border-bottom:1px solid var(--rule);margin-bottom:22px;line-height:1.5;}
+.type-hero{background:var(--navy);border-radius:14px;padding:26px 28px;margin-bottom:22px;}
+.th-label{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;}
+.th-code{font-family:"Caveat",cursive;font-size:36px;font-weight:700;color:var(--teal-l);line-height:1;margin-bottom:4px;}
+.th-name{font-size:16px;font-weight:600;color:white;margin-bottom:3px;}
+.th-tagline{font-size:12px;color:rgba(255,255,255,.4);}
+.th-brains{display:flex;gap:16px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
+.brain{display:flex;flex-direction:column;gap:2px;}
+.brain-l{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);}
+.brain-v{font-size:12px;font-weight:600;color:white;}
+.brain.primary .brain-v{color:var(--teal-l);}
+.brain.tertiary .brain-v{color:rgba(255,255,255,.28);}
+.ps{margin-bottom:18px;}
+.pl{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);margin-bottom:6px;}
+.ps p{font-size:14px;line-height:1.75;color:#333;}
+.pdiv{width:36px;height:2px;background:var(--teal);margin:18px 0;}
+.signal-box{background:var(--teal-p);border-radius:8px;padding:13px 16px;border-left:3px solid var(--teal);font-size:13px;color:var(--teal-d);font-style:italic;line-height:1.6;margin-top:10px;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;}
+.card-head{padding:12px 16px;background:var(--off);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);}
+.card-body{padding:16px;}
+.card-body p{font-size:14px;line-height:1.7;color:#333;}
+.stmt{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;transition:border-color .2s;}
+.stmt.answered{border-color:var(--teal);background:var(--teal-p);}
+.stmt-text{font-size:14px;line-height:1.5;color:var(--charcoal);margin-bottom:12px;font-weight:500;}
+.agree-row{display:flex;gap:6px;}
+.ab{flex:1;padding:9px 4px;border:1.5px solid var(--border);border-radius:8px;background:var(--white);font-family:"DM Sans",sans-serif;font-size:11px;color:var(--muted);cursor:pointer;text-align:center;font-weight:600;transition:all .2s;}
+.ab.s1{background:var(--teal-p);border-color:var(--teal);color:var(--teal-d);}
+.ab.s2{background:var(--gold-p);border-color:var(--gold);color:var(--gold-d);}
+.ab.s3{background:#F8F0F0;border-color:#C08080;color:#804040;}
+.done-box{background:#EAF4F2;border:1px solid #A8D5B5;border-radius:10px;padding:14px 16px;margin-top:14px;display:none;}
+.done-box p{font-size:14px;color:var(--teal-d);font-weight:500;}
+.rbox{background:var(--off);border-radius:10px;padding:16px 18px;border:1px solid var(--border);margin-bottom:14px;}
+.rq{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:10px;line-height:1.4;}
+.ra{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:8px;background:var(--white);font-family:"DM Sans",sans-serif;font-size:14px;color:var(--charcoal);line-height:1.6;outline:none;resize:vertical;min-height:80px;}
+.ra:focus{border-color:var(--teal);}
+.ter-banner{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-m) 100%);border-radius:12px;padding:22px 24px;margin-bottom:16px;display:flex;align-items:center;gap:16px;}
+.ter-badge{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-family:"Caveat",cursive;font-size:18px;font-weight:700;color:rgba(255,255,255,.35);flex-shrink:0;}
+.ter-desc h3{font-family:"Caveat",cursive;font-size:18px;color:white;margin-bottom:3px;}
+.ter-desc p{font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;}
+.ebar-wrap{margin-bottom:16px;}
+.erow{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.elabel{width:70px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:right;flex-shrink:0;}
+.ebar-bg{flex:1;height:7px;background:var(--off);border-radius:4px;overflow:hidden;}
+.ebar{height:100%;border-radius:4px;}
+.ebar.ep{background:var(--teal);width:88%;}
+.ebar.es{background:var(--gold);width:52%;}
+.ebar.et{background:#C0392B;width:18%;}
+.enote{font-size:10px;color:var(--muted);width:72px;flex-shrink:0;}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.sc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.sc-num{font-size:10px;font-weight:700;color:var(--teal);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+.sc-title{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;}
+.sc-body{font-size:12px;color:#444;line-height:1.5;}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+.type-card{border:1.5px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;background:var(--white);text-align:left;width:100%;}
+.type-card:active{transform:scale(.98);}
+.type-card.selected{border-color:var(--teal);background:var(--teal-p);}
+.type-card .tc-code{font-family:"Caveat",cursive;font-size:16px;font-weight:700;color:var(--navy);display:block;margin-bottom:2px;}
+.type-card.selected .tc-code{color:var(--teal-d);}
+.type-card .tc-name{font-size:11px;color:var(--muted);display:block;}
+.type-card.own-type{border-color:var(--teal);background:var(--navy);}
+.type-card.own-type .tc-code{color:var(--teal-l);}
+.type-card.own-type .tc-name{color:rgba(255,255,255,.5);}
+.own-badge{display:inline-block;background:var(--teal);color:white;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-top:4px;}
+.type-detail{display:none;margin-top:4px;}
+.type-detail.visible{display:block;}
+.pairing-card{background:var(--teal-p);border:1px solid rgba(45,125,111,.2);border-radius:10px;padding:16px;margin-bottom:10px;}
+.pairing-card-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-d);margin-bottom:8px;}
+.pairing-card p{font-size:14px;color:var(--teal-d);line-height:1.6;}
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+.teammate-card{border:1.5px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;background:var(--white);text-align:left;width:100%;}
+.teammate-card:active{transform:scale(.98);}
+.teammate-card.selected{border-color:var(--teal);background:var(--teal-p);}
+.teammate-name{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px;}
+.teammate-type{font-family:"Caveat",cursive;font-size:15px;color:var(--teal);font-weight:700;}
+.teammate-role{font-size:11px;color:var(--muted);margin-top:3px;}
+.interaction-panel{background:var(--white);border:1.5px solid var(--teal);border-radius:12px;padding:20px;margin-bottom:16px;display:none;}
+.interaction-panel.visible{display:block;}
+.ip-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--rule);}
+.ip-you,.ip-them{text-align:center;}
+.ip-you .ip-type{font-family:"Caveat",cursive;font-size:15px;font-weight:700;color:var(--teal);}
+.ip-them .ip-type{font-family:"Caveat",cursive;font-size:15px;font-weight:700;color:var(--navy);}
+.ip-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+.ip-arrow{font-size:20px;color:var(--muted);flex:1;text-align:center;}
+.ip-section{margin-bottom:14px;}
+.ip-section-title{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;}
+.ip-section-title.g{color:var(--how);}
+.ip-section-title.a{color:var(--gold-d);}
+.ip-section-title.r{color:var(--what);}
+.ip-text{font-size:14px;color:#333;line-height:1.65;}
+.team-empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.team-empty .empty-icon{font-size:32px;margin-bottom:10px;}
+.team-empty p{font-size:14px;line-height:1.6;}
+.report-gen-btn{width:100%;padding:15px;background:var(--gold);color:white;border:none;border-radius:10px;font-family:"DM Sans",sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:20px;}
+.report-actions{display:flex;gap:10px;margin-bottom:20px;}
+.btn-primary{padding:12px 20px;background:var(--teal);color:white;border:none;border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-ghost{padding:12px 20px;background:transparent;color:var(--navy);border:1.5px solid var(--border);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.report-sheet{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.rpt-top{background:var(--navy);padding:28px 28px 24px;}
+.rpt-code{font-family:"Caveat",cursive;font-size:36px;font-weight:700;color:var(--teal-l);margin-bottom:4px;}
+.rpt-name{font-size:16px;font-weight:600;color:white;margin-bottom:2px;}
+.rpt-tagline{font-size:12px;color:rgba(255,255,255,.4);}
+.rpt-meta-row{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);}
+.rpt-meta-item{display:flex;flex-direction:column;gap:2px;}
+.rpt-ml{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);}
+.rpt-mv{font-size:12px;font-weight:600;color:white;}
+.rpt-mv.accent{color:var(--teal-l);}
+.rpt-mv.dim{color:rgba(255,255,255,.28);}
+.rpt-body{padding:24px 24px 20px;}
+.rpt-section{margin-bottom:22px;}
+.rpt-label{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:7px;}
+.rpt-title{font-family:"Caveat",cursive;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:10px;}
+.rpt-text{font-size:13px;line-height:1.75;color:#333;}
+.rpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.rpt-chip{background:var(--off);border:1px solid var(--border);border-radius:6px;padding:9px 11px;font-size:12px;line-height:1.4;color:var(--charcoal);}
+.rpt-chip.s{border-left:3px solid var(--how);}
+.rpt-chip.c{border-left:3px solid var(--what);}
+.rpt-strat{background:var(--off);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;}
+.rpt-strat-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:4px;}
+.rpt-strat-body{font-size:12px;color:#444;line-height:1.5;}
+.rpt-divider{width:36px;height:2px;background:var(--teal);margin:18px 0;}
+.rpt-footer{border-top:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+.rfl-item{margin-bottom:12px;}
+.rfl-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.rfl-text{font-size:13px;color:#333;line-height:1.6;}
+/* Error state */
+.error-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px 24px;}
+.error-icon{font-size:40px;margin-bottom:16px;}
+.error-title{font-family:"Caveat",cursive;font-size:28px;font-weight:700;color:var(--navy);margin-bottom:10px;}
+.error-body{font-size:14px;color:var(--muted);line-height:1.7;max-width:320px;}
+.error-body code{background:var(--off);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--charcoal);}
+@media print{.topbar,.bottom-nav,.push-banner,.report-actions,.report-gen-btn{display:none!important;}.main{padding:0!important;}.screen.active{display:block!important;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Curio<span>.</span></div>
+  <div class="participant-chip" id="topbar-chip"></div>
+</div>
+
+<div class="push-banner" id="push-banner">
+  <span class="push-icon">&#128276;</span>
+  <div class="push-content">
+    <div class="push-label">From your facilitator</div>
+    <div class="push-text" id="push-text"></div>
+  </div>
+  <button class="push-close" id="push-close">&times;</button>
+</div>
+
+<div class="main" id="main"></div>
+<div class="bottom-nav" id="bottom-nav"></div>
+
+<script>
+// ── TYPE DATA ────────────────────────────────────────────────────────────────
+var TD = {
+  "WHY-WHAT":{name:"The Visionary Strategist",tagline:"Purpose-driven, progress-oriented",primary:"WHY",secondary:"WHAT",tertiary:"HOW",core:"The WHY-WHAT arrives at a problem already asking whether it’s the right problem. They have an instinctive need to understand purpose before they engage — not as a philosophical exercise, but because they genuinely cannot commit their energy to a direction they don’t believe in. Once the purpose clicks, however, they move fast. They translate vision into direction with unusual fluency, articulating not just where the team should go but why the destination matters.",atBest:"At full power, a remarkable catalyst for change. They see opportunities others have normalised away, question assumptions the team stopped questioning, and can articulate a path forward that makes people feel both challenged and oriented. Natural leaders of transformation — not incremental improvement, but genuine reinvention.",friction:"Their most common source of friction is timing. They will pull a team backward — back to purpose, back to the question — at moments when the team believes the decision is made. To a WHAT or HOW teammate, this feels like obstruction. To the WHY-WHAT, skipping this step feels reckless.",drain:"Process documentation. Quality assurance. Tracking granular task completion. Any work that requires sustained attention to many small interdependent details simultaneously.",signal:"They keep asking “but why are we doing it this way?” after the group thinks the decision is made.",workWithThem:"Lead with purpose when bringing them a problem. Give them room to question the frame before expecting commitment to the plan. Don’t interpret questioning as resistance — it’s how they build conviction. Once bought in, they’re genuinely bought in.",strengths:["Setting direction when things are unclear","Rallying people around a vision with conviction","Identifying opportunities others have normalised away","Making high-stakes decisions with incomplete information","Designing the structure of new initiatives"],challenges:["Implementation detail — handoffs often have invisible gaps","Revisiting decisions the team thought were final","Losing patience with execution-heavy work","Communicating in ways that feel abstract to HOW types"],tertiaryStrategies:[["Name it","Stop pretending the HOW gap isn’t there. The details between roadmap and result aren’t your zone — designing around that is smarter than exhausting yourself trying to cover it."],["Partner explicitly","Identify a HOW-WHAT or HOW-WHY counterpart whose explicit job is to take your vision and build the execution architecture underneath it."],["Brief more fully","Before any handoff: what would someone need to know to execute this without asking me? That answer is almost always missing. Add it."],["Forcing question","Before finishing any brief: ‘What are the 3 things someone would need to figure out to actually execute this?’ Write those down."]],pairings:{"WHY-HOW":"Rich intellectual partnership — you share the WHY foundation, they add the systems depth. Use them to stress-test your vision before you commit. Watch for the trap: neither of you will naturally push to ship.","WHY-WHAT":"Mirror relationship. Powerful for validating direction but watch for mutual amplification — you can reinforce each other’s blindspots without realising it. Bring HOW energy in deliberately.","WHAT-WHY":"They take your vision and run with it. Energising partnership — they move when you’re still asking questions. Trust their momentum, even when it feels premature.","WHAT-HOW":"Your execution engine. Give them the direction and get out of the way — they’ll hold the big picture and the detail simultaneously. Over-brief rather than under-brief.","HOW-WHY":"Pressure-tests the vision before you’ve committed. Slow, but their friction is protective. Use them early, not after direction is locked.","HOW-WHAT":"Your most essential counterpart. Takes your vision and builds the operational architecture underneath it. Covers your deepest blind spot. Give them the roadmap and give them authority."}},
+  "WHY-HOW":{name:"The Systems Visionary",tagline:"Purpose-driven, precision-oriented",primary:"WHY",secondary:"HOW",tertiary:"WHAT",core:"The WHY-HOW experiences the world as a web of interconnected systems, each one animated by a purpose that can be understood if you look carefully enough. Driven by a need to understand — not just what something is, but why it exists and how every part of it functions together. Unusually capable of holding complexity: they can operate at the level of the smallest detail and the largest vision without losing either.",atBest:"A rare and remarkable thinker. They produce insight that others can’t access — connections between distant ideas, structural explanations for things that seemed inexplicable, visions grounded in deep systemic understanding rather than intuition alone.",friction:"Friction comes from pace. They need more time than most to feel ready to move. In environments that reward speed this can look like analysis paralysis. Their other friction: explanations can be more intricate than the situation requires.",drain:"Being pushed to act before the picture feels complete. Rapid iteration where deep understanding is never achievable. Being told “good enough” when they can see better is within reach.",signal:"They’re still asking “yes, but have we really understood the system?” at the moment the group believes the design is done.",workWithThem:"Give them time and genuine problems. Don’t rush them to conclusions. When you need them to move faster, help them identify what “complete enough” looks like for this specific decision.",strengths:["Holding vision and detail simultaneously","Diagnosing root causes of systemic problems","Designing frameworks that are both purposeful and rigorous","Deep diagnostic conversations with senior leaders","Writing complex ideas in structured, communicable ways"],challenges:["Committing to action before the picture feels complete","Accepting ‘good enough’ as a deployment standard","Translating complex thinking into direction for WHAT types","Rapid-iteration environments"],tertiaryStrategies:[["Name it precisely","It’s not that you can’t act. It’s the sustained drive to keep moving when the picture isn’t fully resolved — that’s what drains you."],["Pre-commit to ship dates","Before the work begins: define the output and the date it ships. The tinkering happens inside that container — not indefinitely around it."],["Pair with a WHAT","Find a WHAT-WHY or WHAT-HOW partner whose job is explicitly to take your thinking and force it into motion."],["Forcing question","Weekly: ‘If I had to ship this tomorrow, what would I cut and what would I keep?’"]],pairings:{"WHY-WHAT":"They translate your complex thinking into a compelling narrative others can follow. Use them before you present up or out — they’ll strip what’s unnecessary without losing the substance.","WHY-HOW":"Mirror — extraordinary intellectual collaboration. But you must deliberately add WHAT energy or nothing ships from your partnership.","WHAT-WHY":"Your deployment engine. Takes your thinking and moves it. Trust them even when deployment feels premature.","WHAT-HOW":"Turns deep work into shipped product. Use for deployment and operationalisation, not design.","HOW-WHY":"Richest intellectual partnership in the framework. But assign a WHAT explicitly or you’ll both over-refine indefinitely.","HOW-WHAT":"Operationalises your system at scale. Essential once the design is complete. Brief them fully on why the system is designed the way it is."}},
+  "WHAT-WHY":{name:"The Purpose-Driven Driver",tagline:"Progress-driven, purpose-oriented",primary:"WHAT",secondary:"WHY",tertiary:"HOW",core:"The WHAT-WHY is built for momentum. They move toward goals with a directness and confidence that other types often find both inspiring and slightly unnerving. They don’t need perfect information to get started — they need a clear enough destination and the conviction that moving is better than waiting. What separates them from a pure WHAT is that their drive has direction: they care about the goal, not just the motion.",atBest:"One of the most effective mobilisers in any organisation. They can take a room full of people who are stuck and get everyone moving in the same direction with remarkable efficiency. Natural motivators — not because they’re charismatic performers but because their own conviction is genuinely contagious.",friction:"Most significant friction is with HOW types who live in the connective tissue they skip. They move from milestone to milestone with confidence — and the space between milestones simply doesn’t register as important.",drain:"Detailed process documentation. Anything that feels like overhead rather than progress. Extended diagnostic conversations that don’t produce a next step.",signal:"They start proposing next steps before the problem has been fully defined, and become visibly restless in long diagnostic conversations.",workWithThem:"Connect their work to clear goals. Don’t burden them with process ownership. When you need them to slow down, frame it as ‘making sure the momentum is sustainable’ rather than ‘stopping to review.’",strengths:["Creating and sustaining momentum in teams","Rallying people around a shared direction with conviction","Making fast decisions and course-correcting in real time","Navigating ambiguity — getting moving before everything is clear","Driving accountability against milestones that matter"],challenges:["The connective tissue between milestones","Leaving teams with a clean-up burden they don’t see","Burning out HOW types who carry the detail they skip","Moving before direction is sufficiently clear"],tertiaryStrategies:[["Name it honestly","The space between milestones isn’t your zone. You know the start and the end. The process in between is something you rely on others to manage — and sometimes you don’t tell them that."],["Build the HOW partnership","Identify a HOW-WHAT partner and create a standing ritual: after every milestone, a deliberate briefing on what’s needed for the next leg."],["Handoff checklist","Before moving past any milestone: who is doing what between here and the next one, and do they know it?"],["Slow the celebration","Build a mandatory retrospective before moving to the next goal. Even ten minutes surfaces what needs fixing before it breaks."]],pairings:{"WHY-WHAT":"Good directional check. They’ll tell you if your momentum is pointed the wrong direction before you’ve gone too far. Use before you commit to a goal, not after you’ve been running toward it.","WHY-HOW":"Use when the problem itself needs to be understood before you move. Give them the space to be slow — rushing them removes their value.","WHAT-WHY":"Peer mirror — great for shared conviction and momentum. Watch for mutual reinforcement without HOW grounding. Deliberately bring HOW voices in.","WHAT-HOW":"Strong execution peer. Together you cover enormous ground. Assign ownership clearly or you’ll duplicate effort.","HOW-WHY":"Use them to find the structural reason something stalled. Their diagnostic is your operational maintenance. Don’t rush it.","HOW-WHAT":"Your most essential partner. Manages the execution texture you skip. Give them real authority over the process and over-brief them before every milestone."}},
+  "WHAT-HOW":{name:"The Iterative Executor",tagline:"Progress-driven, precision-oriented",primary:"WHAT",secondary:"HOW",tertiary:"WHY",core:"The most complete executor in the framework. They can hold the high-level direction and the granular detail simultaneously, move with urgency, and course-correct in real time without losing the thread of what they’re trying to accomplish. They are energised by the cycle of action and refinement — move, assess, adjust, move again. What they cannot tolerate is standing still.",atBest:"A remarkable operational leader. They keep complex work moving, hold all the parts in mind simultaneously, and make the continuous small adjustments that keep execution on track. The person who ensures that things don’t just get started but actually get finished — and finished well.",friction:"Friction comes primarily from their relationship to purpose. They trust their gut on direction and can be impatient with conversations that question whether that direction is right.",drain:"Extended strategic conversations that don’t produce action. Being asked to justify why they’re pursuing a direction when momentum feels self-evident. Vision work disconnected from execution.",signal:"They start building the execution plan before the group has confirmed the destination.",workWithThem:"Be concrete and action-oriented. Bring problems with some initial thinking about next steps. Frame direction challenges in terms of better outcomes rather than abstract purpose. Give them clear metrics.",strengths:["Holding big picture and granular detail simultaneously","Moving with urgency while course-correcting","Managing complex multi-variable projects","Building metrics and accountability systems","Making work actually get done"],challenges:["Questioning whether the destination is right","Patience with WHY types who resist locking in","Recognising when optimising the wrong problem","Engaging in purpose conversations"],tertiaryStrategies:[["Name it precisely","It’s not that you don’t have direction. The gap is checking whether that direction is right before you’re deep into executing it."],["Institutionalise the purpose check","Build a scheduled direction review into every significant project — a required milestone before the next phase begins."],["Assign a WHY partner","Identify a WHY-WHAT or WHY-HOW explicitly responsible for asking the destination question. Grant them real standing to slow things down."],["Reframe the challenge","When a WHY voice challenges direction, practise: ‘This person just showed me where the risk is. What do I do with that?’"]],pairings:{"WHY-WHAT":"Your most important strategic relationship. Provides the purpose check before you lock direction. Use before you commit — not after you’re executing. Build real trust here.","WHY-HOW":"Deep destination check. Tells you whether you’re solving the right problem. Slow, but protective. Give them standing to question direction.","WHAT-WHY":"Strong execution peer. Make sure someone is doing the WHY work between you. Explicitly identify who holds the purpose check.","WHAT-HOW":"Mirror — richest peer execution collaboration. Must add WHY coverage deliberately. Treat the missing WHY voice as a shared responsibility.","HOW-WHY":"Adds analytical depth and quality control. Use when execution quality is critical. Don’t rush their analysis on high-stakes problems.","HOW-WHAT":"Builds the operational infrastructure that runs at scale. Strong peer for complex execution. Assign clear ownership or you’ll over-engineer."}},
+  "HOW-WHY":{name:"The Insightful Optimizer",tagline:"Precision-driven, purpose-oriented",primary:"HOW",secondary:"WHY",tertiary:"WHAT",core:"Driven by a profound need to understand how things work — and an equally profound belief that once you understand something deeply enough, you can always make it better. They learn by doing, by taking apart, by running experiments in their mind and in reality. They are not satisfied with the way things are done simply because that’s how they’ve always been done. They see current systems as hypotheses, not facts.",atBest:"The person who solves the problems everyone else has given up on. They find the path that wasn’t visible before, improve the system that was assumed to be fixed, make the impossible merely difficult. Inspired by constraints — not defeated by them.",friction:"Friction comes from pace and deliverability. They can tinker and refine past the point of diminishing returns. Communication can be dense — they’ve done so much thinking that bringing others up to speed requires significant effort.",drain:"Project management. Creating and maintaining timelines. Rallying people around a plan. Being pulled out of deep work for coordination and status updates.",signal:"They’re still improving something at the moment the team was expecting to ship it.",workWithThem:"Give them genuinely hard problems and real autonomy. Don’t over-structure their process — the tinkering is the work, not a detour from it. Create clear deployment milestones they commit to, but leave the path open.",strengths:["Solving problems everyone else has given up on","Deep analytical work: root cause, diagnostics, optimisation","Finding elegant solutions inside messy constraints","Process auditing and redesign","Rigorous hypothesis testing before committing"],challenges:["Transitioning from deep work to deployment","Sustained organisational momentum","Communicating findings in a way that drives decisions","Letting go before it’s as good as it could be"],tertiaryStrategies:[["Name it specifically","You can act. The hard part is the sustained organisational drive — the timelines, the rally, the momentum machine. That depletes you. Name it so you can design around it."],["Pre-commit to ship dates","Write down what done looks like and when it ships before the work begins. The work fills whatever container you give it."],["The communication artefact","Before any major output: write one page: what did I find, why does it matter, what should happen next."],["Pair with a WHAT explicitly","Identify a WHAT-WHY or WHAT-HOW partner whose job is deployment. Give them permission to declare done on your behalf."]],pairings:{"WHY-WHAT":"Connects your detailed findings to a compelling narrative for leadership. Use before you present up. Let them simplify — resistance to simplification undermines your reach.","WHY-HOW":"Extraordinary intellectual partnership. But assign a WHAT explicitly or nothing ships from your collaboration. Build WHAT energy in before engaging deeply.","WHAT-WHY":"Takes your work and forces it into motion. Your most important relationship for getting output into the world. Trust them to deploy before you feel ready.","WHAT-HOW":"Translates your insights into action and keeps it moving. Use for deployment, not for design. Be explicit about what done looks like.","HOW-WHY":"Mirror — richest analytical collaboration. Must add WHAT energy deliberately or both of you will over-refine. Treat the deployment gap as a shared responsibility.","HOW-WHAT":"Operationalises your work at scale. Use when work needs to become a repeatable system. Brief them on the why behind the design."}},
+  "HOW-WHAT":{name:"The Operational Architect",tagline:"Precision-driven, progress-oriented",primary:"HOW",secondary:"WHAT",tertiary:"WHY",core:"Oriented toward making work work. They think in systems — not abstractly, but concretely and operationally. They can see how a process will break before it breaks, how a structure will create the wrong incentives before it’s implemented, how the pieces of a complex operation need to fit together for the whole to function. Energised by complexity that resolves into elegant function.",atBest:"The operational foundation that allows ambitious organisations to actually function. They build the systems, processes, and structures that turn vision into repeatable reality. The person who prevents the team from making the same mistake twice — who encodes learning into process so the organisation gets smarter over time.",friction:"Friction is with purpose and change. They invest deeply in building systems that work, and conversations that question whether those systems are pointed at the right goal can feel threatening.",drain:"Vision work. Purpose conversations. Strategic reframes that disrupt functioning systems. Being asked to justify the meaning of work rather than improve the execution of it.",signal:"They’re already designing the operational infrastructure for a vision that hasn’t been fully confirmed yet.",workWithThem:"Bring them in early on implementation, not after the vision is set. When you need them to adapt a system, show them specifically what’s not working and why. Respect and publicly recognise the operational work they do.",strengths:["Building operational systems that are reliable and scalable","Predicting where a system will break before it does","Managing multi-workstream programmes","Making organisations smarter by encoding learning into process","Finding and resolving bottlenecks before they become crises"],challenges:["Whether the system is pointed at the right destination","Strategic reframes that disrupt systems they’ve invested in","Open-ended creative sessions without clear operational outputs","Being asked to justify why the work matters"],tertiaryStrategies:[["Name it directly","The question of why the work matters can feel like a distraction. That’s not wrong — but it becomes a risk when the system you’ve built is running beautifully toward the wrong outcome."],["Partner with a WHY","Identify a WHY-WHAT or WHY-HOW with explicit standing to question the destination. Their job: ask that question. Your job: genuinely engage with it."],["Destination check in the cadence","Quarterly: sit with the WHY partner and ask ‘are we building the right thing, and is it still the right thing?’"],["Distinguish purpose from disruption","When a WHY type challenges direction, practise: ‘Is this obstruction — or the information I need before I build further?’"]],pairings:{"WHY-WHAT":"Your most important strategic relationship. Keeps your systems pointed at the right goal. Build real trust. When they question direction, treat it as data, not interference.","WHY-HOW":"Ensures the system you’re building reflects the right purpose and design principles. Use for significant builds where the destination really matters.","WHAT-WHY":"Drives decisions and maintains team energy while systems are being designed. Give them clear milestones — they need targets to be useful.","WHAT-HOW":"You build the system; they run experiments inside it. Strong operational partnership. Assign clear system domains or you’ll over-engineer.","HOW-WHY":"Finds the elegant improvement inside your current system. Brief them on why the system is designed as it is so they improve rather than rebuild.","HOW-WHAT":"Mirror — richest operational collaboration. Must add WHY energy deliberately. Build a WHY partner into your team before working closely together."}}
+};
+
+// ── URL PARAMS ───────────────────────────────────────────────────────────────
+var params = new URLSearchParams(window.location.search);
+var CONFIG = {
+  type: (params.get('type') || '').toUpperCase(),
+  name: params.get('name') || 'Participant',
+  role: params.get('role') || ''
+};
+var TEAM = [];
+try { if (params.get('team')) TEAM = JSON.parse(params.get('team')); } catch(e){}
+var PUSH_ID = params.get('push') || null;
+var reflections = {};
+var warmupAnswers = {};
+
+// ── VALIDATE ─────────────────────────────────────────────────────────────────
+if (!TD[CONFIG.type]) {
+  document.getElementById('main').innerHTML = '<div class="error-state"><div class="error-icon">&#128279;</div><div class="error-title">Link not set up</div><div class="error-body"><p>This session link is missing a valid profile type. Ask your facilitator for a new link.</p><br><p style="font-size:12px;color:var(--muted)">Valid types: <code>WHY-WHAT</code>, <code>WHY-HOW</code>, <code>WHAT-WHY</code>, <code>WHAT-HOW</code>, <code>HOW-WHY</code>, <code>HOW-WHAT</code></p></div></div>';
+} else {
+  init();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getInteraction(theirType) {
+  var you = TD[CONFIG.type], them = TD[theirType];
+  var pairingText = you.pairings[theirType] || '';
+  var yourP = you.primary, yourT = you.tertiary, theirP = them.primary, theirT = them.tertiary;
+  var whatYouBring, watchFor;
+  if (yourP === theirT) {
+    whatYouBring = 'Your ' + yourP + ' primary is their ' + theirT + ' tertiary blind spot. You naturally cover what drains them most. In this pairing, you’re a force multiplier — your energy goes into exactly the space they can’t sustain.';
+  } else if (yourT === theirP) {
+    whatYouBring = 'Their ' + theirP + ' primary is your ' + yourT + ' tertiary. They bring energy and capability to exactly the space that drains you. This is a highly complementary pairing — you each relieve the other’s biggest cost.';
+  } else {
+    whatYouBring = (yourP === theirP ? 'You share a ' + yourP + ' primary — you’ll find natural alignment on direction and approach.' : 'You bring ' + yourP + ' energy they may not naturally generate. ' + pairingText.split('.')[0] + '.');
+  }
+  if (yourT === theirT) {
+    watchFor = 'You share the same tertiary blind spot — ' + yourT + '. Neither of you will naturally fill that gap. Identify a third person who can cover it or you’ll both skip the same things.';
+  } else if (yourP === theirP) {
+    watchFor = 'You both lead with ' + yourP + '. Strong natural alignment, but you may unconsciously reinforce each other’s perspective. Build in a deliberate check from a different primary type.';
+  } else {
+    watchFor = 'Your different orientations are a strength — but also the source of friction. Name the difference explicitly rather than letting it become tension.';
+  }
+  return { whatYouBring: whatYouBring, watchFor: watchFor, toMakeItWork: pairingText || 'Be explicit about what each of you owns.' };
+}
+
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.bnav-item').forEach(function(b){ b.classList.remove('active'); });
+  var s = document.getElementById('screen-' + id);
+  if (s) s.classList.add('active');
+  var n = document.getElementById('nav-' + id);
+  if (n) n.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function saveR(key, val) { reflections[key] = val; }
+
+function selectType(typeKey) {
+  document.querySelectorAll('.type-card').forEach(function(c){ c.classList.remove('selected'); });
+  var card = document.querySelector('[data-type="' + typeKey + '"]');
+  if (card) card.classList.add('selected');
+  var t = TD[typeKey];
+  var isOwn = typeKey === CONFIG.type;
+  var pairingHtml = !isOwn ? '<div class="pairing-card"><div class="pairing-card-title">How ' + CONFIG.type + ' works with ' + typeKey + '</div><p>' + esc(TD[CONFIG.type].pairings[typeKey] || '') + '</p></div>' : '';
+  var stratCards = t.tertiaryStrategies.map(function(s,i){ return '<div class="sc"><div class="sc-num">Strategy '+(i+1)+'</div><div class="sc-title">'+esc(s[0])+'</div><div class="sc-body">'+esc(s[1])+'</div></div>'; }).join('');
+  var detail = document.getElementById('type-detail');
+  detail.innerHTML = '<div class="type-hero" style="margin-bottom:20px"><div class="th-label">'+(isOwn?'Your Type':'Exploring')+'</div><div class="th-code">'+typeKey.replace('-','–')+'</div><div class="th-name">'+esc(t.name)+'</div><div class="th-tagline">'+esc(t.tagline)+'</div><div class="th-brains"><div class="brain primary"><span class="brain-l">Primary</span><span class="brain-v">'+t.primary+'</span></div><div class="brain"><span class="brain-l">Secondary</span><span class="brain-v">'+t.secondary+'</span></div><div class="brain tertiary"><span class="brain-l">Tertiary</span><span class="brain-v">'+t.tertiary+'</span></div></div></div>'
+    + pairingHtml
+    + '<div class="ps"><div class="pl">Core Drive</div><p>'+esc(t.core)+'</p></div>'
+    + '<div class="ps"><div class="pl">At Their Best</div><p>'+esc(t.atBest)+'</p></div>'
+    + '<div class="ps"><div class="pl">What Drains Them</div><p>'+esc(t.drain)+'</p></div>'
+    + '<div class="ps"><div class="pl">Signal in the Room</div><div class="signal-box">'+esc(t.signal)+'</div></div>'
+    + '<div class="ps"><div class="pl">How to Work With Them</div><p>'+esc(t.workWithThem)+'</p></div>'
+    + '<div class="pdiv"></div><div class="ps"><div class="pl">Their '+t.tertiary+' Tertiary — Strategies</div><div class="sc-grid">'+stratCards+'</div></div>';
+  detail.classList.add('visible');
+  detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function selectTeammate(idx) {
+  document.querySelectorAll('.teammate-card').forEach(function(c){ c.classList.remove('selected'); });
+  var card = document.querySelector('[data-teammate="'+idx+'"]');
+  if (card) card.classList.add('selected');
+  var member = TEAM[idx];
+  var inter = getInteraction(member.type);
+  var panel = document.getElementById('interaction-panel');
+  panel.innerHTML = '<div class="ip-header"><div class="ip-you"><div class="ip-type">'+CONFIG.type+'</div><div class="ip-label">You</div></div><div class="ip-arrow">↔</div><div class="ip-them"><div class="ip-type">'+member.type+'</div><div class="ip-label">'+esc(member.name)+'</div></div></div>'
+    + '<div class="ip-section"><div class="ip-section-title g">What you bring each other</div><div class="ip-text">'+esc(inter.whatYouBring)+'</div></div>'
+    + '<div class="ip-section"><div class="ip-section-title a">Watch for</div><div class="ip-text">'+esc(inter.watchFor)+'</div></div>'
+    + '<div class="ip-section"><div class="ip-section-title r">To make it work</div><div class="ip-text">'+esc(inter.toMakeItWork)+'</div></div>';
+  panel.classList.add('visible');
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function generateReport() {
+  var t = TD[CONFIG.type];
+  var dateStr = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  var sH = t.strengths.map(function(s){ return '<div class="rpt-chip s">'+esc(s)+'</div>'; }).join('');
+  var cH = t.challenges.map(function(c){ return '<div class="rpt-chip c">'+esc(c)+'</div>'; }).join('');
+  var stH = t.tertiaryStrategies.map(function(s){ return '<div class="rpt-strat"><div class="rpt-strat-title">'+esc(s[0])+'</div><div class="rpt-strat-body">'+esc(s[1])+'</div></div>'; }).join('');
+  var rkPairs = [['energy','What energises you'],['drain','Where you work against the grain'],['insight','Key insight from today'],['action','Action commitment']];
+  var rfH = rkPairs.filter(function(r){ return reflections[r[0]]; }).map(function(r){ return '<div class="rfl-item"><div class="rfl-label">'+r[1]+'</div><div class="rfl-text">'+esc(reflections[r[0]])+'</div></div>'; }).join('');
+  document.getElementById('report-content').innerHTML =
+    '<div class="rpt-top"><div class="rpt-code">'+CONFIG.type.replace('-','–')+'</div><div class="rpt-name">'+esc(t.name)+'</div><div class="rpt-tagline">'+esc(t.tagline)+'</div><div class="rpt-meta-row"><div class="rpt-meta-item"><span class="rpt-ml">Name</span><span class="rpt-mv">'+esc(CONFIG.name)+'</span></div>'+(CONFIG.role?'<div class="rpt-meta-item"><span class="rpt-ml">Role</span><span class="rpt-mv">'+esc(CONFIG.role)+'</span></div>':'')+'<div class="rpt-meta-item"><span class="rpt-ml">Primary</span><span class="rpt-mv accent">'+t.primary+'</span></div><div class="rpt-meta-item"><span class="rpt-ml">Tertiary</span><span class="rpt-mv dim">'+t.tertiary+'</span></div></div></div>'
+    + '<div class="rpt-body"><div class="rpt-section"><div class="rpt-label">Your Profile</div><div class="rpt-title">How You Solve Problems</div><p class="rpt-text">'+esc(t.core)+'</p></div>'
+    + '<div class="rpt-divider"></div>'
+    + '<div class="rpt-section"><div class="rpt-label">Strengths</div><div class="rpt-grid">'+sH+'</div></div>'
+    + '<div class="rpt-section" style="margin-top:12px"><div class="rpt-label">Challenge Areas</div><div class="rpt-grid">'+cH+'</div></div>'
+    + '<div class="rpt-divider"></div>'
+    + '<div class="rpt-section"><div class="rpt-label">Your '+t.tertiary+' Tertiary — Strategies</div>'+stH+'</div>'
+    + (rfH ? '<div class="rpt-divider"></div><div class="rpt-section"><div class="rpt-label">Your Reflections</div>'+rfH+'</div>' : '')
+    + '</div>'
+    + '<div class="rpt-footer"><span>Curio &middot; choosecurio.com</span><span>'+esc(CONFIG.name)+' &middot; '+CONFIG.type+' &middot; '+dateStr+'</span></div>';
+  document.getElementById('report-area').style.display = 'block';
+  document.getElementById('report-content').scrollIntoView({behavior:'smooth'});
+}
+
+function init() {
+  var t = TD[CONFIG.type];
+  var hasTeam = TEAM.length > 0;
+
+  // Topbar chip
+  document.getElementById('topbar-chip').innerHTML = '<strong>'+esc(CONFIG.name)+'</strong> &nbsp;&middot;&nbsp; '+CONFIG.type;
+
+  // Nav items
+  var navItems = [
+    {id:'profile',icon:'&#128100;',label:'Profile'},
+    {id:'warmup',icon:'&#9989;',label:'Warm-up'},
+    {id:'tertiary',icon:'&#128161;',label:'Tertiary'},
+    {id:'explorer',icon:'&#128270;',label:'Explore'},
+    {id:'team',icon:'&#128101;',label:'Team'},
+    {id:'report',icon:'&#128196;',label:'Report'}
+  ];
+  document.getElementById('bottom-nav').innerHTML = navItems.map(function(n){
+    return '<button class="bnav-item" id="nav-'+n.id+'" onclick="goScreen(\''+n.id+'\')"><span class="bnav-icon">'+n.icon+'</span><span class="bnav-label">'+n.label+'</span></button>';
+  }).join('');
+
+  // Tertiary strategy cards
+  var stratCards = t.tertiaryStrategies.map(function(s,i){
+    return '<div class="sc"><div class="sc-num">Strategy '+(i+1)+'</div><div class="sc-title">'+esc(s[0])+'</div><div class="sc-body">'+esc(s[1])+'</div></div>';
+  }).join('');
+
+  // Type grid
+  var typeGrid = Object.keys(TD).map(function(tk){
+    var isOwn = tk === CONFIG.type;
+    return '<button class="type-card'+(isOwn?' own-type':'')+'" data-type="'+tk+'" onclick="selectType(\''+tk+'\')">'
+      +'<span class="tc-code">'+tk.replace('-','–')+'</span>'
+      +'<span class="tc-name">'+esc(TD[tk].name)+'</span>'
+      +(isOwn?'<span class="own-badge">Your Type</span>':'')
+      +'</button>';
+  }).join('');
+
+  // Team grid
+  var teamContent = hasTeam
+    ? '<div class="interaction-panel" id="interaction-panel"></div><div class="team-grid">'
+      + TEAM.map(function(m,i){ return '<button class="teammate-card" data-teammate="'+i+'" onclick="selectTeammate('+i+')">'
+        +'<div class="teammate-name">'+esc(m.name)+'</div>'
+        +'<div class="teammate-type">'+m.type.replace('-','–')+'</div>'
+        +(m.role?'<div class="teammate-role">'+esc(m.role)+'</div>':'')
+        +'</button>'; }).join('')
+      + '</div>'
+      + '<div class="rbox"><div class="rq">Based on your team’s types, where are the most significant gaps?</div><textarea class="ra" oninput="saveR(\'team_gaps\',this.value)" placeholder="Write your thoughts here…"></textarea></div>'
+      + '<div class="rbox"><div class="rq">Is there a relationship on your team you want to invest in differently after today?</div><textarea class="ra" oninput="saveR(\'team_invest\',this.value)" placeholder="Write your thoughts here…"></textarea></div>'
+    : '<div class="team-empty"><div class="empty-icon">&#128101;</div><p>Your facilitator hasn’t added team members yet. Check back after the team session has been set up.</p></div>';
+
+  // Build all screens
+  document.getElementById('main').innerHTML =
+
+  // PROFILE
+  '<div class="screen active" id="screen-profile">'
+  +'<div class="eyebrow">Your Profile</div>'
+  +'<h2 class="screen-title">How You<br>Solve Problems</h2>'
+  +'<div class="screen-meta">Read through your profile, then your facilitator will walk through it with you.</div>'
+  +'<div class="type-hero">'
+  +'<div class="th-label">Your MindPrint™ Type</div>'
+  +'<div class="th-code">'+CONFIG.type.replace('-','–')+'</div>'
+  +'<div class="th-name">'+esc(t.name)+'</div>'
+  +'<div class="th-tagline">'+esc(t.tagline)+'</div>'
+  +'<div class="th-brains">'
+  +'<div class="brain primary"><span class="brain-l">Primary</span><span class="brain-v">'+t.primary+'</span></div>'
+  +'<div class="brain"><span class="brain-l">Secondary</span><span class="brain-v">'+t.secondary+'</span></div>'
+  +'<div class="brain tertiary"><span class="brain-l">Tertiary</span><span class="brain-v">'+t.tertiary+'</span></div>'
+  +'</div></div>'
+  +'<div class="ps"><div class="pl">The Core</div><p>'+esc(t.core)+'</p></div>'
+  +'<div class="pdiv"></div>'
+  +'<div class="ps"><div class="pl">At Your Best</div><p>'+esc(t.atBest)+'</p></div>'
+  +'<div class="ps"><div class="pl">The Friction</div><p>'+esc(t.friction)+'</p></div>'
+  +'<div class="ps"><div class="pl">What Drains You</div><p>'+esc(t.drain)+'</p></div>'
+  +'<div class="ps"><div class="pl">How to Work With You</div><p>'+esc(t.workWithThem)+'</p></div>'
+  +'<div class="signal-box">'+esc(t.signal)+'</div>'
+  +'</div>'
+
+  // WARMUP
+  +'<div class="screen" id="screen-warmup">'
+  +'<div class="eyebrow">Warm-up</div>'
+  +'<h2 class="screen-title">Does This Feel<br>Like You?</h2>'
+  +'<div class="screen-meta">Reflect on each statement honestly — not how you aspire to be, but how you naturally show up.</div>'
+  +'<div class="card"><div class="card-head">'+CONFIG.type+' — '+esc(t.name)+'</div><div class="card-body"><p>'+esc(t.core)+'</p></div></div>'
+  +'<div class="rbox"><div class="rq">What resonates most with you in this description?</div><textarea class="ra" oninput="saveR(\'warmup_resonates\',this.value)" placeholder="Write your thoughts here…" style="min-height:60px"></textarea></div>'
+  +'<div class="rbox"><div class="rq">Anything that doesn’t feel quite right?</div><textarea class="ra" oninput="saveR(\'warmup_pushback\',this.value)" placeholder="Write your thoughts here…" style="min-height:60px"></textarea></div>'
+  +'<div class="rbox"><div class="rq">What situation immediately comes to mind when you read “at your best”?</div><textarea class="ra" oninput="saveR(\'warmup_atbest\',this.value)" placeholder="Write your thoughts here…"></textarea></div>'
+  +'</div>'
+
+  // TERTIARY
+  +'<div class="screen" id="screen-tertiary">'
+  +'<div class="eyebrow">Your Blind Spot</div>'
+  +'<h2 class="screen-title">The '+t.tertiary+'<br>Tertiary</h2>'
+  +'<div class="screen-meta">Designing around your blind spot is smarter than fighting it.</div>'
+  +'<div class="ter-banner"><div class="ter-badge">'+t.tertiary+'</div><div class="ter-desc"><h3>The '+t.tertiary+' Blind Spot</h3><p>'+esc(t.drain.substring(0,120))+'</p></div></div>'
+  +'<div class="card"><div class="card-head">Your Energy Map</div><div class="card-body">'
+  +'<div class="ebar-wrap">'
+  +'<div class="erow"><div class="elabel">Primary</div><div class="ebar-bg"><div class="ebar ep"></div></div><div class="enote">Gives energy</div></div>'
+  +'<div class="erow"><div class="elabel">Secondary</div><div class="ebar-bg"><div class="ebar es"></div></div><div class="enote">Neutral</div></div>'
+  +'<div class="erow"><div class="elabel">Tertiary</div><div class="ebar-bg"><div class="ebar et"></div></div><div class="enote">Drains energy</div></div>'
+  +'</div><p style="font-size:13px;color:var(--muted);line-height:1.6">'+esc(t.drain)+'</p></div></div>'
+  +'<div class="card"><div class="card-head">Four Strategies</div><div class="card-body"><div class="sc-grid">'+stratCards+'</div></div></div>'
+  +'<div class="rbox"><div class="rq">Who in your current team is strongest in your '+t.tertiary+' tertiary — and how well are you using that relationship?</div><textarea class="ra" oninput="saveR(\'tertiary_partner\',this.value)" placeholder="Write your thoughts here…"></textarea></div>'
+  +'<div class="rbox"><div class="rq">What’s one thing you currently own that would be better owned by someone with a strong '+t.tertiary+' primary?</div><textarea class="ra" oninput="saveR(\'tertiary_handoff\',this.value)" placeholder="Write your thoughts here…"></textarea></div>'
+  +'</div>'
+
+  // EXPLORER
+  +'<div class="screen" id="screen-explorer">'
+  +'<div class="eyebrow">Type Explorer</div>'
+  +'<h2 class="screen-title">Understand<br>Every Type</h2>'
+  +'<div class="screen-meta">Tap any type to explore how they think and how to work with them. Your type is highlighted.</div>'
+  +'<div class="type-grid">'+typeGrid+'</div>'
+  +'<div class="type-detail" id="type-detail"></div>'
+  +'</div>'
+
+  // TEAM
+  +'<div class="screen" id="screen-team">'
+  +'<div class="eyebrow">Your Team</div>'
+  +'<h2 class="screen-title">Team<br>Dynamics</h2>'
+  +'<div class="screen-meta">Tap a teammate to see how your type works with theirs.</div>'
+  + teamContent
+  +'</div>'
+
+  // REPORT
+  +'<div class="screen" id="screen-report">'
+  +'<div class="eyebrow">Your Take-away</div>'
+  +'<h2 class="screen-title">Closing<br>Reflections</h2>'
+  +'<div class="screen-meta">Capture your thoughts, then generate your personal report to keep.</div>'
+  +'<div class="rbox"><div class="rq">Where in your current role do you feel most energised — most like yourself?</div><textarea class="ra" oninput="saveR(\'energy\',this.value)" placeholder="Write your thoughts here…"></textarea></div>'
+  +'<div class="rbox"><div class="rq">Where do you feel like you’re working against the grain?</div><textarea class="ra" oninput="saveR(\'drain\',this.value)" placeholder="Write your thoughts here…"></textarea></div>'
+  +'<div class="rbox"><div class="rq">The one thing from today I’m going to carry with me:</div><textarea class="ra" oninput="saveR(\'insight\',this.value)" style="min-height:60px" placeholder="Write your thoughts here…"></textarea></div>'
+  +'<div class="rbox"><div class="rq">One thing I want to try differently in the next two weeks:</div><textarea class="ra" oninput="saveR(\'action\',this.value)" style="min-height:60px" placeholder="Write your thoughts here…"></textarea></div>'
+  +'<button class="report-gen-btn" onclick="generateReport()">Generate My Report &#8594;</button>'
+  +'<div id="report-area" style="display:none">'
+  +'<div class="report-actions"><button class="btn-primary" onclick="window.print()">Print / Save as PDF</button><button class="btn-ghost" onclick="document.getElementById(\'report-area\').style.display=\'none\'">Close</button></div>'
+  +'<div class="report-sheet" id="report-content"></div>'
+  +'</div>'
+  +'</div>';
+
+  goScreen('profile');
+
+  // Push polling
+  if (PUSH_ID) {
+    var lastPushId = null;
+    document.getElementById('push-close').addEventListener('click', function(){
+      document.getElementById('push-banner').classList.remove('visible');
+    });
+    function pollForPush() {
+      fetch('/api/session-push?id=' + encodeURIComponent(PUSH_ID))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if (data && data.pushId && data.pushId !== lastPushId && data.message) {
+            lastPushId = data.pushId;
+            document.getElementById('push-text').textContent = data.message;
+            document.getElementById('push-banner').classList.add('visible');
+          }
+        }).catch(function(){});
+    }
+    setInterval(pollForPush, 4000);
+    pollForPush();
+  }
+}
+</script>
+</body>
+</html>
