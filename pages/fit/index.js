@@ -1,0 +1,893 @@
+import Head from 'next/head';
+import Link from 'next/link';
+import { useState, useRef, useEffect } from 'react';
+
+const TYPES = [
+  { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "Purpose-driven, progress-oriented",   primary: "WHY",  secondary: "WHAT" },
+  { id: "WHY-HOW",  label: "WHY – HOW",  tagline: "Purpose-driven, precision-oriented",  primary: "WHY",  secondary: "HOW"  },
+  { id: "WHAT-WHY", label: "WHAT – WHY", tagline: "Progress-driven, purpose-oriented",   primary: "WHAT", secondary: "WHY"  },
+  { id: "WHAT-HOW", label: "WHAT – HOW", tagline: "Progress-driven, precision-oriented", primary: "WHAT", secondary: "HOW"  },
+  { id: "HOW-WHY",  label: "HOW – WHY",  tagline: "Precision-driven, purpose-oriented",  primary: "HOW",  secondary: "WHY"  },
+  { id: "HOW-WHAT", label: "HOW – WHAT", tagline: "Precision-driven, progress-oriented", primary: "HOW",  secondary: "WHAT" },
+];
+
+const TYPE_DETAILS = {
+  "WHY-WHAT": {
+    desc: "Comes into situations, quickly visualizes an ideal state, and articulates the steps to get there. Questions the status quo and plots paths to opportunities just out of reach.",
+    strengths: ["Strategic vision and big-picture thinking","Identifying opportunities and gaps","Setting direction and goals","Pitching and narrative building","Questioning the status quo","High-level roadmap planning"],
+    drains: ["Granular execution and task management","Following detailed processes","Documentation and administrative work","Repetitive or routine tasks","Working in the weeds for extended periods"],
+    bestPartners: ["HOW-WHAT","HOW-WHY","WHAT-HOW"],
+  },
+  "WHY-HOW": {
+    desc: "A systems thinker who sees the big picture and finest details simultaneously. Constantly links outcomes to tasks and builds visions grounded in how things actually work.",
+    strengths: ["Systems thinking and framework design","Research synthesis and distilling insights","Diagnosing root causes","Writing thought leadership","Building comprehensive strategies","Connecting vision to execution detail"],
+    drains: ["Fast-paced iteration without analysis","Rushing to launch before it feels right","Pure action without sufficient grounding","Communicating to WHAT-dominant audiences"],
+    bestPartners: ["WHAT-WHY","WHAT-HOW","HOW-WHAT"],
+  },
+  "WHAT-WHY": {
+    desc: "Values intuition and moves forward with purpose. Equally concerned about the journey as the destination. A natural motivator who rallies teams around clear goals.",
+    strengths: ["Building and maintaining momentum","Rallying teams around shared goals","Fast decision-making under ambiguity","Client-facing discovery and pitching","Running high-energy team sessions","Milestone-oriented project leadership"],
+    drains: ["Detailed process design and documentation","Administrative and compliance work","Deep analytical research","Managing granular task execution","Precision-oriented work for extended periods"],
+    bestPartners: ["HOW-WHAT","WHY-HOW","WHY-WHAT"],
+  },
+  "WHAT-HOW": {
+    desc: "Driven by action and iteration. Can zoom into the deepest details then return to a high-level view instantly. Hates leaving a conversation without a clear next step.",
+    strengths: ["Detailed project planning and management","Breaking initiatives into actionable steps","Building metrics and dashboards","Managing cross-functional execution","Running agile and iterative processes","Operationalizing workflows and processes"],
+    drains: ["Open-ended visioning without clear milestones","Work lacking defined next steps","Pure strategy without implementation path","Extended ambiguity about direction or goals"],
+    bestPartners: ["WHY-WHAT","WHY-HOW","HOW-WHY"],
+  },
+  "HOW-WHY": {
+    desc: "Interested in making things work better. Deeply understands how systems function and imagines better ways to use time, space, money, and energy.",
+    strengths: ["Deep analytical work and root cause analysis","Process auditing and redesign","Synthesizing complex data into insights","Testing and validating approaches rigorously","Spotting inefficiencies","Mentoring on methodology and best practices"],
+    drains: ["Launching before full analysis is complete","High-velocity action-oriented environments","Communicating findings to non-technical audiences","Prioritizing when everything feels equally important"],
+    bestPartners: ["WHAT-HOW","WHAT-WHY","WHY-WHAT"],
+  },
+  "HOW-WHAT": {
+    desc: "Driven by making work function at its best. Understands all the details, thrives in complexity, brings structure to keep everything moving. Can predict where a system will break.",
+    strengths: ["Designing operational processes end-to-end","Building organizational structures and operating models","Creating SOPs, playbooks, and documentation","Implementing systems and managing change","Identifying and resolving bottlenecks","Managing multi-workstream complexity"],
+    drains: ["Ambiguous open-ended creative work","Vision-setting without clear parameters","Work requiring frequent pivots without structure","Communication of 'why' to stakeholders"],
+    bestPartners: ["WHY-WHAT","WHY-HOW","WHAT-WHY"],
+  },
+};
+
+function ScoreRing({ score }) {
+  const r = 48;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.round(score);
+  const dash = (pct / 100) * circ;
+  const color = pct >= 75 ? "#059669" : pct >= 60 ? "#34D399" : pct >= 40 ? "#F59E0B" : "#EF4444";
+  const label = pct >= 75 ? "Strong fit" : pct >= 60 ? "Good fit" : pct >= 40 ? "Partial fit" : pct >= 20 ? "Poor fit" : "Severe mismatch";
+  const labelBg = pct >= 75 ? "rgba(5,150,105,0.08)" : pct >= 60 ? "rgba(52,211,153,0.08)" : pct >= 40 ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)";
+  const labelBorder = pct >= 75 ? "rgba(5,150,105,0.3)" : pct >= 60 ? "rgba(52,211,153,0.3)" : pct >= 40 ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.3)";
+
+  return (
+    <div className="score-ring-wrap">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#E7E5E4" strokeWidth="8" />
+        <circle
+          cx="60" cy="60" r={r} fill="none"
+          stroke={color} strokeWidth="8"
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          transform="rotate(-90 60 60)"
+          style={{ transition: "stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" }}
+        />
+        <text x="60" y="55" textAnchor="middle" fontSize="24" fontWeight="700" fill={color} fontFamily="Caveat, cursive">{pct}%</text>
+        <text x="60" y="72" textAnchor="middle" fontSize="10" fill="#A8A29E" fontFamily="DM Sans, sans-serif" letterSpacing="0.08em">MATCH</text>
+      </svg>
+      <span className="score-fit-label" style={{ color, background: labelBg, border: `1px solid ${labelBorder}` }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function BulletList({ items, muted }) {
+  return (
+    <div className="bullet-list">
+      {items.map((item, i) => (
+        <div key={i} className="bullet-item">
+          <span className={`bullet-dot${muted ? " bullet-dot--muted" : ""}`} />
+          <span className="bullet-text">{item}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ThreeBrainsAnalyzer() {
+  const [selectedType, setSelectedType] = useState("");
+  const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState("");
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+  const resultRef = useRef(null);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem('curio-print-state');
+    if (saved) {
+      try {
+        const s = JSON.parse(saved);
+        if (s.result) { setResult(s.result); setRole(s.role); setSelectedType(s.selectedType); }
+      } catch {}
+      sessionStorage.removeItem('curio-print-state');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (result && resultRef.current) {
+      resultRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [result]);
+
+  async function readStream(response) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "", text = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(payload);
+          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") text += evt.delta.text;
+        } catch {}
+      }
+    }
+    return text;
+  }
+
+  async function callAPI(system, userContent, maxTokens) {
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: maxTokens,
+        temperature: 0,
+        system,
+        messages: [{ role: "user", content: userContent }],
+      }),
+    });
+    const ct = response.headers.get("content-type") || "";
+    if (ct.includes("application/json")) {
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || data.error);
+      return data.content?.[0]?.text || "";
+    }
+    return await readStream(response);
+  }
+
+  async function analyze() {
+    if (!selectedType || !role.trim()) return;
+    setLoading(true);
+    setLoadingStep("Analyzing role demands...");
+    setError("");
+    setResult(null);
+
+    const type = TYPES.find(t => t.id === selectedType);
+    const details = TYPE_DETAILS[selectedType];
+    const tertiary = ["WHY","WHAT","HOW"].find(b => b !== type.primary && b !== type.secondary);
+
+    try {
+      // ── CALL 1: Role-only demand split ──────────────────────────────────
+      // No profile information in scope — guarantees the same role always
+      // returns the same WHY/WHAT/HOW split regardless of profile selected.
+      const splitSystem = `You analyze job roles for the MindPrint Framework and estimate their absolute cognitive demand profile.
+
+The MindPrint Framework defines three cognitive orientations:
+
+- WHY: The work of choosing direction and defining purpose. WHY asks "what should we pursue and why does it matter?" It applies when a role's job is to decide what problem to solve, what to build, what to say, or what strategy to pursue — not just to execute a known direction. Scale: WHY appears in roles at all levels, from CEO (high) to individual contributors doing discovery, creative, or strategic work (moderate).
+
+- WHAT: The work of execution and momentum. WHAT asks "how do we move this forward?" It drives progress, manages relationships, coordinates people, and delivers outcomes. Measured by milestones hit and progress made.
+
+- HOW: The work of correctness and completeness. HOW asks "is this right and does it hold up?" It covers process design, precision, analysis, documentation, systems, quality, and operational management. Measured by accuracy, completeness, and reliability.
+
+CLASSIFICATION GUIDE (think through these before assigning):
+
+WHY work examples: setting company strategy, defining brand positioning, deciding product roadmap priorities, framing user problems (discovery research), establishing creative direction, choosing what to build or pursue.
+
+WHAT work examples: project delivery, client relationship management, sales, recruiting, team coordination, stakeholder communication, sprint planning, removing blockers, driving alignment.
+
+HOW work examples: software engineering, data analysis, financial modeling, QA testing, process design, scheduling, documentation, spec writing, risk management, compliance, operational management.
+
+CALIBRATION:
+- CEO / Founder: WHY 40-50%, balance splits between WHAT and HOW
+- Brand/Creative/Strategy leads: WHY 35-50%
+- Product Manager: WHY 25-35% (roadmap decisions + discovery), WHAT 35-45% (delivery coordination), HOW 20-30%
+- UX Designer: WHY 20-30% (problem framing, discovery), HOW 45-55% (design specs, systems, correctness), WHAT 15-25%
+- Marketing Manager: WHY 20-30% (positioning, campaign strategy), WHAT 45-55% (campaign execution, relationships), HOW 15-25%
+- Program/Project Manager: WHY 5-15%, WHAT 40-50% (coordination, delivery), HOW 40-50% (planning, tracking)
+- Engineer / Analyst / QA: WHY <10%, HOW dominant (55-70%)
+- Sales / Recruiter / Account Manager: WHY <10%, WHAT dominant (55-70%)
+
+Your job: estimate what percentage of this role's core work demands each orientation.
+This is a fixed property of the role — it does not depend on who fills it.
+
+Steps:
+1. Identify the 5-7 activities that consume the majority of this role's time
+2. For each activity, classify: WHY (choosing direction), WHAT (driving execution), or HOW (ensuring correctness)
+3. Estimate the percentage split — must sum to exactly 100
+
+Return ONLY valid JSON, no markdown:
+{ "why": <integer>, "what": <integer>, "how": <integer> }`;
+
+      const splitRaw = await callAPI(splitSystem, `Role: "${role.trim()}"`, 600);
+      const splitMatch = splitRaw.match(/\{[\s\S]*?\}/);
+      if (!splitMatch) throw new Error(`No demand split returned. Raw: ${splitRaw.slice(0,200)}`);
+      const demandSplit = JSON.parse(splitMatch[0]);
+      if (typeof demandSplit.why !== "number") throw new Error("Invalid demand split");
+
+      // Calculate score in JS — profile context never touches this math
+      const splitMap = { WHY: demandSplit.why, WHAT: demandSplit.what, HOW: demandSplit.how };
+      const dp = splitMap[type.primary]   || 0;
+      const ds = splitMap[type.secondary] || 0;
+      const dt = splitMap[tertiary]       || 0;
+      const rawScore = dp * 1.25 + ds * 0.8 + dt * (-1.5);
+      const linear = Math.max(0, Math.min(1, (rawScore + 150) / 275));
+      const score = Math.round(Math.pow(linear, 1.5) * 100);
+
+      // ── CALL 2: Profile-aware qualitative analysis ───────────────────────
+      // Receives the fixed split from Call 1 — profile only affects interpretation,
+      // not the underlying role demand percentages.
+      setLoadingStep("Analyzing profile alignment...");
+
+      const qualSystem = `You are a rigorous analyst for the MindPrint Framework.
+
+The MindPrint Framework defines three cognitive orientations:
+- WHY Brain: Vision-oriented, purpose-driven, big-picture thinker, questions assumptions
+- WHAT Brain: Action-oriented, momentum-driven, milestone-focused, values progress
+- HOW Brain: Detail-oriented, process-focused, precision-driven, systematic
+
+You will receive a person's cognitive profile and a role's already-established demand split.
+Produce a qualitative alignment analysis: what they will enjoy, excel at, dislike, and struggle with — and concrete recommendations.
+Every item must be specific to this role and this profile. No generic filler.
+
+Return ONLY valid JSON, no markdown:
+{
+  "scoreRationale": "<2-3 sentences: state the demand split, map it to this person's primary/secondary/tertiary, describe what that means day-to-day>",
+  "enjoys": ["<specific>", "<specific>", "<specific>", "<specific>"],
+  "excels": ["<specific>", "<specific>", "<specific>", "<specific>"],
+  "dislikes": ["<specific>", "<specific>", "<specific>"],
+  "struggles": ["<specific>", "<specific>", "<specific>"],
+  "recommendations": [
+    { "category": "<label>", "action": "<recommendation>", "rationale": "<1-2 sentences>" },
+    { "category": "<label>", "action": "<recommendation>", "rationale": "<1-2 sentences>" },
+    { "category": "<label>", "action": "<recommendation>", "rationale": "<1-2 sentences>" },
+    { "category": "<label>", "action": "<recommendation>", "rationale": "<1-2 sentences>" }
+  ],
+  "partnerTypes": [
+    { "type": "<e.g. HOW-WHAT>", "reason": "<role-specific reason>" },
+    { "type": "<e.g. WHY-WHAT>", "reason": "<role-specific reason>" }
+  ]
+}`;
+
+      const qualUser = `Profile: ${type.label} (${type.tagline})
+Primary orientation: ${type.primary} — energizing, natural home base
+Secondary orientation: ${type.secondary} — comfortable, functional
+Tertiary orientation: ${tertiary} — draining, least natural
+
+What energizes this type: ${details.strengths.join(", ")}
+What drains this type: ${details.drains.join(", ")}
+
+Role: "${role.trim()}"
+
+Established demand split for this role:
+- WHY: ${demandSplit.why}%
+- WHAT: ${demandSplit.what}%
+- HOW: ${demandSplit.how}%
+
+For this person that means:
+- ${dp}% in ${type.primary} (primary — energizing)
+- ${ds}% in ${type.secondary} (secondary — neutral)
+- ${dt}% in ${tertiary} (tertiary — draining)`;
+
+      const qualRaw = await callAPI(qualSystem, qualUser, 2000);
+      const qualMatch = qualRaw.match(/\{[\s\S]*\}/);
+      if (!qualMatch) throw new Error("No analysis returned");
+      const qual = JSON.parse(qualMatch[0]);
+
+      setResult({ ...qual, demandSplit, score });
+    } catch (e) {
+      setError("Error: " + (e.message || "Something went wrong. Check the browser console for details."));
+      console.error(e);
+    } finally {
+      setLoading(false);
+      setLoadingStep("");
+    }
+  }
+
+  function generatePDF() {
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const pct = Math.round(result.score);
+    const color = pct >= 75 ? '#059669' : pct >= 60 ? '#34D399' : pct >= 40 ? '#F59E0B' : '#EF4444';
+    const label = pct >= 75 ? 'Strong fit' : pct >= 60 ? 'Good fit' : pct >= 40 ? 'Partial fit' : pct >= 20 ? 'Poor fit' : 'Severe mismatch';
+    const labelBg = pct >= 75 ? 'rgba(5,150,105,0.08)' : pct >= 60 ? 'rgba(52,211,153,0.08)' : pct >= 40 ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)';
+    const labelBorder = pct >= 75 ? 'rgba(5,150,105,0.3)' : pct >= 60 ? 'rgba(52,211,153,0.3)' : pct >= 40 ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)';
+    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const r = 36, circ = 2 * Math.PI * r, dash = (pct / 100) * circ;
+    const currentType = TYPES.find(t => t.id === selectedType);
+
+    const bulletRows = (items, dotColor) => items.map(item =>
+      `<div class="bullet"><span class="dot" style="background:${dotColor}"></span><span class="btext">${esc(item)}</span></div>`
+    ).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Role Alignment — ${esc(role)} — Curio</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:1.5;background:#fff}
+.wrap{max-width:700px;margin:0 auto;padding:26px 30px}
+.hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #059669;padding-bottom:11px;margin-bottom:16px}
+.logo{font-family:'Caveat',cursive;font-size:21pt;font-weight:700;color:#1C1917;line-height:1}
+.logo em{color:#059669;font-style:normal}
+.hdr-right{text-align:right;font-size:7pt;color:#78716C}
+.hdr-right strong{display:block;font-size:8pt;color:#1C1917;margin-bottom:1px}
+.score-row{display:flex;align-items:center;gap:18px;padding:13px 15px;background:#FAFAF9;border:1px solid #E7E5E4;border-radius:6px;margin-bottom:9px}
+.sinfo{flex:1}
+.tlabel{font-size:6.5pt;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#059669;margin-bottom:3px}
+.rname{font-family:'Caveat',cursive;font-size:17pt;font-weight:700;color:#1C1917;line-height:1.1;margin-bottom:6px}
+.rationale{font-size:7.5pt;color:#57534E;line-height:1.6}
+.sring{flex-shrink:0;text-align:center}
+.fit-lbl{font-size:6pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;border-radius:100px;display:inline-block;margin-top:4px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}
+.card{background:#FAFAF9;border:1px solid #E7E5E4;border-radius:5px;padding:11px 13px}
+.ca{border-left:2px solid #059669}
+.clabel{font-size:6pt;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:#059669;margin-bottom:7px}
+.bullet{display:flex;gap:6px;align-items:flex-start;margin-bottom:3px}
+.dot{width:4px;height:4px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.btext{font-size:7.5pt;color:#57534E;line-height:1.45}
+.rec{padding:6px 0;border-bottom:1px solid #E7E5E4}
+.rec:last-child{border-bottom:none;padding-bottom:0}
+.rcat{font-size:6pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#059669;margin-bottom:1px}
+.raction{font-family:'Caveat',cursive;font-size:10.5pt;color:#1C1917;line-height:1.2;margin-bottom:1px}
+.rrat{font-size:7pt;color:#78716C;line-height:1.45}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pcard{background:#fff;border:1px solid #E7E5E4;border-radius:4px;padding:8px 10px}
+.pcombo{font-size:6.5pt;font-weight:700;letter-spacing:0.1em;color:#059669;margin-bottom:1px}
+.ptagline{font-style:italic;font-size:7pt;color:#57534E;margin-bottom:2px}
+.preason{font-size:7pt;color:#78716C;line-height:1.4}
+.footer{margin-top:13px;padding-top:9px;border-top:1px solid #E7E5E4;display:flex;justify-content:space-between;align-items:center;font-size:6.5pt;color:#A8A29E}
+.flogo{font-family:'Caveat',cursive;font-size:13pt;font-weight:700;color:#1C1917}
+.flogo em{color:#059669;font-style:normal}
+.print-btn{display:block;width:100%;padding:14px;margin-bottom:16px;background:#059669;color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:10pt;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;text-align:center}
+@media print{@page{margin:12mm 10mm;size:A4 portrait}body{font-size:8pt}.wrap{padding:0;max-width:100%}.print-btn{display:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <button class="print-btn" onclick="this.style.display='none';window.print();">Save as PDF</button>
+  <div class="hdr">
+    <div class="logo">Curio<em>.</em></div>
+    <div class="hdr-right"><strong>Role Alignment Analysis</strong>${esc(today)}</div>
+  </div>
+  <div class="score-row">
+    <div class="sinfo">
+      <div class="tlabel">${esc(currentType.label)} &middot; ${esc(currentType.tagline)}</div>
+      <div class="rname">${esc(role)}</div>
+      <div class="rationale">${esc(result.scoreRationale)}</div>
+    </div>
+    <div class="sring">
+      <svg width="86" height="86" viewBox="0 0 86 86">
+        <circle cx="43" cy="43" r="${r}" fill="none" stroke="#E7E5E4" stroke-width="6"/>
+        <circle cx="43" cy="43" r="${r}" fill="none" stroke="${color}" stroke-width="6"
+          stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+          stroke-linecap="round" transform="rotate(-90 43 43)"/>
+        <text x="43" y="38" text-anchor="middle" font-size="19" font-weight="700" fill="${color}" font-family="Caveat,cursive">${pct}%</text>
+        <text x="43" y="52" text-anchor="middle" font-size="7" fill="#A8A29E" font-family="DM Sans,sans-serif" letter-spacing="1">MATCH</text>
+      </svg>
+      <div class="fit-lbl" style="color:${color};background:${labelBg};border:1px solid ${labelBorder}">${esc(label)}</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card ca"><div class="clabel">Likely enjoys</div>${bulletRows(result.enjoys,'#059669')}</div>
+    <div class="card ca"><div class="clabel">Likely excels at</div>${bulletRows(result.excels,'#059669')}</div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="clabel">Likely dislikes</div>${bulletRows(result.dislikes,'#A8A29E')}</div>
+    <div class="card"><div class="clabel">May struggle with</div>${bulletRows(result.struggles,'#A8A29E')}</div>
+  </div>
+  <div class="card" style="margin-bottom:7px">
+    <div class="clabel">Recommendations</div>
+    ${result.recommendations.map(rec => `<div class="rec"><div class="rcat">${esc(rec.category)}</div><div class="raction">${esc(rec.action)}</div><div class="rrat">${esc(rec.rationale)}</div></div>`).join('')}
+  </div>
+  ${result.partnerTypes && result.partnerTypes.length > 0 ? `<div class="card"><div class="clabel">Ideal collaborators for this role</div><div class="pgrid">${result.partnerTypes.map(p => { const pt = TYPES.find(t => t.id === p.type); return '<div class="pcard"><div class="pcombo">' + esc(p.type) + '</div>' + (pt ? '<div class="ptagline">' + esc(pt.tagline) + '</div>' : '') + '<div class="preason">' + esc(p.reason) + '</div></div>'; }).join('')}</div></div>` : ''}
+  <div class="footer">
+    <div><div class="flogo">Curio<em>.</em></div><div>MindPrint Framework™ &nbsp;&middot;&nbsp; Role Alignment Analysis</div></div>
+    <div style="text-align:right">choosecurio.com &nbsp;&middot;&nbsp; Generated ${esc(today)}</div>
+  </div>
+</div>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
+  const type = TYPES.find(t => t.id === selectedType);
+
+  return (
+    <div className="page">
+      <div className="page-label">Role Alignment Analyzer</div>
+      <h1 className="page-title">How well does your role<br />fit the way you think?</h1>
+      <p className="page-subtitle">Select your Three Brains profile, enter your current role, and get a detailed analysis of your cognitive alignment — what energizes you, what drains you, and how to get more from where you are.</p>
+      <div className="page-rule" />
+
+      <div className="step-block">
+        <div className="step-label">Step One</div>
+        <div className="step-title">Select your Three Brains type</div>
+        <div className="type-grid">
+          {TYPES.map(t => (
+            <button
+              key={t.id}
+              className={`type-btn${selectedType === t.id ? " active" : ""}`}
+              onClick={() => setSelectedType(t.id)}
+            >
+              <div className="type-btn-combo">{t.label}</div>
+              <div className="type-btn-name">{t.tagline}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="step-block">
+        <div className="step-label">Step Two</div>
+        <div className="step-title">Enter your current role</div>
+        <input
+          className="role-input"
+          value={role}
+          onChange={e => setRole(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") analyze(); }}
+          placeholder="e.g. Senior Product Manager, VP of Sales, Operations Director..."
+        />
+      </div>
+
+      <button
+        className="analyze-btn"
+        onClick={analyze}
+        disabled={!selectedType || !role.trim() || loading}
+      >
+        {loading ? (loadingStep || "Analyzing alignment...") : "Analyze my role alignment"}
+      </button>
+
+      {error && <div className="error-box" style={{ marginTop: 24 }}>{error}</div>}
+
+      {result && (
+        <div ref={resultRef}>
+          <div className="print-header">
+            <div className="print-logo">Curio<span>.</span></div>
+            <div className="print-meta">
+              <strong>Role Alignment Analysis</strong>
+              <span id="print-date"></span>
+            </div>
+          </div>
+          <div className="results-rule" />
+
+          <div className="score-header">
+            <div className="score-meta">
+              <div className="score-type-label">{type && type.label} &middot; {type && type.tagline}</div>
+              <div className="score-role">{role}</div>
+              <div className="score-rationale">{result.scoreRationale}</div>
+            </div>
+            <ScoreRing score={result.score} />
+          </div>
+
+          <div className="result-grid-2">
+            <div className="result-card result-card--accent">
+              <div className="result-card-label">Likely enjoys</div>
+              <BulletList items={result.enjoys} />
+            </div>
+            <div className="result-card result-card--accent">
+              <div className="result-card-label">Likely excels at</div>
+              <BulletList items={result.excels} />
+            </div>
+          </div>
+
+          <div className="result-grid-2">
+            <div className="result-card">
+              <div className="result-card-label">Likely dislikes</div>
+              <BulletList items={result.dislikes} muted />
+            </div>
+            <div className="result-card">
+              <div className="result-card-label">May struggle with</div>
+              <BulletList items={result.struggles} muted />
+            </div>
+          </div>
+
+          <div className="result-card result-card--full" style={{ marginBottom: 16 }}>
+            <div className="result-card-label">Recommendations</div>
+            {result.recommendations && result.recommendations.map((rec, i) => (
+              <div key={i} className="rec-card">
+                <div className="rec-category">{rec.category}</div>
+                <div className="rec-action">{rec.action}</div>
+                <div className="rec-rationale">{rec.rationale}</div>
+              </div>
+            ))}
+          </div>
+
+          {result.partnerTypes && result.partnerTypes.length > 0 && (
+            <div className="result-card result-card--full" style={{ marginBottom: 0 }}>
+              <div className="result-card-label">Ideal collaborators for this role</div>
+              <div className="partner-grid">
+                {result.partnerTypes.map((p, i) => {
+                  const pt = TYPES.find(t => t.id === p.type);
+                  return (
+                    <div key={i} className="partner-card">
+                      <div className="partner-combo">{p.type}</div>
+                      {pt && <div className="partner-tagline">{pt.tagline}</div>}
+                      <div className="partner-reason">{p.reason}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="action-row">
+            <button className="pdf-btn" onClick={generatePDF}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download PDF Report
+            </button>
+            <button
+              className="reset-btn"
+              style={{ marginTop: 0 }}
+              onClick={() => { setResult(null); setRole(""); setSelectedType(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            >
+              ← Analyze a different role
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function FitPage() {
+  return (
+    <>
+      <Head>
+        <title>Role Alignment Analyzer — Curio</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <style>{`
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+          html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+          body {
+            background: #fff;
+            color: #1C1917;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+          }
+
+          .nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #E7E5E4;
+            padding: 0 clamp(24px,5vw,72px);
+            height: 72px;
+            display: flex; align-items: center; justify-content: space-between;
+          }
+          .nav-logo {
+            font-family: 'Caveat', cursive;
+            font-size: 1.6rem; font-weight: 700;
+            color: #1C1917; text-decoration: none; letter-spacing: -0.01em;
+          }
+          .nav-logo span { color: #059669; }
+          .nav-back {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em;
+            text-transform: uppercase; color: #78716C;
+            text-decoration: none; transition: color 0.2s;
+          }
+          .nav-back:hover { color: #059669; }
+          .nav-back svg { width: 14px; height: 14px; }
+
+          .page { max-width: 820px; margin: 0 auto; padding: 64px clamp(24px,5vw,72px) 100px; }
+
+          .page-label {
+            display: inline-flex; align-items: center; gap: 12px;
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.17em;
+            text-transform: uppercase; color: #059669; margin-bottom: 20px;
+          }
+          .page-label::before {
+            content: ''; display: block; width: 36px; height: 1px;
+            background: #059669; flex-shrink: 0;
+          }
+          .page-title {
+            font-family: 'Caveat', cursive;
+            font-size: clamp(2.2rem, 4vw, 3.2rem);
+            font-weight: 700; color: #1C1917; line-height: 1.12;
+            margin-bottom: 16px;
+          }
+          .page-subtitle {
+            font-size: 1rem; color: #78716C;
+            max-width: 560px; line-height: 1.75; margin-bottom: 56px;
+          }
+          .page-rule {
+            width: 100%; height: 1px;
+            background: #E7E5E4; margin-bottom: 48px;
+          }
+
+          .step-label {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em;
+            text-transform: uppercase; color: #059669;
+            margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+          }
+          .step-label::before {
+            content: ''; display: block; width: 20px; height: 1px; background: #059669;
+          }
+          .step-title {
+            font-family: 'Caveat', cursive;
+            font-size: 1.4rem; font-weight: 700; color: #1C1917;
+            margin-bottom: 24px;
+          }
+          .step-block { margin-bottom: 48px; }
+
+          .type-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+          }
+          .type-btn {
+            background: #FAFAF9;
+            border: 1px solid #E7E5E4;
+            border-radius: 6px; padding: 16px 14px;
+            cursor: pointer; text-align: left;
+            transition: all 0.18s ease;
+            font-family: 'DM Sans', sans-serif;
+          }
+          .type-btn:hover {
+            background: rgba(5,150,105,0.05);
+            border-color: rgba(5,150,105,0.35);
+          }
+          .type-btn.active {
+            background: rgba(5,150,105,0.08);
+            border-color: #059669;
+          }
+          .type-btn-combo {
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+            color: #059669; margin-bottom: 4px;
+          }
+          .type-btn.active .type-btn-combo { color: #047857; }
+          .type-btn-name {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem; font-style: italic;
+            color: #78716C; line-height: 1.3;
+          }
+          .type-btn.active .type-btn-name { color: #1C1917; }
+
+          .role-input {
+            width: 100%; padding: 16px 20px;
+            background: #FAFAF9;
+            border: 1px solid #E7E5E4;
+            border-radius: 6px; color: #1C1917;
+            font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+            transition: border-color 0.18s; outline: none;
+          }
+          .role-input::placeholder { color: #A8A29E; }
+          .role-input:focus { border-color: #059669; }
+
+          .analyze-btn {
+            width: 100%; padding: 18px 32px;
+            background: #059669; border: none; border-radius: 6px;
+            color: #fff; font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem; font-weight: 700; letter-spacing: 0.06em;
+            text-transform: uppercase; cursor: pointer;
+            transition: all 0.18s ease;
+          }
+          .analyze-btn:hover:not(:disabled) { background: #047857; }
+          .analyze-btn:disabled {
+            background: #E7E5E4;
+            color: #A8A29E; cursor: not-allowed;
+          }
+
+          .error-box {
+            background: rgba(244,63,94,0.05);
+            border: 1px solid rgba(244,63,94,0.2);
+            border-radius: 6px; padding: 16px 20px;
+            color: #be123c; font-size: 0.9rem; margin-bottom: 32px;
+          }
+
+          .results-rule {
+            width: 100%; height: 1px;
+            background: #E7E5E4;
+            margin: 56px 0 48px;
+          }
+
+          .score-header {
+            display: flex; gap: 40px; align-items: flex-start;
+            margin-bottom: 48px;
+          }
+          .score-meta { flex: 1; }
+          .score-type-label {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.17em;
+            text-transform: uppercase; color: #059669; margin-bottom: 10px;
+          }
+          .score-role {
+            font-family: 'Caveat', cursive;
+            font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+            font-weight: 700; color: #1C1917; margin-bottom: 16px;
+            line-height: 1.2;
+          }
+          .score-rationale {
+            font-size: 0.95rem; color: #57534E;
+            line-height: 1.8;
+          }
+
+          .score-ring-wrap {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            flex-shrink: 0;
+          }
+          .score-fit-label {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; padding: 4px 12px; border-radius: 100px;
+          }
+
+          .result-grid-2 {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+            margin-bottom: 16px;
+          }
+
+          .result-card {
+            background: #FAFAF9;
+            border: 1px solid #E7E5E4;
+            border-radius: 6px; padding: 28px;
+          }
+          .result-card--accent { border-left: 2px solid #059669; }
+          .result-card--full { grid-column: 1 / -1; }
+
+          .result-card-label {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.16em;
+            text-transform: uppercase; color: #059669;
+            margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+          }
+          .result-card-label::before {
+            content: ''; display: block; width: 16px; height: 1px; background: #059669;
+          }
+
+          .bullet-list { display: flex; flex-direction: column; gap: 10px; }
+          .bullet-item { display: flex; gap: 12px; align-items: flex-start; }
+          .bullet-dot {
+            width: 4px; height: 4px; border-radius: 50%;
+            background: #059669; margin-top: 8px; flex-shrink: 0;
+          }
+          .bullet-dot--muted { background: #A8A29E; }
+          .bullet-text { font-size: 0.9rem; color: #57534E; line-height: 1.7; }
+
+          .rec-card {
+            padding: 20px 0; border-bottom: 1px solid #E7E5E4;
+          }
+          .rec-card:last-child { border-bottom: none; padding-bottom: 0; }
+          .rec-category {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.14em;
+            text-transform: uppercase; color: #059669; margin-bottom: 6px;
+          }
+          .rec-action {
+            font-family: 'Caveat', cursive;
+            font-size: 1.15rem; color: #1C1917; margin-bottom: 6px; line-height: 1.4;
+          }
+          .rec-rationale { font-size: 0.875rem; color: #78716C; line-height: 1.7; }
+
+          .partner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+          .partner-card {
+            background: #fff;
+            border: 1px solid #E7E5E4;
+            border-radius: 6px; padding: 18px 20px;
+          }
+          .partner-combo {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+            color: #059669; margin-bottom: 4px;
+          }
+          .partner-tagline {
+            font-family: 'DM Sans', sans-serif;
+            font-style: italic; font-size: 0.9rem;
+            color: #57534E; margin-bottom: 10px;
+          }
+          .partner-reason { font-size: 0.85rem; color: #78716C; line-height: 1.65; }
+
+          .reset-btn {
+            width: 100%; padding: 16px 24px; margin-top: 32px;
+            background: transparent;
+            border: 1px solid #E7E5E4;
+            border-radius: 6px; color: #A8A29E;
+            font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.18s ease;
+          }
+          .reset-btn:hover {
+            border-color: #A8A29E;
+            color: #1C1917;
+          }
+
+          .pdf-btn {
+            width: 100%; padding: 16px 24px;
+            background: #059669; border: none; border-radius: 6px;
+            color: #fff; font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem; font-weight: 700; letter-spacing: 0.06em;
+            text-transform: uppercase; cursor: pointer;
+            transition: background 0.18s ease;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+          }
+          .pdf-btn:hover { background: #047857; }
+          .action-row { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; }
+
+          .print-header { display: none; }
+
+          @media print {
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { margin: 14mm 12mm; size: A4 portrait; }
+            body { font-size: 9pt; }
+            .nav,
+            .page-label,
+            .page-title,
+            .page-subtitle,
+            .page-rule,
+            .step-block,
+            .analyze-btn,
+            .error-box,
+            .results-rule,
+            .action-row { display: none !important; }
+            .page { padding: 0; max-width: 100%; }
+            .print-header {
+              display: flex !important;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 2.5px solid #059669;
+              padding-bottom: 12px;
+              margin-bottom: 18px;
+            }
+            .print-logo {
+              font-family: 'Caveat', cursive;
+              font-size: 22pt; font-weight: 700; line-height: 1; color: #1C1917;
+            }
+            .print-logo span { color: #059669; }
+            .print-meta { text-align: right; font-size: 7.5pt; color: #78716C; }
+            .print-meta strong { display: block; font-size: 8.5pt; color: #1C1917; margin-bottom: 2px; }
+            .score-header { margin-bottom: 14px; gap: 20px; }
+            .result-grid-2 { gap: 10px; margin-bottom: 10px; }
+            .result-card { padding: 14px 16px; page-break-inside: avoid; }
+            .rec-card { padding: 8px 0; }
+            .partner-grid { gap: 8px; }
+            .partner-card { padding: 10px 12px; }
+          }
+
+          @media (max-width: 600px) {
+            .type-grid { grid-template-columns: 1fr 1fr; }
+            .result-grid-2 { grid-template-columns: 1fr; }
+            .partner-grid { grid-template-columns: 1fr; }
+            .score-header { flex-direction: column-reverse; align-items: flex-start; gap: 24px; }
+          }
+        `}</style>
+      </Head>
+
+      <nav className="nav">
+        <Link href="/" className="nav-logo">Curio<span>.</span></Link>
+        <Link href="/" className="nav-back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back to site
+        </Link>
+      </nav>
+
+      <ThreeBrainsAnalyzer />
+    </>
+  );
+}
