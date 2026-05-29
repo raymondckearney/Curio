@@ -220,11 +220,42 @@ Steps:
 Return ONLY valid JSON, no markdown:
 { "why": <integer>, "what": <integer>, "how": <integer> }`;
 
-      const splitRaw = await callAPI(splitSystem, `Role: "${role.trim()}"`, 600);
-      const splitMatch = splitRaw.match(/\{[\s\S]*?\}/);
-      if (!splitMatch) throw new Error(`No demand split returned. Raw: ${splitRaw.slice(0,200)}`);
-      const demandSplit = JSON.parse(splitMatch[0]);
-      if (typeof demandSplit.why !== "number") throw new Error("Invalid demand split");
+      // Run demand split 3 times in parallel and average — eliminates single-call
+      // variance. With prompt caching the 3 calls cost ~1.5x one call and run
+      // simultaneously, so latency is unchanged.
+      const rolePrompt = `Role: "${role.trim()}"`;
+      const [raw1, raw2, raw3] = await Promise.all([
+        callAPI(splitSystem, rolePrompt, 600),
+        callAPI(splitSystem, rolePrompt, 600),
+        callAPI(splitSystem, rolePrompt, 600),
+      ]);
+
+      function parseSplit(raw) {
+        const m = raw.match(/\{[\s\S]*?\}/);
+        if (!m) return null;
+        try {
+          const s = JSON.parse(m[0]);
+          return typeof s.why === "number" && typeof s.what === "number" && typeof s.how === "number" ? s : null;
+        } catch { return null; }
+      }
+
+      const splits = [raw1, raw2, raw3].map(parseSplit).filter(Boolean);
+      if (!splits.length) throw new Error("No valid demand splits returned");
+
+      // Average across all successful splits
+      const avg = {
+        why:  splits.reduce((s, x) => s + x.why,  0) / splits.length,
+        what: splits.reduce((s, x) => s + x.what, 0) / splits.length,
+        how:  splits.reduce((s, x) => s + x.how,  0) / splits.length,
+      };
+
+      // Round and force sum to exactly 100 (adjust the largest bucket)
+      const demandSplit = { why: Math.round(avg.why), what: Math.round(avg.what), how: Math.round(avg.how) };
+      const off = 100 - (demandSplit.why + demandSplit.what + demandSplit.how);
+      if (off !== 0) {
+        const largest = Object.entries(demandSplit).sort((a, b) => b[1] - a[1])[0][0];
+        demandSplit[largest] += off;
+      }
 
       // Calculate score in JS — profile context never touches this math
       const splitMap = { WHY: demandSplit.why, WHAT: demandSplit.what, HOW: demandSplit.how };
