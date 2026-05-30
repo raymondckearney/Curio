@@ -8,8 +8,11 @@ export async function getServerSideProps({ params }) {
     if (!rows.length) {
       return { redirect: { destination: '/go/invalid', permanent: false } };
     }
-    const { purpose } = rows[0];
-    return { redirect: { destination: `/${purpose}?token=${token}`, permanent: false } };
+    const { purpose, name, email } = rows[0];
+    const params = new URLSearchParams({ token });
+    if (name)  params.set('name', name);
+    if (email) params.set('email', email);
+    return { redirect: { destination: `/${purpose}?${params}`, permanent: false } };
   } catch {
     return { redirect: { destination: '/go/invalid', permanent: false } };
   }

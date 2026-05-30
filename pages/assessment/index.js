@@ -1,11 +1,27 @@
 import Head from 'next/head';
-import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
 
 export default function Assessment() {
+  const router = useRouter();
+  const embedRef = useRef(null);
+
   useEffect(() => {
-    // Load Typeform embed script
+    if (!router.isReady) return;
+
+    const { token, name, email } = router.query;
+
+    // Build hidden fields string for Typeform embed
+    const hiddenParts = [];
+    if (name)  hiddenParts.push(`name=${encodeURIComponent(name)}`);
+    if (email) hiddenParts.push(`email=${encodeURIComponent(email)}`);
+    if (token) hiddenParts.push(`token=${encodeURIComponent(token)}`);
+
+    if (embedRef.current && hiddenParts.length > 0) {
+      embedRef.current.setAttribute('data-tf-hidden', hiddenParts.join(','));
+    }
+
     const script = document.createElement('script');
     script.src = '//embed.typeform.com/next/embed.js';
     script.async = true;
@@ -13,7 +29,7 @@ export default function Assessment() {
     return () => {
       if (document.body.contains(script)) document.body.removeChild(script);
     };
-  }, []);
+  }, [router.isReady, router.query]);
 
   return (
     <Layout>
@@ -104,7 +120,7 @@ export default function Assessment() {
       {/* EMBED */}
       <section id="assessment-embed">
         <div className="tf-wrap">
-          <div data-tf-live="01KSPEY5T3A63WKTMY1XMBT178"></div>
+          <div ref={embedRef} data-tf-live="01KSPEY5T3A63WKTMY1XMBT178"></div>
         </div>
       </section>
     </Layout>
