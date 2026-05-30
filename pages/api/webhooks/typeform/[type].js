@@ -56,7 +56,8 @@ export default async function handler(req, res) {
   const rawBody = await getRawBody(req);
   const signature = req.headers['typeform-signature'];
 
-  if (!verifySignature(rawBody, signature)) {
+  if (process.env.TYPEFORM_WEBHOOK_SECRET && !verifySignature(rawBody, signature)) {
+    console.error('[typeform webhook] signature mismatch', { signature, type });
     return res.status(401).json({ error: 'Invalid signature' });
   }
 
@@ -65,6 +66,8 @@ export default async function handler(req, res) {
     const formResponse = body.form_response || {};
     const hidden = formResponse.hidden || {};
     const answers = formResponse.answers || [];
+
+    console.log('[typeform webhook] received', { type, hidden, answerCount: answers.length });
 
     function getAnswerNumber(ref) {
       const answer = answers.find(a => a.field && a.field.ref === ref);
