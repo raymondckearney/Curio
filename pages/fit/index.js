@@ -610,8 +610,21 @@ const TOKEN_MESSAGES = {
 
 export default function FitPage() {
   const { status, participant, consume } = useTokenGate('fit');
+  const [completedThisSession, setCompletedThisSession] = useState(false);
 
-  const blocked = status !== 'loading' && status !== 'no_token' && status !== 'valid' && TOKEN_MESSAGES[status];
+  async function handleConsume(payload) {
+    const result = await consume(payload);
+    setCompletedThisSession(true);
+    return result;
+  }
+
+  // Only block if the token arrived already-used/expired/invalid —
+  // not if the user just consumed it in this session.
+  const blocked = !completedThisSession
+    && status !== 'loading'
+    && status !== 'no_token'
+    && status !== 'valid'
+    && TOKEN_MESSAGES[status];
 
   return (
     <>
@@ -954,7 +967,7 @@ export default function FitPage() {
           </div>
         </div>
       ) : (
-        <ThreeBrainsAnalyzer participant={participant} consume={consume} />
+        <ThreeBrainsAnalyzer participant={participant} consume={handleConsume} />
       )}
     </>
   );
