@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import { useTokenGate } from '../../hooks/useTokenGate';
 
 const TYPES = [
   { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "Purpose-driven, progress-oriented",   primary: "WHY",  secondary: "WHAT" },
@@ -95,7 +96,7 @@ function BulletList({ items, muted }) {
   );
 }
 
-function ThreeBrainsAnalyzer() {
+function ThreeBrainsAnalyzer({ participant, consume }) {
   const [selectedType, setSelectedType] = useState("");
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
@@ -327,6 +328,7 @@ For this person that means:
       const qual = JSON.parse(qualMatch[0]);
 
       setResult({ ...qual, demandSplit, score });
+      if (consume) consume({ role: role.trim(), type: selectedType, score, demandSplit });
     } catch (e) {
       setError("Error: " + (e.message || "Something went wrong. Check the browser console for details."));
       console.error(e);
@@ -464,6 +466,11 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
       <div className="page-label">Role Alignment Analyzer</div>
       <h1 className="page-title">How well does your role<br />fit the way you think?</h1>
       <p className="page-subtitle">Select your Three Brains profile, enter your current role, and get a detailed analysis of your cognitive alignment — what energizes you, what drains you, and how to get more from where you are.</p>
+      {participant && (
+        <div className="welcome-banner">
+          Welcome, <strong>{participant.name}</strong> — your results will be saved automatically.
+        </div>
+      )}
       <div className="page-rule" />
 
       <div className="step-block">
@@ -596,6 +603,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
 }
 
 export default function FitPage() {
+  const { participant, consume } = useTokenGate('fit');
   return (
     <>
       <Head>
@@ -656,6 +664,16 @@ export default function FitPage() {
           .page-subtitle {
             font-size: 1rem; color: #78716C;
             max-width: 560px; line-height: 1.75; margin-bottom: 56px;
+          }
+          .welcome-banner {
+            display: inline-block;
+            background: rgba(5,150,105,0.07);
+            border: 1px solid rgba(5,150,105,0.25);
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-size: 0.875rem;
+            color: #065F46;
+            margin-bottom: 32px;
           }
           .page-rule {
             width: 100%; height: 1px;
@@ -919,7 +937,7 @@ export default function FitPage() {
         </Link>
       </nav>
 
-      <ThreeBrainsAnalyzer />
+      <ThreeBrainsAnalyzer participant={participant} consume={consume} />
     </>
   );
 }
