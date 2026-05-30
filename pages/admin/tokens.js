@@ -1,17 +1,18 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 
 export default function AdminTokens() {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
-    if (status === 'unauthenticated') router.replace('/admin/login');
-  }, [status, router]);
+    fetch('/api/admin/me')
+      .then(r => r.ok ? setAuthed(true) : router.replace('/admin/login'))
+      .catch(() => router.replace('/admin/login'));
+  }, [router]);
 
-  if (status === 'loading' || !session) return null;
+  if (!authed) return null;
   return (
     <>
       <Head>
@@ -23,7 +24,7 @@ export default function AdminTokens() {
         <header style={s.header}>
           <span style={s.logo}>Curio<span style={s.dot}>.</span></span>
           <span style={s.headerTitle}>Token Manager</span>
-          <button style={s.signOut} onClick={() => signOut({ callbackUrl: '/admin/login' })}>Sign out</button>
+          <button style={s.signOut} onClick={() => fetch('/api/admin/logout', { method: 'POST' }).then(() => router.push('/admin/login'))}>Sign out</button>
         </header>
         <main style={s.main}>
           <GeneratePanel />

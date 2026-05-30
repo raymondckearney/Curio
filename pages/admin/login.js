@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 
 export default function AdminLogin() {
@@ -14,13 +13,13 @@ export default function AdminLogin() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const result = await signIn('credentials', {
-      username,
-      password,
-      redirect: false,
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
     });
     setLoading(false);
-    if (result?.ok) {
+    if (res.ok) {
       router.push('/admin/tokens');
     } else {
       setError('Invalid credentials');
@@ -69,59 +68,14 @@ export default function AdminLogin() {
 }
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#F8FAFC',
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  card: {
-    background: '#fff',
-    borderRadius: 16,
-    padding: '48px 40px',
-    width: '100%',
-    maxWidth: 400,
-    boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-  },
-  logo: {
-    fontFamily: "'Caveat', cursive",
-    fontSize: '2rem',
-    fontWeight: 700,
-    color: '#0F172A',
-    marginBottom: 8,
-  },
+  page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif" },
+  card: { background: '#fff', borderRadius: 16, padding: '48px 40px', width: '100%', maxWidth: 400, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' },
+  logo: { fontFamily: "'Caveat', cursive", fontSize: '2rem', fontWeight: 700, color: '#0F172A', marginBottom: 8 },
   dot: { color: '#059669' },
-  title: {
-    fontSize: '1.1rem',
-    fontWeight: 600,
-    color: '#64748B',
-    marginBottom: 32,
-    marginTop: 0,
-  },
+  title: { fontSize: '1.1rem', fontWeight: 600, color: '#64748B', marginBottom: 32, marginTop: 0 },
   form: { display: 'flex', flexDirection: 'column', gap: 8 },
   label: { fontSize: '0.875rem', fontWeight: 500, color: '#0F172A', marginTop: 8 },
-  input: {
-    padding: '10px 14px',
-    borderRadius: 8,
-    border: '1.5px solid #E2E8F0',
-    fontSize: '1rem',
-    fontFamily: "'DM Sans', sans-serif",
-    color: '#0F172A',
-    outline: 'none',
-  },
+  input: { padding: '10px 14px', borderRadius: 8, border: '1.5px solid #E2E8F0', fontSize: '1rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', outline: 'none' },
   error: { color: '#DC2626', fontSize: '0.875rem', margin: '4px 0 0' },
-  button: {
-    marginTop: 16,
-    padding: '12px',
-    background: '#059669',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    fontSize: '1rem',
-    fontWeight: 600,
-    fontFamily: "'DM Sans', sans-serif",
-    cursor: 'pointer',
-  },
+  button: { marginTop: 16, padding: '12px', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", cursor: 'pointer' },
 };
