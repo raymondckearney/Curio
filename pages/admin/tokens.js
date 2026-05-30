@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 export default function AdminTokens() {
   const router = useRouter();
   const [authed, setAuthed] = useState(false);
+  const [activeTab, setActiveTab] = useState('tokens');
 
   useEffect(() => {
     fetch('/api/admin/me')
@@ -23,12 +24,35 @@ export default function AdminTokens() {
       <div style={s.page}>
         <header style={s.header}>
           <span style={s.logo}>Curio<span style={s.dot}>.</span></span>
-          <span style={s.headerTitle}>Token Manager</span>
+          <span style={s.headerTitle}>Admin</span>
           <button style={s.signOut} onClick={() => fetch('/api/admin/logout', { method: 'POST' }).then(() => router.push('/admin/login'))}>Sign out</button>
         </header>
+
+        {/* Tab bar */}
+        <div style={s.tabBar}>
+          <button
+            style={activeTab === 'tokens' ? { ...s.tab, ...s.tabActive } : s.tab}
+            onClick={() => setActiveTab('tokens')}
+          >
+            Tokens
+          </button>
+          <button
+            style={activeTab === 'assessments' ? { ...s.tab, ...s.tabActive } : s.tab}
+            onClick={() => setActiveTab('assessments')}
+          >
+            Assessments
+          </button>
+        </div>
+
         <main style={s.main}>
-          <GeneratePanel />
-          <StatusPanel />
+          {activeTab === 'tokens' ? (
+            <>
+              <GeneratePanel />
+              <StatusPanel />
+            </>
+          ) : (
+            <AssessmentsPanel />
+          )}
         </main>
       </div>
     </>
@@ -238,6 +262,80 @@ function StatusPanel() {
   );
 }
 
+function AssessmentsPanel() {
+  const [assessments, setAssessments] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function load() {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/assessments');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setAssessments(data.assessments);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section style={s.panel}>
+      <h2 style={s.panelTitle}>Assessment Submissions</h2>
+      <button style={s.btn} onClick={load} disabled={loading}>
+        {loading ? 'Loading…' : 'Load'}
+      </button>
+      {error && <p style={s.error}>{error}</p>}
+
+      {assessments && (
+        <div style={{ marginTop: 24 }}>
+          <p style={s.summary}>
+            <strong>{assessments.length}</strong> assessment{assessments.length !== 1 ? 's' : ''}
+          </p>
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead>
+                <tr>
+                  {['Name', 'Email', 'Type', 'H Score', 'W Score', 'Y Score', 'Submitted At'].map(h => (
+                    <th key={h} style={s.th}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {assessments.map((a, i) => (
+                  <tr key={a.id || i} style={i % 2 === 0 ? s.trEven : {}}>
+                    <td style={s.td}>{a.name || '—'}</td>
+                    <td style={s.td}>{a.email || '—'}</td>
+                    <td style={s.td}>
+                      {a.type ? (
+                        <span style={s.badgeType}>{a.type.toUpperCase()}</span>
+                      ) : '—'}
+                    </td>
+                    <td style={s.td}>{a.h_score ?? '—'}</td>
+                    <td style={s.td}>{a.w_score ?? '—'}</td>
+                    <td style={s.td}>{a.y_score ?? '—'}</td>
+                    <td style={s.td}>{a.submitted_at ? new Date(a.submitted_at).toLocaleString() : '—'}</td>
+                  </tr>
+                ))}
+                {assessments.length === 0 && (
+                  <tr>
+                    <td colSpan={7} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>
+                      No assessments yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 const s = {
   page: { minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' },
   header: {
@@ -252,6 +350,31 @@ const s = {
   dot: { color: '#059669' },
   headerTitle: { fontSize: '0.9rem', color: '#64748B', flex: 1 },
   signOut: { background: 'none', border: '1px solid #E2E8F0', borderRadius: 6, padding: '6px 14px', fontSize: '0.875rem', cursor: 'pointer', color: '#64748B', fontFamily: "'DM Sans', sans-serif" },
+  tabBar: {
+    background: '#fff',
+    borderBottom: '1px solid #E2E8F0',
+    padding: '0 32px',
+    display: 'flex',
+    gap: 0,
+  },
+  tab: {
+    padding: '14px 20px',
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    color: '#64748B',
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    marginBottom: -1,
+    transition: 'color 0.15s, border-color 0.15s',
+  },
+  tabActive: {
+    color: '#059669',
+    borderBottom: '2px solid #059669',
+    fontWeight: 600,
+  },
   main: { maxWidth: 900, margin: '0 auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 32 },
   panel: { background: '#fff', borderRadius: 12, padding: 32, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' },
   panelTitle: { fontSize: '1.1rem', fontWeight: 600, marginBottom: 24, marginTop: 0 },
@@ -276,4 +399,5 @@ const s = {
   summary: { fontSize: '0.95rem', marginBottom: 12, color: '#374151' },
   badgeUsed: { background: '#D1FAE5', color: '#065F46', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600 },
   badgePending: { background: '#FEF3C7', color: '#92400E', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600 },
+  badgeType: { background: '#EFF6FF', color: '#1D4ED8', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.05em' },
 };
