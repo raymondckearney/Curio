@@ -3,29 +3,49 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
 
+const FORM_ID = '01KSPEY5T3A63WKTMY1XMBT178';
+
 export default function Assessment() {
   const router = useRouter();
-  const embedRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     if (!router.isReady) return;
 
     const { token, name, email } = router.query;
 
-    // Build hidden fields string for Typeform embed
-    const hiddenParts = [];
-    if (name)  hiddenParts.push(`name=${encodeURIComponent(name)}`);
-    if (email) hiddenParts.push(`email=${encodeURIComponent(email)}`);
-    if (token) hiddenParts.push(`token=${encodeURIComponent(token)}`);
+    function initTypeform() {
+      if (!window.tf || !containerRef.current) return;
 
-    if (embedRef.current && hiddenParts.length > 0) {
-      embedRef.current.setAttribute('data-tf-hidden', hiddenParts.join(','));
+      const hidden = {};
+      if (name)  hidden.name  = name;
+      if (email) hidden.email = email;
+      if (token) hidden.token = token;
+
+      window.tf.createWidget(FORM_ID, {
+        container: containerRef.current,
+        hidden,
+        onSubmit: () => {
+          if (token) {
+            // Give the webhook a moment to fire before we start polling
+            window.location.href = `/results/pending?token=${encodeURIComponent(token)}&name=${encodeURIComponent(name || '')}`;
+          }
+        },
+      });
+    }
+
+    const existing = document.querySelector('script[src*="typeform"]');
+    if (existing) {
+      initTypeform();
+      return;
     }
 
     const script = document.createElement('script');
     script.src = '//embed.typeform.com/next/embed.js';
     script.async = true;
+    script.onload = initTypeform;
     document.body.appendChild(script);
+
     return () => {
       if (document.body.contains(script)) document.body.removeChild(script);
     };
@@ -98,11 +118,10 @@ export default function Assessment() {
             margin: 0 auto;
             padding: 64px 24px 80px;
           }
-          [data-tf-live] { min-height: 560px; }
+          .tf-container { min-height: 560px; }
         `}</style>
       </Head>
 
-      {/* HERO */}
       <section id="assessment-hero">
         <div className="assessment-back">
           <a href="#" onClick={(e) => { e.preventDefault(); history.back(); }}>
@@ -117,10 +136,9 @@ export default function Assessment() {
         </div>
       </section>
 
-      {/* EMBED */}
       <section id="assessment-embed">
         <div className="tf-wrap">
-          <div ref={embedRef} data-tf-live="01KSPEY5T3A63WKTMY1XMBT178"></div>
+          <div ref={containerRef} className="tf-container" />
         </div>
       </section>
     </Layout>

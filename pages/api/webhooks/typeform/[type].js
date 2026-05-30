@@ -3,6 +3,7 @@
  *
  * CREATE TABLE IF NOT EXISTS assessments (
  *   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ *   token         text,
  *   name          text,
  *   email         text,
  *   type          text,
@@ -11,6 +12,7 @@
  *   y_score       integer,
  *   submitted_at  timestamptz NOT NULL DEFAULT now()
  * );
+ * CREATE INDEX IF NOT EXISTS assessments_token_idx ON assessments (token);
  */
 
 import crypto from 'crypto';
@@ -74,12 +76,14 @@ export default async function handler(req, res) {
 
     const name  = hidden.name  || null;
     const email = hidden.email || null;
+    const token = hidden.token || null;
 
     const h_score = hidden.h_score != null ? parseInt(hidden.h_score, 10) : getAnswerNumber('h_score');
     const w_score = hidden.w_score != null ? parseInt(hidden.w_score, 10) : getAnswerNumber('w_score');
     const y_score = hidden.y_score != null ? parseInt(hidden.y_score, 10) : getAnswerNumber('y_score');
 
     await dbInsert('assessments', {
+      token,
       name,
       email,
       type,
