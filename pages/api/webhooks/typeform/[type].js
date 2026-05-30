@@ -11,13 +11,38 @@
  *   y_score       integer,
  *   submitted_at  timestamptz NOT NULL DEFAULT now()
  * );
- *
- * -- Optional: index for querying by type or email
- * CREATE INDEX IF NOT EXISTS assessments_type_idx  ON assessments (type);
- * CREATE INDEX IF NOT EXISTS assessments_email_idx ON assessments (email);
  */
 
+import crypto from 'crypto';
 import { dbInsert } from '../../../../lib/supabase';
+
+export const config = { api: { bodyParser: false } };
+
+async function getRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+function verifySignature(rawBody, signature) {
+  const secret = process.env.TYPEFORM_WEBHOOK_SECRET;
+  if (!secret) return true; // skip verification if secret not configured
+  if (!signature) return false;
+
+  // Typeform sends: sha256=<base64_hmac>
+  const [algo, hash] = signature.split('=');
+  if (algo !== 'sha256' || !hash) return false;
+
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('base64');
+
+  return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(expected));
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -26,23 +51,23 @@ export default async function handler(req, res) {
 
   const { type } = req.query;
 
+  const rawBody = await getRawBody(req);
+  const signature = req.headers['typeform-signature'];
+
+  if (!verifySignature(rawBody, signature)) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+
   try {
-    const body = req.body || {};
+    const body = JSON.parse(rawBody.toString());
     const formResponse = body.form_response || {};
-
-    // Hidden fields come as a plain object: { name: "Ray", email: "ray@..." }
     const hidden = formResponse.hidden || {};
-
-    // Answers array — each item has a field.ref and a value depending on type
     const answers = formResponse.answers || [];
 
-    // Helper to extract a numeric answer by field ref
     function getAnswerNumber(ref) {
       const answer = answers.find(a => a.field && a.field.ref === ref);
       if (!answer) return null;
-      // Typeform number answers: { number: 42 }
       if (typeof answer.number === 'number') return answer.number;
-      // Typeform text answers that are numeric strings
       if (answer.text !== undefined) return parseInt(answer.text, 10) || null;
       return null;
     }
@@ -50,19 +75,9 @@ export default async function handler(req, res) {
     const name  = hidden.name  || null;
     const email = hidden.email || null;
 
-    // Scores: first try hidden fields (if set as hidden variables),
-    // then fall back to looking for answers with ref matching the score key.
-    const h_score = hidden.h_score != null
-      ? parseInt(hidden.h_score, 10)
-      : getAnswerNumber('h_score');
-
-    const w_score = hidden.w_score != null
-      ? parseInt(hidden.w_score, 10)
-      : getAnswerNumber('w_score');
-
-    const y_score = hidden.y_score != null
-      ? parseInt(hidden.y_score, 10)
-      : getAnswerNumber('y_score');
+    const h_score = hidden.h_score != null ? parseInt(hidden.h_score, 10) : getAnswerNumber('h_score');
+    const w_score = hidden.w_score != null ? parseInt(hidden.w_score, 10) : getAnswerNumber('w_score');
+    const y_score = hidden.y_score != null ? parseInt(hidden.y_score, 10) : getAnswerNumber('y_score');
 
     await dbInsert('assessments', {
       name,
@@ -77,7 +92,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[typeform webhook]', err);
-    // Return 200 so Typeform doesn't retry on DB errors
     return res.status(200).json({ ok: false, error: err.message });
   }
 }
