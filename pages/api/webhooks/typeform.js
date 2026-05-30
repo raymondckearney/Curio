@@ -22,11 +22,8 @@ async function getRawBody(req) {
   });
 }
 
-function verifySignature(rawBody, signature) {
-  const secret = process.env.TYPEFORM_WEBHOOK_SECRET;
-  if (!secret) return true;
-  if (!signature) return false;
-  const [algo, hash] = signature.split('=');
+function verifySignature(rawBody, signature, secret) {
+  const [algo, hash] = (signature || '').split('=');
   if (algo !== 'sha256' || !hash) return false;
   const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('base64');
   try {
@@ -45,9 +42,13 @@ export default async function handler(req, res) {
   const rawBody = await getRawBody(req);
   const signature = req.headers['typeform-signature'];
 
-  if (process.env.TYPEFORM_WEBHOOK_SECRET && !verifySignature(rawBody, signature)) {
-    console.error('[typeform webhook] signature mismatch');
-    return res.status(401).json({ error: 'Invalid signature' });
+  // Only verify signature when both the env var AND a signature header are present
+  const secret = process.env.TYPEFORM_WEBHOOK_SECRET;
+  if (secret && signature) {
+    if (!verifySignature(rawBody, signature, secret)) {
+      console.error('[typeform webhook] signature mismatch');
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
   }
 
   try {
