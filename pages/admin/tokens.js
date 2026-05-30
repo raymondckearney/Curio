@@ -1,16 +1,17 @@
 import Head from 'next/head';
-import { useState } from 'react';
-import { signOut } from 'next-auth/react';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../api/auth/[...nextauth]';
-
-export async function getServerSideProps(context) {
-  const session = await getServerSession(context.req, context.res, authOptions);
-  if (!session) return { redirect: { destination: '/admin/login', permanent: false } };
-  return { props: {} };
-}
+import { useState, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/router';
 
 export default function AdminTokens() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') router.replace('/admin/login');
+  }, [status, router]);
+
+  if (status === 'loading' || !session) return null;
   return (
     <>
       <Head>

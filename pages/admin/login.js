@@ -1,15 +1,7 @@
 import Head from 'next/head';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../api/auth/[...nextauth]';
 import { useRouter } from 'next/router';
-
-export async function getServerSideProps(context) {
-  const session = await getServerSession(context.req, context.res, authOptions);
-  if (session) return { redirect: { destination: '/admin/tokens', permanent: false } };
-  return { props: {} };
-}
 
 export default function AdminLogin() {
   const router = useRouter();
