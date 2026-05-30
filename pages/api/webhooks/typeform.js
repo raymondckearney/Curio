@@ -29,7 +29,14 @@ function verifySignature(rawBody, signature) {
   const [algo, hash] = signature.split('=');
   if (algo !== 'sha256' || !hash) return false;
   const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('base64');
-  return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(expected));
+  try {
+    const a = Buffer.from(hash, 'base64');
+    const b = Buffer.from(expected, 'base64');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 export default async function handler(req, res) {
