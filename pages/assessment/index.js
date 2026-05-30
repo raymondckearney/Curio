@@ -7,47 +7,56 @@ const FORM_ID = '01KSPEY5T3A63WKTMY1XMBT178';
 
 export default function Assessment() {
   const router = useRouter();
-  const containerRef = useRef(null);
+  const embedRef = useRef(null);
 
   useEffect(() => {
     if (!router.isReady) return;
 
     const { token, name, email } = router.query;
 
-    function initTypeform() {
-      if (!window.tf || !containerRef.current) return;
+    // Global callback that Typeform calls on submit via data-tf-on-submit
+    window.__curioTfSubmit = () => {
+      if (token) {
+        window.location.href = `/results/pending?token=${encodeURIComponent(token)}&name=${encodeURIComponent(name || '')}`;
+      }
+    };
 
-      const hidden = {};
-      if (name)  hidden.name  = name;
-      if (email) hidden.email = email;
-      if (token) hidden.token = token;
+    // Also catch via postMessage in case data-tf-on-submit isn't supported
+    const onMessage = (e) => {
+      if (!e.data) return;
+      const type = e.data.type || e.data['type'];
+      if (type === 'form-submit' || type === 'typeform:submit') {
+        window.__curioTfSubmit();
+      }
+    };
+    window.addEventListener('message', onMessage);
 
-      window.tf.createWidget(FORM_ID, {
-        container: containerRef.current,
-        hidden,
-        onSubmit: () => {
-          if (token) {
-            // Give the webhook a moment to fire before we start polling
-            window.location.href = `/results/pending?token=${encodeURIComponent(token)}&name=${encodeURIComponent(name || '')}`;
-          }
-        },
-      });
+    if (embedRef.current) {
+      const hiddenParts = [];
+      if (name)  hiddenParts.push(`name=${name}`);
+      if (email) hiddenParts.push(`email=${email}`);
+      if (token) hiddenParts.push(`token=${token}`);
+      if (hiddenParts.length) {
+        embedRef.current.setAttribute('data-tf-hidden', hiddenParts.join(','));
+      }
+      embedRef.current.setAttribute('data-tf-on-submit', '__curioTfSubmit');
     }
 
-    const existing = document.querySelector('script[src*="typeform"]');
+    const existing = document.querySelector('script[src*="typeform.com/next/embed"]');
     if (existing) {
-      initTypeform();
-      return;
+      // Script already loaded; re-init by dispatching a DOM event
+      if (window.tf && window.tf.load) window.tf.load();
+      return () => window.removeEventListener('message', onMessage);
     }
 
     const script = document.createElement('script');
     script.src = '//embed.typeform.com/next/embed.js';
     script.async = true;
-    script.onload = initTypeform;
     document.body.appendChild(script);
 
     return () => {
-      if (document.body.contains(script)) document.body.removeChild(script);
+      window.removeEventListener('message', onMessage);
+      delete window.__curioTfSubmit;
     };
   }, [router.isReady, router.query]);
 
@@ -118,7 +127,7 @@ export default function Assessment() {
             margin: 0 auto;
             padding: 64px 24px 80px;
           }
-          .tf-container { min-height: 560px; }
+          [data-tf-live] { min-height: 560px; }
         `}</style>
       </Head>
 
@@ -138,7 +147,7 @@ export default function Assessment() {
 
       <section id="assessment-embed">
         <div className="tf-wrap">
-          <div ref={containerRef} className="tf-container" />
+          <div ref={embedRef} data-tf-live={FORM_ID} />
         </div>
       </section>
     </Layout>
