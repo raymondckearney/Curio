@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       name: row.name,
       email: row.email,
       token: row.token,
-      url: `https://www.choosecurio.com/${row.purpose}?token=${row.token}`,
+      url: `https://www.choosecurio.com/go/${row.token}`,
     }));
 
     return res.status(200).json({ tokens: results });
