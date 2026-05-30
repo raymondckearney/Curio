@@ -602,8 +602,17 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
   );
 }
 
+const TOKEN_MESSAGES = {
+  used:      { title: "You've already completed this.", body: "Your results have been recorded. This link can only be used once." },
+  expired:   { title: "This link has expired.",         body: "Please contact your Curio coordinator for a new link." },
+  not_found: { title: "This link is invalid.",          body: "The link you followed doesn't exist. Please check the URL or contact your Curio coordinator." },
+};
+
 export default function FitPage() {
-  const { participant, consume } = useTokenGate('fit');
+  const { status, participant, consume } = useTokenGate('fit');
+
+  const blocked = status !== 'loading' && status !== 'no_token' && status !== 'valid' && TOKEN_MESSAGES[status];
+
   return (
     <>
       <Head>
@@ -937,7 +946,16 @@ export default function FitPage() {
         </Link>
       </nav>
 
-      <ThreeBrainsAnalyzer participant={participant} consume={consume} />
+      {blocked ? (
+        <div style={{ maxWidth: 820, margin: '0 auto', padding: '80px clamp(24px,5vw,72px)' }}>
+          <div style={{ background: '#FAFAF9', border: '1px solid #E7E5E4', borderLeft: '3px solid #059669', borderRadius: 8, padding: '40px 48px', maxWidth: 520 }}>
+            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1C1917', marginBottom: 12 }}>{blocked.title}</div>
+            <p style={{ fontSize: '0.95rem', color: '#78716C', lineHeight: 1.75 }}>{blocked.body}</p>
+          </div>
+        </div>
+      ) : (
+        <ThreeBrainsAnalyzer participant={participant} consume={consume} />
+      )}
     </>
   );
 }
