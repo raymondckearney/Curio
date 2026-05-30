@@ -61,10 +61,7 @@ function GeneratePanel() {
     try {
       const res = await fetch('/api/tokens/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${prompt('Admin password:')}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           participants,
           purpose,
@@ -175,9 +172,7 @@ function StatusPanel() {
     if (!engagementId.trim()) return setError('Enter an Engagement ID');
     setLoading(true);
     try {
-      const res = await fetch(`/api/tokens/status?engagement_id=${encodeURIComponent(engagementId.trim())}`, {
-        headers: { Authorization: `Bearer ${prompt('Admin password:')}` },
-      });
+      const res = await fetch(`/api/tokens/status?engagement_id=${encodeURIComponent(engagementId.trim())}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setTokens(data.tokens);
