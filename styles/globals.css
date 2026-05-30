@@ -868,3 +868,5 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
   .footer-bottom   { flex-direction: column; gap: 10px; text-align: center; }
   .app-grid        { grid-template-columns: 1fr; }
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }
