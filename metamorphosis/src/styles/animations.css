@@ -1,3 +1,0 @@
-/* Shared Framer Motion variant styles */
-.fade-up-initial  { opacity: 0; transform: translateY(30px); }
-.fade-up-animate  { opacity: 1; transform: translateY(0); }
