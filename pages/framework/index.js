@@ -33,7 +33,7 @@ export default function Framework() {
               <img src="/images/framework-hero.png" alt="MindPrint Framework" />
             </div>
             <h1 className="fw-page-title">MindPrint™<br />Framework</h1>
-            <Link href="/assessment/" className="btn btn-gold fw-hero-btn">Take MindPrint™ Quiz</Link>
+            <Link href="/assessment/intro" className="btn btn-gold fw-hero-btn">Take MindPrint™ Quiz</Link>
           </div>
           <p className="fw-page-sub reveal reveal-d1">Everyone solves problems differently. MindPrint™ reveals how by identifying each person&apos;s natural orientation across three dimensions: <strong style={{ color: '#fff', fontWeight: 700 }}>WHY</strong> (purpose), <strong style={{ color: '#fff', fontWeight: 700 }}>WHAT</strong> (progress), and <strong style={{ color: '#fff', fontWeight: 700 }}>HOW</strong> (precision). The order matters: primary energizes, secondary sustains, tertiary drains. Understanding that hierarchy is the key to productivity, happiness and fulfillment.</p>
         </div>
@@ -137,7 +137,7 @@ export default function Framework() {
           <h2 className="reveal">Discover your profile.</h2>
           <p className="reveal reveal-d1">Take the assessment and discover your team&apos;s cognitive composition — and what to build around it.</p>
           <div className="cta-btns reveal reveal-d2">
-            <Link href="/assessment/" className="btn btn-gold">Take MindPrint™ Quiz</Link>
+            <Link href="/assessment/intro" className="btn btn-gold">Take MindPrint™ Quiz</Link>
             <a href="mailto:hello@curio.com" className="btn btn-ghost">Schedule a Conversation</a>
           </div>
         </div>
