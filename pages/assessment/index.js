@@ -33,8 +33,8 @@ export default function Assessment() {
 
     if (embedRef.current) {
       const hiddenParts = [];
-      if (name)  hiddenParts.push(`name=${name}`);
-      if (email) hiddenParts.push(`email=${email}`);
+      if (name)  hiddenParts.push(`participant_name=${name}`);
+      if (email) hiddenParts.push(`participant_email=${email}`);
       if (token) hiddenParts.push(`participant_token=${token}`);
       if (hiddenParts.length) {
         embedRef.current.setAttribute('data-tf-hidden', hiddenParts.join(','));

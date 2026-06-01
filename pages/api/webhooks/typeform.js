@@ -86,9 +86,9 @@ export default async function handler(req, res) {
     const y_score = hidden.y_score != null ? parseInt(hidden.y_score, 10)
                   : getVariable('y_score') ?? getAnswerNumber('y_score');
 
-    const name  = hidden.name  || null;
-    const email = hidden.email || null;
-    const token = hidden.token || hidden.participant_token || null;
+    const name  = hidden.participant_name  || hidden.name  || null;
+    const email = hidden.participant_email || hidden.email || null;
+    const token = hidden.participant_token || hidden.token || null;
 
     // Calculate profile type from scores
     const type = determineType(h_score || 0, w_score || 0, y_score || 0);
