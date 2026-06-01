@@ -90,8 +90,20 @@ export default async function handler(req, res) {
     const email = hidden.participant_email || hidden.email || null;
     const token = hidden.participant_token || hidden.token || null;
 
+    // Abort with a clear error if scores are missing — don't silently route to wrong profile
+    if (h_score == null || w_score == null || y_score == null) {
+      console.error('[typeform webhook] MISSING SCORES — cannot determine type', { h_score, w_score, y_score, variables: variables.map(v => v.key) });
+      await dbInsert('assessments', {
+        token, name, email,
+        type: 'unknown',
+        h_score: null, w_score: null, y_score: null,
+        submitted_at: new Date().toISOString(),
+      });
+      return res.status(200).json({ ok: false, error: 'missing_scores' });
+    }
+
     // Calculate profile type from scores
-    const type = determineType(h_score || 0, w_score || 0, y_score || 0);
+    const type = determineType(h_score, w_score, y_score);
 
     console.log('[typeform webhook] scores', { h_score, w_score, y_score, type, token });
 
