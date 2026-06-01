@@ -228,7 +228,7 @@ export default function Home() {
               <p className="mp-intro-body">Strategic harmony happens when people are aligned to work that plays to their primary and secondary, and shielded, where possible, from sustained work in their tertiary.</p>
               <div className="mp-intro-btns">
                 <Link href="/framework/" className="btn btn-gold">Explore MindPrint™ Framework</Link>
-                <Link href="/assessment/intro" className="btn btn-outline">Take MindPrint™ Quiz</Link>
+                {/* QUIZ BUTTON — uncomment to re-enable: <Link href="/assessment/intro" className="btn btn-outline">Take MindPrint™ Quiz</Link> */}
               </div>
             </div>
             <div className="mp-intro-img reveal reveal-d1">
