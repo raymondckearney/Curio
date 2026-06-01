@@ -35,7 +35,7 @@ export default function Assessment() {
       const hiddenParts = [];
       if (name)  hiddenParts.push(`name=${name}`);
       if (email) hiddenParts.push(`email=${email}`);
-      if (token) hiddenParts.push(`token=${token}`);
+      if (token) hiddenParts.push(`participant_token=${token}`);
       if (hiddenParts.length) {
         embedRef.current.setAttribute('data-tf-hidden', hiddenParts.join(','));
       }

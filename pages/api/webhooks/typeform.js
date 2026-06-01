@@ -88,7 +88,7 @@ export default async function handler(req, res) {
 
     const name  = hidden.name  || null;
     const email = hidden.email || null;
-    const token = hidden.token || null;
+    const token = hidden.token || hidden.participant_token || null;
 
     // Calculate profile type from scores
     const type = determineType(h_score || 0, w_score || 0, y_score || 0);
