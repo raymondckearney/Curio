@@ -343,7 +343,7 @@ export default function Home() {
           <h2 className="reveal">Ready to unlock your<br />team&apos;s full potential?</h2>
           <p className="reveal reveal-d1">Let&apos;s start with a conversation about your team, your challenges, and how Curio can transform the way you work.</p>
           <div className="cta-btns reveal reveal-d2">
-            <a href="mailto:hello@curio.com" className="btn btn-outline">Schedule a Conversation</a>
+            <a href="mailto:raymondckearney@gmail.com" className="btn btn-outline">Schedule a Conversation</a>
           </div>
         </div>
       </section>
