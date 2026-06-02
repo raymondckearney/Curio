@@ -29,12 +29,12 @@ export default function AssessmentIntro() {
 
           <h1 style={s.heading}>
             {displayName
-              ? <>{displayName},<br />you've been invited.</>
-              : <>You've been invited.</>}
+              ? <>{displayName}, you've been invited to discover your MindPrint™ Profile.</>
+              : <>You've been invited to discover your MindPrint™ Profile.</>}
           </h1>
 
           <p style={s.intro}>
-            You're about to discover your <strong>MindPrint™ Profile</strong> — a framework for understanding how you think, what energizes you, and how you do your best work.
+            This assessment is designed to identify your natural orientation for solving problems and what type of thinking energizes you.
           </p>
 
           <div style={s.divider} />
@@ -42,11 +42,11 @@ export default function AssessmentIntro() {
           <div style={s.metaRow}>
             <div style={s.metaItem}>
               <span style={s.metaIcon}>⏱</span>
-              <span style={s.metaText}>About 5 minutes</span>
+              <span style={s.metaText}>7–10 minutes</span>
             </div>
             <div style={s.metaItem}>
               <span style={s.metaIcon}>✦</span>
-              <span style={s.metaText}>15 questions</span>
+              <span style={s.metaText}>23 questions</span>
             </div>
             <div style={s.metaItem}>
               <span style={s.metaIcon}>◆</span>
@@ -55,7 +55,7 @@ export default function AssessmentIntro() {
           </div>
 
           <div style={s.tip}>
-            <strong>One tip:</strong> Go with your first instinct. There are no right or wrong answers — only what's true for you.
+            <strong>Tip:</strong> Go with your first instinct. There are no right or wrong answers — only what's true for you.
           </div>
 
           <Link href={assessmentUrl} style={s.btn}>
