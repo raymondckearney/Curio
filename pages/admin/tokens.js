@@ -303,7 +303,7 @@ function AssessmentsPanel() {
             <table style={s.table}>
               <thead>
                 <tr>
-                  {['Name', 'Email', 'Company', 'Role', 'Type', 'H Score', 'W Score', 'Y Score', 'Submitted At'].map(h => (
+                  {['Reg. Name', 'Reg. Email', 'Quiz Name', 'Quiz Email', 'Company', 'Role', 'Type', 'H Score', 'W Score', 'Y Score', 'Submitted At'].map(h => (
                     <th key={h} style={s.th}>{h}</th>
                   ))}
                 </tr>
@@ -311,6 +311,8 @@ function AssessmentsPanel() {
               <tbody>
                 {assessments.map((a, i) => (
                   <tr key={a.id || i} style={i % 2 === 0 ? s.trEven : {}}>
+                    <td style={s.td}>{a.reg_name || '—'}</td>
+                    <td style={s.td}>{a.reg_email || '—'}</td>
                     <td style={s.td}>{a.name || '—'}</td>
                     <td style={s.td}>{a.email || '—'}</td>
                     <td style={s.td}>{a.company || '—'}</td>
@@ -328,7 +330,7 @@ function AssessmentsPanel() {
                 ))}
                 {assessments.length === 0 && (
                   <tr>
-                    <td colSpan={9} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>
+                    <td colSpan={11} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>
                       No assessments yet.
                     </td>
                   </tr>
