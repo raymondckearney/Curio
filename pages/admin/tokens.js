@@ -159,7 +159,7 @@ function GeneratePanel() {
             <table style={s.table}>
               <thead>
                 <tr>
-                  {['Name', 'Email', 'URL', ''].map(h => (
+                  {['Name', 'Email', 'Company', 'Role', 'URL', ''].map(h => (
                     <th key={h} style={s.th}>{h}</th>
                   ))}
                 </tr>
@@ -168,7 +168,9 @@ function GeneratePanel() {
                 {results.map((r, i) => (
                   <tr key={i} style={i % 2 === 0 ? s.trEven : {}}>
                     <td style={s.td}>{r.name}</td>
-                    <td style={s.td}>{r.email}</td>
+                    <td style={s.td}>{r.email || '—'}</td>
+                    <td style={s.td}>{r.company || '—'}</td>
+                    <td style={s.td}>{r.role || '—'}</td>
                     <td style={{ ...s.td, ...s.urlCell }}>{r.url}</td>
                     <td style={s.td}>
                       <button style={s.copyBtn} onClick={() => copyOne(r.url)}>Copy</button>
@@ -230,7 +232,7 @@ function StatusPanel() {
             <table style={s.table}>
               <thead>
                 <tr>
-                  {['Name', 'Email', 'Status', 'Used At', 'Result'].map(h => (
+                  {['Name', 'Email', 'Company', 'Role', 'Status', 'Used At', 'Result'].map(h => (
                     <th key={h} style={s.th}>{h}</th>
                   ))}
                 </tr>
@@ -239,7 +241,9 @@ function StatusPanel() {
                 {tokens.map((t, i) => (
                   <tr key={i} style={i % 2 === 0 ? s.trEven : {}}>
                     <td style={s.td}>{t.name}</td>
-                    <td style={s.td}>{t.email}</td>
+                    <td style={s.td}>{t.email || '—'}</td>
+                    <td style={s.td}>{t.company || '—'}</td>
+                    <td style={s.td}>{t.role || '—'}</td>
                     <td style={s.td}>
                       <span style={t.used ? s.badgeUsed : s.badgePending}>
                         {t.used ? 'Completed' : 'Pending'}
@@ -299,7 +303,7 @@ function AssessmentsPanel() {
             <table style={s.table}>
               <thead>
                 <tr>
-                  {['Name', 'Email', 'Type', 'H Score', 'W Score', 'Y Score', 'Submitted At'].map(h => (
+                  {['Name', 'Email', 'Company', 'Role', 'Type', 'H Score', 'W Score', 'Y Score', 'Submitted At'].map(h => (
                     <th key={h} style={s.th}>{h}</th>
                   ))}
                 </tr>
@@ -309,6 +313,8 @@ function AssessmentsPanel() {
                   <tr key={a.id || i} style={i % 2 === 0 ? s.trEven : {}}>
                     <td style={s.td}>{a.name || '—'}</td>
                     <td style={s.td}>{a.email || '—'}</td>
+                    <td style={s.td}>{a.company || '—'}</td>
+                    <td style={s.td}>{a.role || '—'}</td>
                     <td style={s.td}>
                       {a.type ? (
                         <span style={s.badgeType}>{a.type.toUpperCase()}</span>
@@ -322,7 +328,7 @@ function AssessmentsPanel() {
                 ))}
                 {assessments.length === 0 && (
                   <tr>
-                    <td colSpan={7} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>
+                    <td colSpan={9} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>
                       No assessments yet.
                     </td>
                   </tr>
