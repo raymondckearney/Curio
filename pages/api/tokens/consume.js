@@ -20,10 +20,12 @@ export default async function handler(req, res) {
     result_payload: result_payload ?? null,
   });
 
-  // Non-blocking notification email
-  sendNotification({ row, result_payload, usedAt }).catch(err =>
-    console.error('[consume] email notification failed:', err)
-  );
+  // Await notification so Vercel doesn't kill the function before Resend responds
+  try {
+    await sendNotification({ row, result_payload, usedAt });
+  } catch (err) {
+    console.error('[consume] email notification failed:', err);
+  }
 
   return res.status(200).json({ success: true });
 }
