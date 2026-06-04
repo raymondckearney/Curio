@@ -1,11 +1,21 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 import profiles from '../../lib/profiles';
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { type, name } = router.query;
+  const { type, name, token } = router.query;
+
+  useEffect(() => {
+    if (!router.isReady || !token || !type) return;
+    fetch('/api/tokens/consume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, result_payload: { type } }),
+    }).catch(() => {});
+  }, [router.isReady, token, type]);
 
   const profile = type ? profiles[type] : null;
 

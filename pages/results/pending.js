@@ -24,8 +24,9 @@ export default function ResultsPending() {
         if (res.ok) {
           const data = await res.json();
           if (data.type) {
-            const dest = `/results/${data.type}${name ? `?name=${encodeURIComponent(name)}` : ''}`;
-            window.location.href = dest;
+            const qs = new URLSearchParams({ token });
+            if (name) qs.set('name', name);
+            window.location.href = `/results/${data.type}?${qs}`;
             return;
           }
         }
