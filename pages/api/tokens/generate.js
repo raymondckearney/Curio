@@ -15,10 +15,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'participants, purpose, and engagement_id are required' });
     }
 
-    const rows = participants.map(({ name, email }) => ({
+    const rows = participants.map(({ name, email, company, role }) => ({
       token: crypto.randomUUID(),
       name,
-      email,
+      email: email || null,
+      company: company || null,
+      role: role || null,
       purpose,
       engagement_id,
       expires_at: expires_at || null,
@@ -30,6 +32,8 @@ export default async function handler(req, res) {
     const results = inserted.map(row => ({
       name: row.name,
       email: row.email,
+      company: row.company,
+      role: row.role,
       token: row.token,
       url: `https://www.choosecurio.com/go/${row.token}`,
     }));

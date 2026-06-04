@@ -74,11 +74,11 @@ function GeneratePanel() {
     setResults(null);
     const lines = participantText.trim().split('\n').filter(Boolean);
     const participants = lines.map(line => {
-      const [name, ...rest] = line.split(',');
-      return { name: name.trim(), email: rest.join(',').trim() };
-    }).filter(p => p.name && p.email);
+      const [name, email, company, role] = line.split(',').map(s => s.trim());
+      return { name: name || '', email: email || '', company: company || '', role: role || '' };
+    }).filter(p => p.name);
 
-    if (!participants.length) return setError('Enter at least one participant as "Name, email"');
+    if (!participants.length) return setError('Enter at least one participant (Name required, email optional)');
     if (!engagementId.trim()) return setError('Engagement ID is required');
 
     setLoading(true);
@@ -133,12 +133,12 @@ function GeneratePanel() {
         <input style={s.input} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
       </div>
       <div style={s.fieldGroup}>
-        <label style={s.label}>Participants — one per line: <code style={s.code}>Name, email</code></label>
+        <label style={s.label}>Participants — one per line: <code style={s.code}>Name, email, Company, Role</code> (email, Company, Role all optional)</label>
         <textarea
           style={s.textarea}
           value={participantText}
           onChange={e => setParticipantText(e.target.value)}
-          placeholder={"Alex Smith, alex@example.com\nJordan Lee, jordan@example.com"}
+          placeholder={"Alex Smith, alex@example.com, Acme Corp, Engineer\nJordan Lee, jordan@example.com\nSam Taylor"}
           rows={6}
         />
       </div>
