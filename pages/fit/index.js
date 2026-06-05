@@ -98,6 +98,7 @@ function BulletList({ items, muted }) {
 
 function ThreeBrainsAnalyzer({ participant, consume }) {
   const [selectedType, setSelectedType] = useState("");
+  const [participantName, setParticipantName] = useState(participant?.name || "");
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
@@ -110,7 +111,7 @@ function ThreeBrainsAnalyzer({ participant, consume }) {
     if (saved) {
       try {
         const s = JSON.parse(saved);
-        if (s.result) { setResult(s.result); setRole(s.role); setSelectedType(s.selectedType); }
+        if (s.result) { setResult(s.result); setRole(s.role); setSelectedType(s.selectedType); if (s.participantName) setParticipantName(s.participantName); }
       } catch {}
       sessionStorage.removeItem('curio-print-state');
     }
@@ -358,7 +359,7 @@ For this person that means:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Role Alignment — ${esc(role)} — Curio</title>
+<title>Role Alignment${participantName ? ` — ${esc(participantName)}` : ''} — ${esc(role)} — Curio</title>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -393,6 +394,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
 .pcombo{font-size:6.5pt;font-weight:700;letter-spacing:0.1em;color:#059669;margin-bottom:1px}
 .ptagline{font-style:italic;font-size:7pt;color:#57534E;margin-bottom:2px}
 .preason{font-size:7pt;color:#78716C;line-height:1.4}
+.participant-name{font-family:'Caveat',cursive;font-size:26pt;font-weight:700;color:#0F172A;line-height:1;margin-bottom:10px}
 .footer{margin-top:13px;padding-top:9px;border-top:1px solid #E7E5E4;display:flex;justify-content:space-between;align-items:center;font-size:6.5pt;color:#A8A29E}
 .flogo{font-family:'Caveat',cursive;font-size:13pt;font-weight:700;color:#1C1917}
 .flogo em{color:#059669;font-style:normal}
@@ -407,6 +409,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
     <div class="logo">Curio<em>.</em></div>
     <div class="hdr-right"><strong>Role Alignment Analysis</strong>${esc(today)}</div>
   </div>
+  ${participantName ? `<div class="participant-name">${esc(participantName)}</div>` : ''}
   <div class="score-row">
     <div class="sinfo">
       <div class="tlabel">${esc(currentType.label)} &middot; ${esc(currentType.tagline)}</div>
@@ -475,6 +478,17 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
 
       <div className="step-block">
         <div className="step-label">Step One</div>
+        <div className="step-title">Enter your name</div>
+        <input
+          className="role-input"
+          value={participantName}
+          onChange={e => setParticipantName(e.target.value)}
+          placeholder="e.g. Alex Smith"
+        />
+      </div>
+
+      <div className="step-block">
+        <div className="step-label">Step Two</div>
         <div className="step-title">Select your Three Brains type</div>
         <div className="type-grid">
           {TYPES.map(t => (
@@ -491,7 +505,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
       </div>
 
       <div className="step-block">
-        <div className="step-label">Step Two</div>
+        <div className="step-label">Step Three</div>
         <div className="step-title">Enter your current role</div>
         <input
           className="role-input"

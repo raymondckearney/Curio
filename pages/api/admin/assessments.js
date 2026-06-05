@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     const tokens = assessments.map(a => a.token).filter(Boolean);
     let tokenMap = {};
     if (tokens.length) {
-      const ids = tokens.map(t => `"${t}"`).join(',');
+      const ids = tokens.join(',');
       const tRes = await fetch(
         `${SUPABASE_URL}/rest/v1/tokens?token=in.(${ids})&select=token,name,email`,
         { headers }
