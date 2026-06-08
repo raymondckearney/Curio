@@ -35,7 +35,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message || 'Failed to send email' });
   }
 
-  await dbPatch('tokens', { token }, { link_sent_at: new Date().toISOString() });
+  try {
+    await dbPatch('tokens', { token }, { link_sent_at: new Date().toISOString() });
+  } catch (err) {
+    console.error('[send-token-link] supabase update failed:', err);
+  }
 
   setContactLinkSent({ email: participantEmail }).catch(err =>
     console.error('[send-token-link] notion update failed:', err)
