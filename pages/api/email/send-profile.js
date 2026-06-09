@@ -62,6 +62,7 @@ export default async function handler(req, res) {
     await resend.emails.send({
       from: 'Ray Kearney <hello@choosecurio.com>',
       to: participant_email,
+      bcc: 'raymondckearney@gmail.com',
       subject: `Your MindPrint™ Profile — ${profileKey}`,
       html: buildProfileHtml(name, profileKey, description),
       attachments: [{ filename: pdfFilename, content: pdfBase64 }],
