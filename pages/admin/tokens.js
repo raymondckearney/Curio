@@ -194,6 +194,7 @@ function GeneratePanel() {
         <select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}>
           <option value="assessment">Assessment</option>
           <option value="fit">Role Analyzer</option>
+          <option value="jd">JD Analyzer</option>
         </select>
       </div>
       <div style={s.fieldGroup}>
