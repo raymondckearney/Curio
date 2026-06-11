@@ -1,5 +1,6 @@
 import { dbInsert } from '../../../lib/supabase';
 import { getAdminSession } from '../../../lib/adminSession';
+import { createSendLinksTask } from '../../../lib/notion';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -37,6 +38,10 @@ export default async function handler(req, res) {
       token: row.token,
       url: `https://www.choosecurio.com/go/${row.token}`,
     }));
+
+    createSendLinksTask({ engagementId: engagement_id.trim(), participantCount: rows.length }).catch(err =>
+      console.error('[generate] notion follow-up failed:', err)
+    );
 
     return res.status(200).json({ tokens: results });
   } catch (err) {
