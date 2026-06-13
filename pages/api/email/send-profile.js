@@ -60,7 +60,7 @@ export default async function handler(req, res) {
 
   try {
     await resend.emails.send({
-      from: 'Ray Kearney <hello@choosecurio.com>',
+      from: 'Curio <hello@choosecurio.com>',
       to: participant_email,
       bcc: ['raymondckearney@gmail.com'],
       subject: `Your MindPrint™ Profile — ${profileKey}`,
@@ -80,7 +80,7 @@ function buildProfileHtml(name, profile, description) {
   return `<!DOCTYPE html>
 <html>
 <head>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap');</style>
 </head>
 <body style="margin:0;padding:0;background:#F8FAFC;font-family:'DM Sans',Helvetica,Arial,sans-serif">
   <div style="max-width:560px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
@@ -103,7 +103,6 @@ function buildProfileHtml(name, profile, description) {
       <p style="margin:0 0 32px;line-height:1.7;color:#0F172A">Your full profile report is attached to this email.</p>
 
       <p style="margin:0;line-height:1.6;color:#64748B;font-size:0.9rem">
-        Ray Kearney<br>
         <span style="color:#059669;font-weight:600">Curio</span>
       </p>
     </div>

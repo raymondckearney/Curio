@@ -4,7 +4,8 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        {/* Google Analytics */}
+        <link rel="icon" type="image/png" href="/images/mindprint-car.png" />
+      {/* Google Analytics */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-HYNDBMVCZ8" />
         <script
           dangerouslySetInnerHTML={{
