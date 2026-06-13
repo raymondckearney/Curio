@@ -4,7 +4,7 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <link rel="icon" type="image/png" href="/images/mindprint-car.png" />
+        <link rel="icon" type="image/png" href="/images/framework-hero.png" />
       {/* Google Analytics */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-HYNDBMVCZ8" />
         <script
