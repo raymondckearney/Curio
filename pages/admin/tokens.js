@@ -60,25 +60,57 @@ export default function AdminTokens() {
 
 // ─── Shared: Send Link inline panel ──────────────────────────────────────────
 
-function buildDefaultMessage(name, tokenUrl) {
-  return `Hi ${name},
+const PURPOSE_CONTENT = {
+  assessment: {
+    subject: "You're invited to take the MindPrint™ Assessment",
+    body: (name, url) => `Hi ${name},
 
 I'd like to invite you to take the MindPrint™ Assessment — a short exercise that identifies how you're naturally wired to think through and solve problems.
 
-Your personal link: ${tokenUrl}
+Your personal link: ${url}
 
 This link is unique to you and can only be used once. It will take approximately 10 minutes to complete.
 
 Looking forward to sharing the results with you.
 
-Ray Kearney
-Curio`;
+Curio`,
+  },
+  fit: {
+    subject: "Your Role Analyzer link from Curio",
+    body: (name, url) => `Hi ${name},
+
+Here is your personal link to the MindPrint™ Role Analyzer — a tool that shows how your cognitive profile matches the demands of a specific role.
+
+Your personal link: ${url}
+
+This link is unique to you and can only be used once.
+
+Curio`,
+  },
+  jd: {
+    subject: "Your JD Analyzer link from Curio",
+    body: (name, url) => `Hi ${name},
+
+Here is your personal link to the MindPrint™ JD Analyzer — a tool that breaks down any job description by cognitive demand and ranks how well each MindPrint profile fits the role.
+
+Your personal link: ${url}
+
+This link is unique to you and can only be used once.
+
+Curio`,
+  },
+};
+
+function buildDefaultContent(purpose, name, tokenUrl) {
+  const content = PURPOSE_CONTENT[purpose] || PURPOSE_CONTENT.assessment;
+  return { subject: content.subject, message: content.body(name, tokenUrl) };
 }
 
-function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, onClose, onSent }) {
+function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, purpose, onClose, onSent }) {
+  const defaults = buildDefaultContent(purpose || 'assessment', participantName || 'there', tokenUrl);
   const [to, setTo] = useState(participantEmail || '');
-  const [subject, setSubject] = useState("You're invited to take the MindPrint™ Assessment");
-  const [message, setMessage] = useState(buildDefaultMessage(participantName || 'there', tokenUrl));
+  const [subject, setSubject] = useState(defaults.subject);
+  const [message, setMessage] = useState(defaults.message);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
@@ -272,6 +304,7 @@ function GeneratePanel() {
                             participantName={r.name}
                             participantEmail={r.email}
                             tokenUrl={r.url}
+                            purpose={purpose}
                             onClose={() => setOpenSendLink(null)}
                             onSent={() => {
                               setSentLinks(prev => new Set([...prev, r.token]));
@@ -455,6 +488,7 @@ function StatusPanel() {
                           participantName={t.name}
                           participantEmail={t.email}
                           tokenUrl={tokenUrl}
+                          purpose={t.purpose}
                           onClose={() => setOpenSendLink(null)}
                           onSent={() => {
                             setSentLinks(prev => new Set([...prev, t.token]));
