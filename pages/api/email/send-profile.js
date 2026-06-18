@@ -60,7 +60,7 @@ export default async function handler(req, res) {
 
   try {
     await resend.emails.send({
-      from: 'Ray Kearney <hello@choosecurio.com>',
+      from: 'Curio <hello@choosecurio.com>',
       to: participant_email,
       bcc: ['raymondckearney@gmail.com'],
       subject: `Your MindPrint™ Profile — ${profileKey}`,
