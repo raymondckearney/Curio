@@ -261,7 +261,7 @@ export default function Types() {
           <p className="reveal reveal-d1">Take the assessment and discover your primary and secondary orientation — and how to build a team around it.</p>
           <div className="cta-btns reveal reveal-d2">
             {/* QUIZ BUTTON — uncomment to re-enable: <Link href="/assessment/intro" className="btn btn-gold">Take MindPrint™ Quiz</Link> */}
-            <a href="mailto:raymondckearney@gmail.com" className="btn btn-ghost">Schedule a Conversation</a>
+            <a href="mailto:hello@choosecurio.com" className="btn btn-ghost">Schedule a Conversation</a>
           </div>
         </div>
       </section>

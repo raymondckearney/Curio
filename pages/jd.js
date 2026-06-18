@@ -134,34 +134,32 @@ function ProfileCard({ typeId, score, analysis, variant, rank }) {
         <ScoreRing score={score} size={isFull ? 120 : 88} />
       </div>
 
-      {showDetail && (
-        <div className="profile-detail">
-          {!isFull && analysis.rationale && (
-            <p className="profile-rationale" style={{ marginBottom: 16 }}>{analysis.rationale}</p>
-          )}
-          <div className="detail-grid">
-            <div className="result-card result-card--accent">
-              <div className="result-card-label">Likely succeeds &amp; enjoys</div>
-              <BulletList items={analysis.succeedEnjoy} />
-            </div>
-            <div className="result-card">
-              <div className="result-card-label">May struggle with</div>
-              <BulletList items={analysis.challenges} muted />
-            </div>
+      <div className={`profile-detail${showDetail ? '' : ' profile-detail--hidden'}`}>
+        {!isFull && analysis.rationale && (
+          <p className="profile-rationale" style={{ marginBottom: 16 }}>{analysis.rationale}</p>
+        )}
+        <div className="detail-grid">
+          <div className="result-card result-card--accent">
+            <div className="result-card-label">Likely succeeds &amp; enjoys</div>
+            <BulletList items={analysis.succeedEnjoy} />
           </div>
-          <div className="result-card result-card--recs">
-            <div className="result-card-label">How to help them succeed</div>
-            <div className="recs-list">
-              {(analysis.recommendations || []).map((rec, i) => (
-                <div key={i} className="rec-item">
-                  <span className="rec-num">{i + 1}</span>
-                  <span className="bullet-text">{rec}</span>
-                </div>
-              ))}
-            </div>
+          <div className="result-card">
+            <div className="result-card-label">May struggle with</div>
+            <BulletList items={analysis.challenges} muted />
           </div>
         </div>
-      )}
+        <div className="result-card result-card--recs">
+          <div className="result-card-label">How to help them succeed</div>
+          <div className="recs-list">
+            {(analysis.recommendations || []).map((rec, i) => (
+              <div key={i} className="rec-item">
+                <span className="rec-num">{i + 1}</span>
+                <span className="bullet-text">{rec}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {!isFull && (
         <button className="expand-btn" onClick={() => setExpanded(e => !e)}>
@@ -546,9 +544,15 @@ COUNTS per profile (do not deviate): succeedEnjoy: exactly 3, challenges: exactl
             ))}
           </div>
 
-          <button className="reset-btn" onClick={() => { setResult(null); setJdText(''); setJdUrl(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-            ← Analyze a different role
-          </button>
+          <div className="result-actions">
+            <button className="download-btn" onClick={() => window.print()}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download PDF
+            </button>
+            <button className="reset-btn" onClick={() => { setResult(null); setJdText(''); setJdUrl(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              ← Analyze a different role
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -685,6 +689,7 @@ const css = `
   .profile-card--compact .profile-tagline { font-size: 1.2rem; margin-bottom: 8px; }
 
   .profile-detail { margin-top: 8px; }
+  .profile-detail--hidden { display: none; }
   .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
   .result-card { background: #fff; border: 1px solid #E7E5E4; border-radius: 6px; padding: 22px; }
   .result-card--accent { border-left: 2px solid #059669; }
@@ -705,8 +710,24 @@ const css = `
   .expand-btn { margin-top: 16px; padding: 7px 0; background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; color: #059669; cursor: pointer; transition: opacity 0.15s; }
   .expand-btn:hover { opacity: 0.7; }
 
-  .reset-btn { width: 100%; padding: 16px 24px; margin-top: 40px; background: transparent; border: 1px solid #E7E5E4; border-radius: 6px; color: #A8A29E; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; transition: all 0.18s ease; }
+  .result-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 40px; }
+
+  .download-btn { width: 100%; padding: 16px 24px; background: #0F172A; border: none; border-radius: 6px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.18s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .download-btn:hover { background: #1E293B; }
+
+  .reset-btn { width: 100%; padding: 16px 24px; background: transparent; border: 1px solid #E7E5E4; border-radius: 6px; color: #A8A29E; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; transition: all 0.18s ease; }
   .reset-btn:hover { border-color: #A8A29E; color: #1C1917; }
+
+  @media print {
+    .nav, .input-tabs, .jd-input, .url-input, .error-box, .analyze-btn, .results-rule, .cache-badge, .expand-btn, .result-actions, .page-rule { display: none !important; }
+    body { background: #fff; }
+    .page { padding: 0; max-width: 100%; }
+    .profile-card--compact { break-inside: avoid; }
+    .profile-card--full { break-inside: avoid; }
+    .other-grid { grid-template-columns: 1fr 1fr; }
+    .detail-grid { grid-template-columns: 1fr 1fr; }
+    .profile-detail--hidden { display: block !important; }
+  }
 
   @media (max-width: 680px) {
     .other-grid { grid-template-columns: 1fr; }
