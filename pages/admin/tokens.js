@@ -528,10 +528,45 @@ function FitAnalysisPanel({ assessment, onClose }) {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [emailTo, setEmailTo] = useState(assessment.email || assessment.reg_email || '');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
 
   const type = FIT_TYPES.find(t => t.id === profileType);
   const details = FIT_TYPE_DETAILS[profileType];
   const tertiary = type ? ['WHY','WHAT','HOW'].find(b => b !== type.primary && b !== type.secondary) : null;
+
+  // Auto-run analysis when panel opens
+  useEffect(() => {
+    if (type && role.trim()) analyze();
+  }, []);
+
+  // Populate email draft once analysis completes
+  useEffect(() => {
+    if (!result) return;
+    const n = assessment.name || assessment.reg_name || 'there';
+    const pct = Math.round(result.score);
+    const label = pct>=75?'Strong Fit':pct>=60?'Good Fit':pct>=40?'Partial Fit':pct>=20?'Poor Fit':'Severe Mismatch';
+    const r = role.trim();
+    setEmailSubject(`Your MindPrint™ Role Fit Analysis — ${r}`);
+    setEmailBody(
+`Hi ${n},
+
+Attached is your MindPrint™ Role Fit Analysis for the ${r} position.
+
+The Role Fit Analysis evaluates how well your natural cognitive profile — the way you're wired to think, prioritize, and approach problems — aligns with the demands of a specific role. Rather than assessing your skills or experience, it identifies whether the type of thinking the role requires will energize or drain you.
+
+Attached you'll find:
+• Your fit score for the ${r} role (${pct}% — ${label})
+• What aspects of the role you're likely to enjoy and excel at
+• Areas where you may face more friction or drain
+• Specific recommendations for setting yourself up for success
+
+If you have any questions about your results, please don't hesitate to reach out.
+
+Curio`
+    );
+  }, [result]);
 
   async function callAPI(system, userContent, maxTokens, model = 'claude-haiku-4-5-20251001') {
     const response = await fetch('/api/analyze', {
@@ -734,9 +769,8 @@ For this person: ${dp}% in ${type.primary} (energizing), ${ds}% in ${type.second
   }
 
   async function sendEmail() {
-    const email = assessment.email || assessment.reg_email;
+    if (!emailTo.trim()) return setError('Email address is required');
     const name = assessment.name || assessment.reg_name;
-    if (!email) return setError('No email address found for this participant');
     setSending(true);
     setError('');
     try {
@@ -745,10 +779,12 @@ For this person: ${dp}% in ${type.primary} (energizing), ${ds}% in ${type.second
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           participant_name: name,
-          participant_email: email,
+          participant_email: emailTo.trim(),
           profile_type: profileType,
           role: role.trim(),
           result,
+          email_subject: emailSubject,
+          email_body: emailBody,
         }),
       });
       const data = await res.json();
@@ -785,74 +821,81 @@ For this person: ${dp}% in ${type.primary} (energizing), ${ds}% in ${type.second
 
   const pct = result ? Math.round(result.score) : 0;
   const scoreColor = pct>=75?'#059669':pct>=60?'#34D399':pct>=40?'#F59E0B':'#EF4444';
-  const scoreLabel = pct>=75?'Strong fit':pct>=60?'Good fit':pct>=40?'Partial fit':pct>=20?'Poor fit':'Severe mismatch';
+  const scoreLabel = pct>=75?'Strong Fit':pct>=60?'Good Fit':pct>=40?'Partial Fit':pct>=20?'Poor Fit':'Severe Mismatch';
 
   return (
     <div style={s.sendPanel}>
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
-          Role Fit Analysis — {profileType}
+      {/* Header row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Role Fit — {profileType}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <label style={s.sendLabel}>Role to analyze</label>
-            <input
-              style={s.sendInput}
-              value={role}
-              onChange={e => setRole(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && analyze()}
-              placeholder="e.g. Senior Product Manager, VP of Sales…"
-            />
-          </div>
-          <button style={s.btn} onClick={analyze} disabled={loading || !role.trim()}>
-            {loading ? (loadingStep || 'Analyzing…') : 'Analyze'}
-          </button>
-          <button style={s.btnSecondary} onClick={onClose}>Close</button>
-        </div>
+        <button style={s.btnSecondary} onClick={onClose}>Close</button>
       </div>
+
+      {/* Role field + re-analyze */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          <label style={s.sendLabel}>Role</label>
+          <input
+            style={s.sendInput}
+            value={role}
+            onChange={e => setRole(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !loading && analyze()}
+            placeholder="e.g. Senior Product Manager, VP of Sales…"
+          />
+        </div>
+        <button style={s.btnSecondary} onClick={analyze} disabled={loading || !role.trim()}>
+          {loading ? (loadingStep || 'Analyzing…') : result ? 'Re-analyze' : 'Analyze'}
+        </button>
+      </div>
+
+      {/* Loading state */}
+      {loading && (
+        <div style={{ padding: '12px 0', fontSize: '0.875rem', color: '#64748B' }}>
+          {loadingStep || 'Analyzing…'}
+        </div>
+      )}
 
       {error && <p style={s.error}>{error}</p>}
 
-      {result && (
-        <div style={{ marginTop: 16, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: `3px solid ${scoreColor}`, borderRadius: 6, padding: '12px 16px', flex: 1 }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: scoreColor, marginBottom: 4 }}>{profileType} &middot; {type?.tagline}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: scoreColor, fontFamily: "'Caveat', cursive" }}>{pct}% — {scoreLabel}</div>
-              {result.scoreRationale && <div style={{ fontSize: '0.8rem', color: '#57534E', lineHeight: 1.6, marginTop: 6 }}>{result.scoreRationale}</div>}
+      {/* Score banner + email composer */}
+      {result && !loading && (
+        <div>
+          {/* Compact score banner */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: `3px solid ${scoreColor}`, borderRadius: 6, padding: '10px 14px', marginBottom: 14 }}>
+            <span style={{ fontFamily: "'Caveat', cursive", fontSize: '1.4rem', fontWeight: 700, color: scoreColor }}>{pct}%</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151' }}>{scoreLabel}</span>
+            <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>· {type?.label}</span>
+          </div>
+
+          {/* Email composer */}
+          <div style={s.sendPanelGrid}>
+            <div style={s.sendField}>
+              <label style={s.sendLabel}>To</label>
+              <input style={s.sendInput} value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="recipient@example.com" />
+            </div>
+            <div style={s.sendField}>
+              <label style={s.sendLabel}>Subject</label>
+              <input style={s.sendInput} value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
+            </div>
+            <div style={{ ...s.sendField, gridColumn: '1 / -1' }}>
+              <label style={s.sendLabel}>Message <span style={{ fontWeight: 400, color: '#94A3B8' }}>(PDF analysis will be attached)</span></label>
+              <textarea style={{ ...s.sendTextarea, lineHeight: 1.7 }} rows={11} value={emailBody} onChange={e => setEmailBody(e.target.value)} />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 5, padding: '10px 12px' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#059669', marginBottom: 6 }}>Likely enjoys</div>
-              {(result.enjoys||[]).map((item,i) => <div key={i} style={{ fontSize: '0.78rem', color: '#374151', marginBottom: 3, paddingLeft: 10, position: 'relative' }}><span style={{ position:'absolute',left:0,top:5,width:4,height:4,borderRadius:'50%',background:'#059669',display:'block' }} />{item}</div>)}
-            </div>
-            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 5, padding: '10px 12px' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#059669', marginBottom: 6 }}>Likely excels at</div>
-              {(result.excels||[]).map((item,i) => <div key={i} style={{ fontSize: '0.78rem', color: '#374151', marginBottom: 3, paddingLeft: 10, position: 'relative' }}><span style={{ position:'absolute',left:0,top:5,width:4,height:4,borderRadius:'50%',background:'#059669',display:'block' }} />{item}</div>)}
-            </div>
-            <div style={{ background: '#FAFAF9', border: '1px solid #E2E8F0', borderRadius: 5, padding: '10px 12px' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716C', marginBottom: 6 }}>May struggle with</div>
-              {(result.struggles||[]).map((item,i) => <div key={i} style={{ fontSize: '0.78rem', color: '#57534E', marginBottom: 3, paddingLeft: 10, position: 'relative' }}><span style={{ position:'absolute',left:0,top:5,width:4,height:4,borderRadius:'50%',background:'#A8A29E',display:'block' }} />{item}</div>)}
-            </div>
-            <div style={{ background: '#FAFAF9', border: '1px solid #E2E8F0', borderRadius: 5, padding: '10px 12px' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716C', marginBottom: 6 }}>Recommendations</div>
-              {(result.recommendations||[]).map((rec,i) => <div key={i} style={{ fontSize: '0.75rem', color: '#374151', marginBottom: 5 }}><span style={{ fontSize:'0.6rem',fontWeight:700,color:'#059669',textTransform:'uppercase',letterSpacing:'0.1em' }}>{rec.category}: </span>{rec.action}</div>)}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <div style={s.sendActions}>
             {sent ? (
               <span style={s.sentBadge}>Email Sent ✓</span>
             ) : (
-              <button style={s.btn} onClick={sendEmail} disabled={sending || !(assessment.email || assessment.reg_email)}>
-                {sending ? 'Sending…' : `Send to ${assessment.email || assessment.reg_email || '(no email)'}`}
+              <button style={s.btn} onClick={sendEmail} disabled={sending || !emailTo.trim()}>
+                {sending ? 'Sending…' : 'Send Email + PDF'}
               </button>
             )}
             <button style={s.btnSecondary} onClick={downloadPDF}>Download PDF</button>
           </div>
-          {!assessment.email && !assessment.reg_email && (
+          {!emailTo.trim() && (
             <p style={{ ...s.error, marginTop: 6 }}>No email address on record for this participant.</p>
           )}
         </div>
