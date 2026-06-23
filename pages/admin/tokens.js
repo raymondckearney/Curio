@@ -521,7 +521,7 @@ const FIT_TYPE_DETAILS = {
 
 function FitAnalysisPanel({ assessment, onClose }) {
   const profileType = (assessment.type || '').toUpperCase().replace(/_/g, '-');
-  const [role, setRole] = useState(assessment.role || '');
+  const [role, setRole] = useState(assessment.role || assessment.reg_role || '');
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
   const [result, setResult] = useState(null);
