@@ -4,12 +4,12 @@ import { useRouter } from 'next/router';
 
 export default function AssessmentIntro() {
   const router = useRouter();
-  const { token, name, email } = router.query;
+  const { token, name, email, role } = router.query;
 
   const displayName = name ? String(name) : null;
 
   const assessmentUrl = token
-    ? `/assessment?token=${encodeURIComponent(token)}${name ? `&name=${encodeURIComponent(name)}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}`
+    ? `/assessment?token=${encodeURIComponent(token)}${name ? `&name=${encodeURIComponent(name)}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}${role ? `&role=${encodeURIComponent(role)}` : ''}`
     : '/assessment';
 
   return (

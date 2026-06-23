@@ -8,10 +8,11 @@ export async function getServerSideProps({ params }) {
     if (!rows.length) {
       return { redirect: { destination: '/go/invalid', permanent: false } };
     }
-    const { purpose, name, email } = rows[0];
+    const { purpose, name, email, role } = rows[0];
     const qs = new URLSearchParams({ token });
     if (name)  qs.set('name', name);
     if (email) qs.set('email', email);
+    if (role)  qs.set('role', role);
     // Assessment tokens go to the intro landing page first
     const dest = purpose === 'assessment' ? `/assessment/intro?${qs}` : `/${purpose}?${qs}`;
     return { redirect: { destination: dest, permanent: false } };

@@ -11,7 +11,7 @@ export default function Assessment() {
   useEffect(() => {
     if (!router.isReady) return;
 
-    const { token, name, email } = router.query;
+    const { token, name, email, role } = router.query;
 
     // Global callback that Typeform calls on submit via data-tf-on-submit
     window.__curioTfSubmit = () => {
@@ -35,6 +35,7 @@ export default function Assessment() {
       if (name)  hiddenParts.push(`participant_name=${name}`);
       if (email) hiddenParts.push(`participant_email=${email}`);
       if (token) hiddenParts.push(`participant_token=${token}`);
+      if (role)  hiddenParts.push(`role=${role}`);
       if (hiddenParts.length) {
         embedRef.current.setAttribute('data-tf-hidden', hiddenParts.join(','));
       }
