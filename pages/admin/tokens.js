@@ -1113,6 +1113,8 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
   const [actionMsg, setActionMsg] = useState('');
   const [actionErr, setActionErr] = useState('');
   const [restrictResults, setRestrictResults] = useState(account.restrict_results || false);
+  const [acctTokens, setAcctTokens] = useState(null);
+  const [acctTokensErr, setAcctTokensErr] = useState('');
 
   useEffect(() => {
     if (open && !detail) {
@@ -1122,6 +1124,21 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
         .catch(() => {});
     }
   }, [open, account.id]);
+
+  function loadAcctTokens() {
+    setAcctTokensErr('');
+    fetch(`/api/admin/accounts/${account.id}/tokens`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) setAcctTokensErr(data.error);
+        else setAcctTokens(data.tokens || []);
+      })
+      .catch(() => setAcctTokensErr('Failed to load tokens'));
+  }
+
+  useEffect(() => {
+    if (open && detailTab === 'tokens') loadAcctTokens();
+  }, [open, detailTab]);
 
   async function addUser() {
     if (!userEmail || !userPwd) return setActionErr('Email and password required');
@@ -1183,6 +1200,7 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
     if (!res.ok) return setActionErr(data.error || 'Failed');
     setEngId('');
     setActionMsg(`Linked ${data.linked} token(s) to this account`); setActionErr('');
+    loadAcctTokens();
   }
 
   async function toggleRestrict(val) {
@@ -1224,7 +1242,7 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
 
               {/* Sub-tabs */}
               <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #E2E8F0', marginBottom: 16 }}>
-                {['users', 'licenses', 'settings'].map(t => (
+                {['users', 'licenses', 'tokens', 'settings'].map(t => (
                   <button key={t} onClick={() => setDetailTab(t)} style={{ ...s.tab, ...(detailTab === t ? s.tabActive : {}), padding: '8px 14px', fontSize: '0.8rem' }}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </button>
@@ -1305,14 +1323,55 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
                     </div>
                     <button style={{ ...s.btn, marginTop: 12 }} onClick={addLicense}>Add License</button>
                   </div>
+                </>
+              )}
+
+              {detailTab === 'tokens' && (
+                <>
                   {/* Link engagement */}
-                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16 }}>
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
                     <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Link Token Engagement</p>
-                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: 12 }}>Link all tokens from an engagement ID to this account so participants can view their results here.</p>
+                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: 12 }}>Paste an Engagement ID to link all its tokens to this account. The client will then see those tokens in their portal.</p>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <input style={{ ...s.sendInput, flex: 1 }} value={engId} onChange={e=>setEngId(e.target.value)} placeholder="e.g. acme-2026-q1" />
                       <button style={s.btn} onClick={linkEngagement}>Link</button>
                     </div>
+                    {actionMsg && <p style={{ color: '#059669', fontSize: '0.8rem', marginTop: 8 }}>{actionMsg}</p>}
+                    {actionErr && <p style={s.error}>{actionErr}</p>}
+                  </div>
+                  {/* Linked tokens list */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 12 }}>
+                      Linked Tokens {acctTokens ? `(${acctTokens.length})` : ''}
+                    </p>
+                    {acctTokensErr && <p style={s.error}>{acctTokensErr}</p>}
+                    {!acctTokens && !acctTokensErr && <p style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Loading…</p>}
+                    {acctTokens && acctTokens.length === 0 && (
+                      <p style={{ fontSize: '0.8rem', color: '#94A3B8' }}>No tokens linked yet. Use the form above to link an engagement.</p>
+                    )}
+                    {acctTokens && acctTokens.length > 0 && (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={s.table}>
+                          <thead><tr>{['Name','Email','Role','Engagement','Status','Date'].map(h=><th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                          <tbody>
+                            {acctTokens.map((t, i) => (
+                              <tr key={t.token} style={i%2===0?s.trEven:{}}>
+                                <td style={s.td}>{t.name||'—'}</td>
+                                <td style={s.td}>{t.email||'—'}</td>
+                                <td style={s.td}>{t.role||'—'}</td>
+                                <td style={s.td}><code style={{ fontSize: '0.75rem' }}>{t.engagement_id||'—'}</code></td>
+                                <td style={s.td}>
+                                  <span style={t.used ? { background:'#D1FAE5',color:'#065F46',padding:'2px 9px',borderRadius:99,fontSize:'0.78rem',fontWeight:600 } : { background:'#FEF3C7',color:'#92400E',padding:'2px 9px',borderRadius:99,fontSize:'0.78rem',fontWeight:600 }}>
+                                    {t.used ? 'Completed' : 'Pending'}
+                                  </span>
+                                </td>
+                                <td style={s.td}>{t.used_at ? new Date(t.used_at).toLocaleDateString() : new Date(t.created_at).toLocaleDateString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
