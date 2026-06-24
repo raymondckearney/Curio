@@ -1115,6 +1115,10 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
   const [restrictResults, setRestrictResults] = useState(account.restrict_results || false);
   const [acctTokens, setAcctTokens] = useState(null);
   const [acctTokensErr, setAcctTokensErr] = useState('');
+  const [genQty, setGenQty] = useState('');
+  const [genEngId, setGenEngId] = useState('');
+  const [genMsg, setGenMsg] = useState('');
+  const [genErr, setGenErr] = useState('');
 
   useEffect(() => {
     if (open && !detail) {
@@ -1200,6 +1204,22 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
     if (!res.ok) return setActionErr(data.error || 'Failed');
     setEngId('');
     setActionMsg(`Linked ${data.linked} token(s) to this account`); setActionErr('');
+    loadAcctTokens();
+  }
+
+  async function generatePool() {
+    setGenErr(''); setGenMsg('');
+    const qty = parseInt(genQty, 10);
+    if (!qty || qty < 1) return setGenErr('Enter a valid quantity');
+    const res = await fetch(`/api/admin/accounts/${account.id}/generate-tokens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: qty, engagement_id: genEngId.trim() || undefined }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setGenErr(data.error || 'Failed');
+    setGenQty(''); setGenEngId('');
+    setGenMsg(`Created ${data.created} token${data.created !== 1 ? 's' : ''} (engagement: ${data.engagement_id})`);
     loadAcctTokens();
   }
 
@@ -1328,6 +1348,18 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
 
               {detailTab === 'tokens' && (
                 <>
+                  {/* Generate token pool */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Generate Token Pool</p>
+                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: 12 }}>Create blank tokens assigned directly to this account. The client can then send them to recipients from their portal.</p>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <input style={{ ...s.sendInput, width: 100 }} type="number" min="1" max="500" value={genQty} onChange={e=>setGenQty(e.target.value)} placeholder="Qty" />
+                      <input style={{ ...s.sendInput, flex: 1 }} value={genEngId} onChange={e=>setGenEngId(e.target.value)} placeholder="Engagement ID (optional, auto-generated if blank)" />
+                      <button style={s.btn} onClick={generatePool}>Generate</button>
+                    </div>
+                    {genMsg && <p style={{ color: '#059669', fontSize: '0.8rem', marginTop: 8 }}>{genMsg}</p>}
+                    {genErr && <p style={s.error}>{genErr}</p>}
+                  </div>
                   {/* Link engagement */}
                   <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
                     <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Link Token Engagement</p>
