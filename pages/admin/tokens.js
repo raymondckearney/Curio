@@ -894,6 +894,7 @@ For this person: ${dp}% in ${type.primary} (energizing), ${ds}% in ${type.second
               </button>
             )}
             <button style={s.btnSecondary} onClick={downloadPDF}>Download PDF</button>
+            <button style={s.btnSecondary} onClick={onClose}>Close</button>
           </div>
           {!emailTo.trim() && (
             <p style={{ ...s.error, marginTop: 6 }}>No email address on record for this participant.</p>
