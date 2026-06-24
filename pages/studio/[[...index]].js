@@ -5,7 +5,16 @@ export default function StudioPage() {
   const [error, setError] = useState(null)
   const [StudioComp, setStudioComp] = useState(null)
 
+  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET
+
   useEffect(() => {
+    if (!projectId || !dataset) {
+      setError(`Missing env vars. NEXT_PUBLIC_SANITY_PROJECT_ID="${projectId}", NEXT_PUBLIC_SANITY_DATASET="${dataset}"`)
+      setState('error')
+      return
+    }
+
     Promise.all([
       import('sanity'),
       import('../../sanity.config'),
@@ -34,7 +43,10 @@ export default function StudioPage() {
   if (state === 'loading') {
     return (
       <div style={{ padding: 40, fontFamily: 'sans-serif', color: '#555' }}>
-        Loading studio…
+        <p>Loading studio…</p>
+        <p style={{ fontSize: 12, marginTop: 8 }}>
+          Project: {projectId || '(not set)'} / Dataset: {dataset || '(not set)'}
+        </p>
       </div>
     )
   }
