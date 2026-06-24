@@ -3,6 +3,12 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
+const LICENSE_LABELS = {
+  assessment_tokens: 'Assessment Tokens',
+  role_analyzer: 'Role Fit Analyzer',
+  jd_analyzer: 'JD Analyzer',
+};
+
 export default function PortalDashboard() {
   const router = useRouter();
   const [me, setMe] = useState(null);
@@ -28,9 +34,11 @@ export default function PortalDashboard() {
   if (!me) return null;
 
   const licenses = data?.licenses || [];
-  const hasRoleFit = licenses.some(l => l.type === 'role_analyzer' && (!l.expires_at || new Date(l.expires_at) > new Date()));
-  const hasJD = licenses.some(l => l.type === 'jd_analyzer' && (!l.expires_at || new Date(l.expires_at) > new Date()));
-  const tokenLicense = licenses.find(l => l.type === 'assessment_tokens');
+  const now = new Date();
+  const activeLicenses = licenses.filter(l => !l.expires_at || new Date(l.expires_at) > now);
+  const hasRoleFit = activeLicenses.some(l => l.type === 'role_analyzer');
+  const hasJD = activeLicenses.some(l => l.type === 'jd_analyzer');
+  const tokenLicense = activeLicenses.find(l => l.type === 'assessment_tokens');
   const { total = 0, used = 0, available = 0 } = data?.tokenStats || {};
 
   return (
@@ -47,6 +55,33 @@ export default function PortalDashboard() {
             <h1 style={s.welcomeTitle}>Welcome back{me.user.name ? `, ${me.user.name.split(' ')[0]}` : ''}</h1>
             <p style={s.welcomeSub}>{me.account.name}</p>
           </div>
+
+          {/* Active Licenses */}
+          {licenses.length > 0 && (
+            <div style={s.section}>
+              <h2 style={s.sectionTitle}>Active Licenses</h2>
+              <div style={s.licenseGrid}>
+                {licenses.map(l => {
+                  const expired = l.expires_at && new Date(l.expires_at) <= now;
+                  return (
+                    <div key={l.id} style={{ ...s.licenseCard, opacity: expired ? 0.55 : 1 }}>
+                      <div style={s.licenseType}>{LICENSE_LABELS[l.type] || l.type.replace(/_/g, ' ')}</div>
+                      {l.quantity != null && (
+                        <div style={s.licenseMeta}>{l.quantity.toLocaleString()} tokens</div>
+                      )}
+                      <div style={{ ...s.licenseMeta, marginTop: 4 }}>
+                        {expired
+                          ? <span style={s.expiredBadge}>Expired {new Date(l.expires_at).toLocaleDateString()}</span>
+                          : l.expires_at
+                            ? `Expires ${new Date(l.expires_at).toLocaleDateString()}`
+                            : 'No expiry'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Stats row */}
           {tokenLicense && (
@@ -109,7 +144,7 @@ export default function PortalDashboard() {
             </div>
           )}
 
-          {!tokenLicense && !hasRoleFit && !hasJD && (
+          {licenses.length === 0 && (
             <div style={s.emptyState}>
               <p>No active licenses yet. Contact your Curio account manager to get started.</p>
             </div>
@@ -187,4 +222,9 @@ const s = {
   trEven: { background: '#FAFAFA' },
   badge: { background: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600, fontFamily: 'monospace' },
   emptyState: { background: '#fff', borderRadius: 12, padding: '40px 28px', textAlign: 'center', color: '#64748B', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' },
+  licenseGrid: { display: 'flex', gap: 12, flexWrap: 'wrap' },
+  licenseCard: { background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '14px 18px', minWidth: 180 },
+  licenseType: { fontSize: '0.875rem', fontWeight: 600, color: '#0F172A', marginBottom: 4 },
+  licenseMeta: { fontSize: '0.775rem', color: '#64748B' },
+  expiredBadge: { background: '#FEE2E2', color: '#991B1B', padding: '1px 7px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600 },
 };
