@@ -44,6 +44,7 @@ export default function Nav() {
             <li><Link href="/#applications">Applications</Link></li>
             <li><Link href="/framework/" className={isActive('/framework') ? 'active' : ''}>MindPrint™ Framework</Link></li>
             <li><Link href="/types/" className={isActive('/types') ? 'active' : ''}>MindPrint™ Profiles</Link></li>
+            <li><Link href="/insights" className={isActive('/insights') ? 'active' : ''}>Insights</Link></li>
             <li><Link href="/#cta">Work With Us</Link></li>
           </ul>
           <div className="nav-right">
@@ -73,6 +74,7 @@ export default function Nav() {
         <Link href="/#applications" onClick={() => setMenuOpen(false)}>Applications</Link>
         <Link href="/framework/" onClick={() => setMenuOpen(false)}>MindPrint™ Framework</Link>
         <Link href="/types/" onClick={() => setMenuOpen(false)}>MindPrint™ Profiles</Link>
+        <Link href="/insights" onClick={() => setMenuOpen(false)}>Insights</Link>
         <Link href="/#cta" onClick={() => setMenuOpen(false)}>Work With Us</Link>
       </div>
     </>
