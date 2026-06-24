@@ -1262,7 +1262,7 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
 
               {/* Sub-tabs */}
               <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #E2E8F0', marginBottom: 16 }}>
-                {['users', 'licenses', 'tokens', 'settings'].map(t => (
+                {['users', 'tokens', 'settings'].map(t => (
                   <button key={t} onClick={() => setDetailTab(t)} style={{ ...s.tab, ...(detailTab === t ? s.tabActive : {}), padding: '8px 14px', fontSize: '0.8rem' }}>
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </button>
@@ -1308,12 +1308,14 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
                 </>
               )}
 
-              {detailTab === 'licenses' && (
+              {detailTab === 'tokens' && (
                 <>
-                  {/* License list */}
+                  {/* ── Tool Access ── */}
+                  <div style={s.sectionHeader}>Tool Access</div>
+                  <p style={s.sectionDesc}>Controls which tools this account can access in the portal. Assessment Tokens unlocks the token-sending feature.</p>
                   {(detail.licenses || []).length > 0 && (
-                    <table style={{ ...s.table, marginBottom: 16 }}>
-                      <thead><tr>{['Type','Quantity','Expires',''].map(h=><th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                    <table style={{ ...s.table, marginBottom: 12 }}>
+                      <thead><tr>{['Tool / Feature','Quantity','Expires',''].map(h=><th key={h} style={s.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {detail.licenses.map((l, i) => (
                           <tr key={l.id} style={i%2===0?s.trEven:{}}>
@@ -1326,12 +1328,11 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
                       </tbody>
                     </table>
                   )}
-                  {/* Add license form */}
-                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 12 }}>Add License</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px 14px' }}>
+                  <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: 14, marginBottom: 24 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 10 }}>Add Tool Access</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px 12px', alignItems: 'flex-end' }}>
                       <div>
-                        <label style={s.sendLabel}>Type</label>
+                        <label style={s.sendLabel}>Tool</label>
                         <select style={s.sendInput} value={licType} onChange={e=>setLicType(e.target.value)}>
                           <option value="assessment_tokens">Assessment Tokens</option>
                           <option value="role_analyzer">Role Fit Analyzer</option>
@@ -1339,31 +1340,33 @@ function AccountRow({ account, open, onToggle, onRefresh }) {
                         </select>
                       </div>
                       <div><label style={s.sendLabel}>Quantity (tokens only)</label><input style={s.sendInput} type="number" value={licQty} onChange={e=>setLicQty(e.target.value)} placeholder="e.g. 100" /></div>
-                      <div><label style={s.sendLabel}>Expiry Date (optional)</label><input style={s.sendInput} type="date" value={licExpiry} onChange={e=>setLicExpiry(e.target.value)} /></div>
+                      <div><label style={s.sendLabel}>Expiry (optional)</label><input style={s.sendInput} type="date" value={licExpiry} onChange={e=>setLicExpiry(e.target.value)} /></div>
+                      <button style={s.btn} onClick={addLicense}>Add</button>
                     </div>
-                    <button style={{ ...s.btn, marginTop: 12 }} onClick={addLicense}>Add License</button>
                   </div>
-                </>
-              )}
 
-              {detailTab === 'tokens' && (
-                <>
-                  {/* Generate token pool */}
-                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Generate Token Pool</p>
-                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: 12 }}>Create blank tokens assigned directly to this account. The client can then send them to recipients from their portal.</p>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <input style={{ ...s.sendInput, width: 100 }} type="number" min="1" max="500" value={genQty} onChange={e=>setGenQty(e.target.value)} placeholder="Qty" />
-                      <input style={{ ...s.sendInput, flex: 1 }} value={genEngId} onChange={e=>setGenEngId(e.target.value)} placeholder="Engagement ID (optional, auto-generated if blank)" />
+                  {/* ── Assessment Token Pool ── */}
+                  <div style={s.sectionHeader}>Assessment Token Pool</div>
+                  <p style={s.sectionDesc}>Generate blank tokens for this account. The client sends them to participants from their portal — no manual setup needed per recipient.</p>
+                  <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: 14, marginBottom: 12 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 10 }}>Generate Tokens</p>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                      <div>
+                        <label style={s.sendLabel}>Quantity</label>
+                        <input style={{ ...s.sendInput, width: 90 }} type="number" min="1" max="500" value={genQty} onChange={e=>setGenQty(e.target.value)} placeholder="e.g. 50" />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={s.sendLabel}>Engagement ID <span style={{ fontWeight: 400, color: '#94A3B8' }}>(optional — auto-generated if blank)</span></label>
+                        <input style={s.sendInput} value={genEngId} onChange={e=>setGenEngId(e.target.value)} placeholder="e.g. acme-q3-2026" />
+                      </div>
                       <button style={s.btn} onClick={generatePool}>Generate</button>
                     </div>
                     {genMsg && <p style={{ color: '#059669', fontSize: '0.8rem', marginTop: 8 }}>{genMsg}</p>}
                     {genErr && <p style={s.error}>{genErr}</p>}
                   </div>
-                  {/* Link engagement */}
-                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Link Token Engagement</p>
-                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: 12 }}>Paste an Engagement ID to link all its tokens to this account. The client will then see those tokens in their portal.</p>
+                  <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: 14, marginBottom: 20 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Link Existing Engagement</p>
+                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: 10 }}>Already generated tokens via the Generate tab? Paste the engagement ID here to assign them to this account.</p>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <input style={{ ...s.sendInput, flex: 1 }} value={engId} onChange={e=>setEngId(e.target.value)} placeholder="e.g. acme-2026-q1" />
                       <button style={s.btn} onClick={linkEngagement}>Link</button>
@@ -1500,6 +1503,8 @@ const s = {
   badgePending: { background: '#FEF3C7', color: '#92400E', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap' },
   badgeLinkSent: { background: '#EFF6FF', color: '#1D4ED8', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap' },
   badgeType: { background: '#EFF6FF', color: '#1D4ED8', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.05em' },
+  sectionHeader: { fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 },
+  sectionDesc: { fontSize: '0.8rem', color: '#64748B', marginBottom: 12 },
   sentBadge: { color: '#059669', fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap' },
   sendLinkBtn: { padding: '4px 10px', background: '#F0FDF4', color: '#059669', border: '1px solid #BBF7D0', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' },
   sendLinkBtnActive: { padding: '4px 10px', background: '#059669', color: '#fff', border: '1px solid #059669', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' },

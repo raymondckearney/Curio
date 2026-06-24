@@ -19,6 +19,7 @@ export default async function handler(req, res) {
       account_id: accountId,
       engagement_id: engId,
       purpose: 'assessment',
+      name: '',
       used: false,
     }));
 
