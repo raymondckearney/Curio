@@ -29,18 +29,15 @@ export default function AdminTokens() {
         </header>
 
         <div style={s.tabBar}>
-          <button
-            style={activeTab === 'tokens' ? { ...s.tab, ...s.tabActive } : s.tab}
-            onClick={() => setActiveTab('tokens')}
-          >
-            Tokens
-          </button>
-          <button
-            style={activeTab === 'assessments' ? { ...s.tab, ...s.tabActive } : s.tab}
-            onClick={() => setActiveTab('assessments')}
-          >
-            Assessments
-          </button>
+          {['tokens', 'assessments', 'accounts'].map(tab => (
+            <button
+              key={tab}
+              style={activeTab === tab ? { ...s.tab, ...s.tabActive } : s.tab}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
 
         <main style={s.main}>
@@ -49,8 +46,10 @@ export default function AdminTokens() {
               <GeneratePanel />
               <StatusPanel />
             </>
-          ) : (
+          ) : activeTab === 'assessments' ? (
             <AssessmentsPanel />
+          ) : (
+            <AccountsPanel />
           )}
         </main>
       </div>
@@ -1009,6 +1008,337 @@ function AssessmentsPanel() {
         </div>
       )}
     </section>
+  );
+}
+
+// ─── Accounts Panel ───────────────────────────────────────────────────────────
+
+function AccountsPanel() {
+  const [accounts, setAccounts] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newSlug, setNewSlug] = useState('');
+  const [newNotes, setNewNotes] = useState('');
+  const [openId, setOpenId] = useState(null);
+
+  async function load() {
+    setLoading(true); setError('');
+    try {
+      const res = await fetch('/api/admin/accounts');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setAccounts(data.accounts);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function create() {
+    if (!newName.trim() || !newSlug.trim()) return setError('Name and slug are required');
+    try {
+      const res = await fetch('/api/admin/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim(), slug: newSlug.trim(), notes: newNotes.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setNewName(''); setNewSlug(''); setNewNotes(''); setCreating(false);
+      load();
+    } catch (e) { setError(e.message); }
+  }
+
+  return (
+    <section style={s.panel}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Client Accounts</h2>
+        <button style={s.btn} onClick={() => setCreating(c => !c)}>
+          {creating ? 'Cancel' : '+ New Account'}
+        </button>
+      </div>
+
+      {creating && (
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: 20, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', marginBottom: 12 }}>
+            <div>
+              <label style={s.sendLabel}>Account Name</label>
+              <input style={s.sendInput} value={newName} onChange={e => { setNewName(e.target.value); if (!newSlug) setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')); }} placeholder="Acme Corp" />
+            </div>
+            <div>
+              <label style={s.sendLabel}>Slug (URL-safe ID)</label>
+              <input style={s.sendInput} value={newSlug} onChange={e => setNewSlug(e.target.value)} placeholder="acme-corp" />
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={s.sendLabel}>Notes (optional)</label>
+              <input style={s.sendInput} value={newNotes} onChange={e => setNewNotes(e.target.value)} placeholder="Internal notes about this account" />
+            </div>
+          </div>
+          {error && <p style={s.error}>{error}</p>}
+          <button style={s.btn} onClick={create}>Create Account</button>
+        </div>
+      )}
+
+      {loading && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>}
+      {error && !creating && <p style={s.error}>{error}</p>}
+
+      {accounts && accounts.length === 0 && (
+        <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No accounts yet. Create one above.</p>
+      )}
+
+      {accounts && accounts.length > 0 && (
+        <div>
+          {accounts.map(acc => (
+            <AccountRow key={acc.id} account={acc} open={openId === acc.id} onToggle={() => setOpenId(openId === acc.id ? null : acc.id)} onRefresh={load} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AccountRow({ account, open, onToggle, onRefresh }) {
+  const [detail, setDetail] = useState(null);
+  const [detailTab, setDetailTab] = useState('users');
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState('member');
+  const [userPwd, setUserPwd] = useState('');
+  const [licType, setLicType] = useState('assessment_tokens');
+  const [licQty, setLicQty] = useState('');
+  const [licExpiry, setLicExpiry] = useState('');
+  const [engId, setEngId] = useState('');
+  const [actionMsg, setActionMsg] = useState('');
+  const [actionErr, setActionErr] = useState('');
+  const [restrictResults, setRestrictResults] = useState(account.restrict_results || false);
+
+  useEffect(() => {
+    if (open && !detail) {
+      fetch(`/api/admin/accounts/${account.id}`)
+        .then(r => r.json())
+        .then(data => { setDetail(data); setRestrictResults(data.account?.restrict_results || false); })
+        .catch(() => {});
+    }
+  }, [open, account.id]);
+
+  async function addUser() {
+    if (!userEmail || !userPwd) return setActionErr('Email and password required');
+    const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail, name: userName, role: userRole, password: userPwd }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setActionErr(data.error || 'Failed');
+    setUserEmail(''); setUserName(''); setUserPwd(''); setUserRole('member');
+    setActionMsg('User added'); setActionErr('');
+    fetch(`/api/admin/accounts/${account.id}`).then(r => r.json()).then(setDetail);
+  }
+
+  async function removeUser(userId) {
+    const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) return setActionErr('Failed to remove user');
+    fetch(`/api/admin/accounts/${account.id}`).then(r => r.json()).then(setDetail);
+  }
+
+  async function addLicense() {
+    const res = await fetch(`/api/admin/accounts/${account.id}/licenses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: licType, quantity: licQty || undefined, expires_at: licExpiry || undefined }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setActionErr(data.error || 'Failed');
+    setLicQty(''); setLicExpiry('');
+    setActionMsg('License added'); setActionErr('');
+    fetch(`/api/admin/accounts/${account.id}`).then(r => r.json()).then(setDetail);
+    onRefresh();
+  }
+
+  async function removeLicense(licenseId) {
+    const res = await fetch(`/api/admin/accounts/${account.id}/licenses`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseId }),
+    });
+    if (!res.ok) return setActionErr('Failed to remove license');
+    fetch(`/api/admin/accounts/${account.id}`).then(r => r.json()).then(setDetail);
+    onRefresh();
+  }
+
+  async function linkEngagement() {
+    if (!engId.trim()) return setActionErr('Enter an engagement ID');
+    const res = await fetch(`/api/admin/accounts/${account.id}/link-engagement`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ engagement_id: engId.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setActionErr(data.error || 'Failed');
+    setEngId('');
+    setActionMsg(`Linked ${data.linked} token(s) to this account`); setActionErr('');
+  }
+
+  async function toggleRestrict(val) {
+    setRestrictResults(val);
+    await fetch(`/api/admin/accounts/${account.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restrict_results: val }),
+    });
+  }
+
+  const licSummary = (account.licenses || []).map(l => {
+    if (l.type === 'assessment_tokens') return `${l.quantity || '?'} Tokens`;
+    if (l.type === 'role_analyzer') return 'Role Fit';
+    if (l.type === 'jd_analyzer') return 'JD Analyzer';
+    return l.type;
+  }).join(', ');
+
+  return (
+    <div style={{ borderBottom: '1px solid #E2E8F0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', cursor: 'pointer' }} onClick={onToggle}>
+        <span style={{ fontSize: '0.7rem', color: '#94A3B8', transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(90deg)' : 'none' }}>▶</span>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0F172A' }}>{account.name}</span>
+          <span style={{ marginLeft: 12, fontSize: '0.8rem', color: '#64748B' }}>{(account.users || []).length} user{(account.users||[]).length !== 1 ? 's' : ''}</span>
+          {licSummary && <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#059669' }}>· {licSummary}</span>}
+        </div>
+        <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{new Date(account.created_at).toLocaleDateString()}</span>
+      </div>
+
+      {open && (
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: 20, marginBottom: 16 }}>
+          {!detail ? (
+            <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>
+          ) : (
+            <>
+              {actionMsg && <p style={{ color: '#059669', fontSize: '0.8rem', marginBottom: 8 }}>{actionMsg}</p>}
+              {actionErr && <p style={s.error}>{actionErr}</p>}
+
+              {/* Sub-tabs */}
+              <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #E2E8F0', marginBottom: 16 }}>
+                {['users', 'licenses', 'settings'].map(t => (
+                  <button key={t} onClick={() => setDetailTab(t)} style={{ ...s.tab, ...(detailTab === t ? s.tabActive : {}), padding: '8px 14px', fontSize: '0.8rem' }}>
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {detailTab === 'users' && (
+                <>
+                  {/* User list */}
+                  {(detail.users || []).length > 0 && (
+                    <table style={{ ...s.table, marginBottom: 16 }}>
+                      <thead><tr>{['Email','Name','Role','Last Login',''].map(h=><th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {detail.users.map((u, i) => (
+                          <tr key={u.id} style={i%2===0?s.trEven:{}}>
+                            <td style={s.td}>{u.email}</td>
+                            <td style={s.td}>{u.name||'—'}</td>
+                            <td style={s.td}><span style={{ ...s.badgeType, background: u.role==='owner'?'#FEF3C7':'#EFF6FF', color: u.role==='owner'?'#92400E':'#1D4ED8' }}>{u.role}</span></td>
+                            <td style={s.td}>{u.last_login_at ? new Date(u.last_login_at).toLocaleDateString() : 'Never'}</td>
+                            <td style={s.td}><button style={s.copyBtn} onClick={() => removeUser(u.id)}>Remove</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {/* Add user form */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 12 }}>Add User</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px' }}>
+                      <div><label style={s.sendLabel}>Email *</label><input style={s.sendInput} value={userEmail} onChange={e=>setUserEmail(e.target.value)} placeholder="user@company.com" /></div>
+                      <div><label style={s.sendLabel}>Name</label><input style={s.sendInput} value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Full Name" /></div>
+                      <div>
+                        <label style={s.sendLabel}>Role</label>
+                        <select style={s.sendInput} value={userRole} onChange={e=>setUserRole(e.target.value)}>
+                          <option value="member">Member</option>
+                          <option value="owner">Owner</option>
+                        </select>
+                      </div>
+                      <div><label style={s.sendLabel}>Password *</label><input style={s.sendInput} type="password" value={userPwd} onChange={e=>setUserPwd(e.target.value)} placeholder="Initial password" /></div>
+                    </div>
+                    <button style={{ ...s.btn, marginTop: 12 }} onClick={addUser}>Add User</button>
+                  </div>
+                </>
+              )}
+
+              {detailTab === 'licenses' && (
+                <>
+                  {/* License list */}
+                  {(detail.licenses || []).length > 0 && (
+                    <table style={{ ...s.table, marginBottom: 16 }}>
+                      <thead><tr>{['Type','Quantity','Expires',''].map(h=><th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {detail.licenses.map((l, i) => (
+                          <tr key={l.id} style={i%2===0?s.trEven:{}}>
+                            <td style={s.td}><span style={s.badgeType}>{l.type.replace(/_/g,' ')}</span></td>
+                            <td style={s.td}>{l.quantity ?? '—'}</td>
+                            <td style={s.td}>{l.expires_at ? new Date(l.expires_at).toLocaleDateString() : 'No expiry'}</td>
+                            <td style={s.td}><button style={s.copyBtn} onClick={()=>removeLicense(l.id)}>Remove</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {/* Add license form */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 12 }}>Add License</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px 14px' }}>
+                      <div>
+                        <label style={s.sendLabel}>Type</label>
+                        <select style={s.sendInput} value={licType} onChange={e=>setLicType(e.target.value)}>
+                          <option value="assessment_tokens">Assessment Tokens</option>
+                          <option value="role_analyzer">Role Fit Analyzer</option>
+                          <option value="jd_analyzer">JD Analyzer</option>
+                        </select>
+                      </div>
+                      <div><label style={s.sendLabel}>Quantity (tokens only)</label><input style={s.sendInput} type="number" value={licQty} onChange={e=>setLicQty(e.target.value)} placeholder="e.g. 100" /></div>
+                      <div><label style={s.sendLabel}>Expiry Date (optional)</label><input style={s.sendInput} type="date" value={licExpiry} onChange={e=>setLicExpiry(e.target.value)} /></div>
+                    </div>
+                    <button style={{ ...s.btn, marginTop: 12 }} onClick={addLicense}>Add License</button>
+                  </div>
+                  {/* Link engagement */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Link Token Engagement</p>
+                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: 12 }}>Link all tokens from an engagement ID to this account so participants can view their results here.</p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input style={{ ...s.sendInput, flex: 1 }} value={engId} onChange={e=>setEngId(e.target.value)} placeholder="e.g. acme-2026-q1" />
+                      <button style={s.btn} onClick={linkEngagement}>Link</button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {detailTab === 'settings' && (
+                <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0F172A' }}>Restrict result visibility</p>
+                      <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>When on, members only see their own assessment results. Owners always see everything.</p>
+                    </div>
+                    <button
+                      onClick={() => toggleRestrict(!restrictResults)}
+                      style={{ padding: '6px 16px', background: restrictResults ? '#059669' : '#E2E8F0', color: restrictResults ? '#fff' : '#374151', border: 'none', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}
+                    >
+                      {restrictResults ? 'Restricted' : 'Unrestricted'}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: 12 }}>Portal URL: <code style={s.code}>/portal/login</code></p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

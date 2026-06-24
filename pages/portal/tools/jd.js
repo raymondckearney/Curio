@@ -1,0 +1,349 @@
+import Head from 'next/head';
+import Link from 'next/link';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/router';
+
+// Mirrors /jd.js but with portal session auth instead of token gate
+
+const TYPES = [
+  { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "Purpose-driven, progress-oriented",   primary: "WHY",  secondary: "WHAT" },
+  { id: "WHY-HOW",  label: "WHY – HOW",  tagline: "Purpose-driven, precision-oriented",  primary: "WHY",  secondary: "HOW"  },
+  { id: "WHAT-WHY", label: "WHAT – WHY", tagline: "Progress-driven, purpose-oriented",   primary: "WHAT", secondary: "WHY"  },
+  { id: "WHAT-HOW", label: "WHAT – HOW", tagline: "Progress-driven, precision-oriented", primary: "WHAT", secondary: "HOW"  },
+  { id: "HOW-WHY",  label: "HOW – WHY",  tagline: "Precision-driven, purpose-oriented",  primary: "HOW",  secondary: "WHY"  },
+  { id: "HOW-WHAT", label: "HOW – WHAT", tagline: "Precision-driven, progress-oriented", primary: "HOW",  secondary: "WHAT" },
+];
+
+const DEMAND_COLORS = { WHY: '#10B981', WHAT: '#3B82F6', HOW: '#D97706' };
+const CACHE_VERSION = 'v1';
+function normalizeJD(text) { return text.trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 400); }
+function getCacheKey(n) { return `curio-jd-${CACHE_VERSION}-${n}`; }
+function getSplitKey(n) { return `curio-jd-split-${CACHE_VERSION}-${n}`; }
+
+function calcScore(demandSplit, typeId) {
+  const type = TYPES.find(t => t.id === typeId);
+  const tertiary = ["WHY","WHAT","HOW"].find(b => b !== type.primary && b !== type.secondary);
+  const dp = demandSplit[type.primary.toLowerCase()] || 0, ds = demandSplit[type.secondary.toLowerCase()] || 0, dt = demandSplit[tertiary.toLowerCase()] || 0;
+  const rawScore = dp * 1.25 + ds * 0.8 + dt * (-1.5);
+  const linear = Math.max(0, Math.min(1, (rawScore + 150) / 275));
+  return Math.round(Math.pow(linear, 1.5) * 100);
+}
+
+function ScoreRing({ score, size = 88 }) {
+  const r = size <= 88 ? 32 : 48, circ = 2 * Math.PI * r, pct = Math.round(score), dash = (pct / 100) * circ;
+  const color = pct >= 75 ? "#059669" : pct >= 60 ? "#34D399" : pct >= 40 ? "#F59E0B" : "#EF4444";
+  const label = pct >= 75 ? "Strong fit" : pct >= 60 ? "Good fit" : pct >= 40 ? "Partial fit" : pct >= 20 ? "Poor fit" : "Severe mismatch";
+  const labelBg = pct >= 75 ? "rgba(5,150,105,0.08)" : pct >= 60 ? "rgba(52,211,153,0.08)" : pct >= 40 ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)";
+  const labelBorder = pct >= 75 ? "rgba(5,150,105,0.3)" : pct >= 60 ? "rgba(52,211,153,0.3)" : pct >= 40 ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.3)";
+  const cx = size / 2;
+  return (
+    <div className="score-ring-wrap">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke="#E7E5E4" strokeWidth={size <= 88 ? 6 : 8} />
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke={color} strokeWidth={size <= 88 ? 6 : 8} strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cx})`} style={{ transition: "stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" }} />
+        <text x={cx} y={cx - 4} textAnchor="middle" fontSize={size <= 88 ? 16 : 24} fontWeight="700" fill={color} fontFamily="Caveat, cursive">{pct}%</text>
+        <text x={cx} y={cx + (size <= 88 ? 9 : 11)} textAnchor="middle" fontSize={size <= 88 ? 7 : 10} fill="#A8A29E" fontFamily="DM Sans, sans-serif" letterSpacing="0.08em">MATCH</text>
+      </svg>
+      <span className="score-fit-label" style={{ color, background: labelBg, border: `1px solid ${labelBorder}` }}>{label}</span>
+    </div>
+  );
+}
+
+function BulletList({ items, muted }) {
+  return <div className="bullet-list">{(items||[]).map((item,i)=><div key={i} className="bullet-item"><span className={`bullet-dot${muted?" bullet-dot--muted":""}`}/><span className="bullet-text">{item}</span></div>)}</div>;
+}
+
+function DemandBar({ demandSplit }) {
+  const { why, what, how } = demandSplit;
+  const segments = [
+    { key:'why', val:why, color:DEMAND_COLORS.WHY, label:'WHY', sub:'Direction & vision', radius:'6px 0 0 6px' },
+    { key:'what', val:what, color:DEMAND_COLORS.WHAT, label:'WHAT', sub:'Execution & delivery', radius:'0' },
+    { key:'how', val:how, color:DEMAND_COLORS.HOW, label:'HOW', sub:'Process & precision', radius:'0 6px 6px 0' },
+  ];
+  return (
+    <div className="demand-wrap">
+      <div className="demand-track">
+        {segments.map(seg=><div key={seg.key} style={{width:`${seg.val}%`,background:seg.color,borderRadius:seg.radius,display:'flex',alignItems:'center',justifyContent:'center',transition:'width 0.8s'}}>
+          {seg.val>=12&&<span style={{fontSize:'0.8rem',fontWeight:700,color:'rgba(255,255,255,0.9)',letterSpacing:'0.04em'}}>{seg.val}%</span>}
+        </div>)}
+      </div>
+      <div className="demand-legend">
+        {segments.map(seg=><div key={seg.key} className="demand-legend-item"><span className="demand-dot" style={{background:seg.color}}/><div><span className="demand-legend-name" style={{color:seg.color}}>{seg.label} {seg.val}%</span><span className="demand-legend-sub">{seg.sub}</span></div></div>)}
+      </div>
+    </div>
+  );
+}
+
+function ProfileCard({ typeId, score, analysis, variant }) {
+  const [expanded, setExpanded] = useState(false);
+  const type = TYPES.find(t => t.id === typeId);
+  const isFull = variant === 'full', showDetail = isFull || expanded;
+  return (
+    <div className={`profile-card${isFull?' profile-card--full':' profile-card--compact'}`}>
+      <div className="profile-card-header">
+        <div className="profile-card-meta">
+          {isFull && <div className="best-match-badge">★ Best Match</div>}
+          <div className="profile-combo">{type?.label}</div>
+          <div className="profile-tagline">{type?.tagline}</div>
+          {isFull && analysis?.rationale && <p className="profile-rationale">{analysis.rationale}</p>}
+        </div>
+        <ScoreRing score={score} size={isFull ? 120 : 88} />
+      </div>
+      <div className={`profile-detail${showDetail?'':' profile-detail--hidden'}`}>
+        {!isFull && analysis?.rationale && <p className="profile-rationale" style={{marginBottom:16}}>{analysis.rationale}</p>}
+        <div className="detail-grid">
+          <div className="result-card result-card--accent"><div className="result-card-label">Likely succeeds &amp; enjoys</div><BulletList items={analysis?.succeedEnjoy}/></div>
+          <div className="result-card"><div className="result-card-label">May struggle with</div><BulletList items={analysis?.challenges} muted/></div>
+        </div>
+        <div className="result-card result-card--recs">
+          <div className="result-card-label">How to help them succeed</div>
+          <div className="recs-list">{(analysis?.recommendations||[]).map((rec,i)=><div key={i} className="rec-item"><span className="rec-num">{i+1}</span><span className="bullet-text">{rec}</span></div>)}</div>
+        </div>
+      </div>
+      {!isFull && <button className="expand-btn" onClick={()=>setExpanded(e=>!e)}>{expanded?'Hide details ↑':'Show details ↓'}</button>}
+    </div>
+  );
+}
+
+function JDAnalyzer() {
+  const [inputMode, setInputMode] = useState('text');
+  const [jdText, setJdText] = useState('');
+  const [jdUrl, setJdUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const resultRef = useRef(null);
+
+  useEffect(() => { if (result && resultRef.current) resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, [result]);
+
+  async function callAPI(system, userContent, maxTokens, model = 'claude-haiku-4-5-20251001') {
+    const response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model, max_tokens: maxTokens, temperature: 0, top_k: 1, system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }], messages: [{ role: 'user', content: userContent }] }) });
+    const ct = response.headers.get('content-type') || '';
+    if (ct.includes('application/json')) { const data = await response.json(); if (data.error) throw new Error(data.error.message || data.error); return data.content?.[0]?.text || ''; }
+    const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '', text = '';
+    while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split('\n'); buffer = lines.pop(); for (const line of lines) { if (!line.startsWith('data: ')) continue; const payload = line.slice(6).trim(); if (payload === '[DONE]') continue; try { const evt = JSON.parse(payload); if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') text += evt.delta.text; } catch {} } }
+    return text;
+  }
+
+  async function analyze() {
+    setError(''); setResult(null);
+    let text = jdText.trim();
+    if (inputMode === 'url') {
+      if (!jdUrl.trim()) return setError('Enter a URL to continue');
+      setLoading(true); setLoadingStep('Fetching job description…');
+      try { const r = await fetch('/api/jd/fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: jdUrl.trim() }) }); const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Failed to fetch URL'); text = d.text; }
+      catch (e) { setError(e.message); setLoading(false); return; }
+    } else {
+      if (!text || text.length < 50) return setError('Paste a job description (at least a few sentences)');
+      setLoading(true);
+    }
+    const normalizedJD = normalizeJD(text);
+    const cacheKey = getCacheKey(normalizedJD), splitKey = getSplitKey(normalizedJD);
+    try { const cached = localStorage.getItem(cacheKey); if (cached) { setResult(JSON.parse(cached)); setLoading(false); return; } } catch {}
+
+    const splitSystem = `You analyze job descriptions for the MindPrint Framework and estimate their absolute cognitive demand profile.\n- WHY: Choosing direction and defining purpose.\n- WHAT: Execution and momentum.\n- HOW: Correctness and completeness, process, precision.\nReturn ONLY valid JSON: { "why": <integer>, "what": <integer>, "how": <integer> }`;
+    const qualSystem = `You are a deterministic analyst for the MindPrint Framework. Given a job description and its WHY/WHAT/HOW cognitive demand split, produce a detailed analysis of how all 6 MindPrint profiles fit this specific role.\nReturn ONLY valid JSON:\n{\n  "summary": "<2-3 sentences>",\n  "profiles": {\n    "WHY-WHAT": { "rationale": "...", "succeedEnjoy": ["...","...","..."], "challenges": ["...","...","..."], "recommendations": ["...","...","..."] },\n    "WHY-HOW":  { "rationale": "...", "succeedEnjoy": [...], "challenges": [...], "recommendations": [...] },\n    "WHAT-WHY": { "rationale": "...", "succeedEnjoy": [...], "challenges": [...], "recommendations": [...] },\n    "WHAT-HOW": { "rationale": "...", "succeedEnjoy": [...], "challenges": [...], "recommendations": [...] },\n    "HOW-WHY":  { "rationale": "...", "succeedEnjoy": [...], "challenges": [...], "recommendations": [...] },\n    "HOW-WHAT": { "rationale": "...", "succeedEnjoy": [...], "challenges": [...], "recommendations": [...] }\n  }\n}`;
+
+    try {
+      setLoadingStep('Analyzing cognitive demands…');
+      let demandSplit;
+      try { const cachedSplit = localStorage.getItem(splitKey); if (cachedSplit) demandSplit = JSON.parse(cachedSplit); } catch {}
+      if (!demandSplit) {
+        const jdPrompt = `Job Description:\n\n${text.slice(0, 4000)}`;
+        const raws = await Promise.all([callAPI(splitSystem, jdPrompt, 600), callAPI(splitSystem, jdPrompt, 600), callAPI(splitSystem, jdPrompt, 600), callAPI(splitSystem, jdPrompt, 600), callAPI(splitSystem, jdPrompt, 600)]);
+        function parseSplit(raw) { const m = raw.match(/\{[\s\S]*?\}/); if (!m) return null; try { const s = JSON.parse(m[0]); return typeof s.why === 'number' && typeof s.what === 'number' && typeof s.how === 'number' ? s : null; } catch { return null; } }
+        const splits = raws.map(parseSplit).filter(Boolean);
+        if (!splits.length) throw new Error('Could not parse demand split');
+        const avg = { why: splits.reduce((s,x)=>s+x.why,0)/splits.length, what: splits.reduce((s,x)=>s+x.what,0)/splits.length, how: splits.reduce((s,x)=>s+x.how,0)/splits.length };
+        demandSplit = { why: Math.round(avg.why), what: Math.round(avg.what), how: Math.round(avg.how) };
+        const off = 100 - (demandSplit.why + demandSplit.what + demandSplit.how);
+        if (off !== 0) { const largest = Object.entries(demandSplit).sort((a,b)=>b[1]-a[1])[0][0]; demandSplit[largest] += off; }
+        try { localStorage.setItem(splitKey, JSON.stringify(demandSplit)); } catch {}
+      }
+      const scores = {};
+      TYPES.forEach(t => { scores[t.id] = calcScore(demandSplit, t.id); });
+      setLoadingStep('Building profile analyses…');
+      const qualUser = `Job Description:\n\n${text.slice(0, 4500)}\n\nEstablished cognitive demand split:\n- WHY: ${demandSplit.why}%\n- WHAT: ${demandSplit.what}%\n- HOW: ${demandSplit.how}%`;
+      const SONNET = 'claude-sonnet-4-6';
+      const qualRaws = await Promise.all([callAPI(qualSystem, qualUser, 4500, SONNET), callAPI(qualSystem, qualUser, 4500, SONNET), callAPI(qualSystem, qualUser, 4500, SONNET)]);
+      function parseQual(raw) { const m = raw.match(/\{[\s\S]*\}/); if (!m) return null; try { return JSON.parse(m[0]); } catch { return null; } }
+      function consensusScore(candidate, others) {
+        const texts = Object.values(candidate.profiles||{}).flatMap(p=>[...(p.succeedEnjoy||[]),...(p.challenges||[]),...(p.recommendations||[])]);
+        let score = 0;
+        for (const other of others) { const otherText = Object.values(other.profiles||{}).flatMap(p=>[...(p.succeedEnjoy||[]),...(p.challenges||[]),...(p.recommendations||[])]).join(' ').toLowerCase(); for (const t of texts) { const words = t.toLowerCase().split(/\s+/).filter(w=>w.length>4); if (words.filter(w=>otherText.includes(w)).length >= Math.max(1,Math.floor(words.length*0.5))) score++; } }
+        return score;
+      }
+      const candidates = qualRaws.map(parseQual).filter(Boolean);
+      if (!candidates.length) throw new Error('No valid analysis returned');
+      const qual = candidates.length === 1 ? candidates[0] : candidates.map((c,i)=>({c,s:consensusScore(c,candidates.filter((_,j)=>j!==i))})).sort((a,b)=>b.s-a.s)[0].c;
+      const fullResult = { demandSplit, scores, summary: qual.summary||'', profiles: qual.profiles||{} };
+      setResult(fullResult);
+      try { localStorage.setItem(cacheKey, JSON.stringify(fullResult)); } catch {}
+    } catch (e) { setError('Error: ' + (e.message || 'Something went wrong')); } finally { setLoading(false); setLoadingStep(''); }
+  }
+
+  const sortedProfiles = result ? [...TYPES].map(t=>({...t,score:result.scores[t.id]||0,analysis:result.profiles[t.id]||{}})).sort((a,b)=>b.score-a.score) : [];
+  const topProfiles = sortedProfiles.slice(0, 2), otherProfiles = sortedProfiles.slice(2);
+
+  return (
+    <div className="page">
+      <div className="page-label">Job Description Analyzer</div>
+      <h1 className="page-title">Which MindPrint profiles<br />fit this role?</h1>
+      <p className="page-subtitle">Paste a job description or enter a URL. Get the cognitive demand breakdown and a ranked analysis of every profile.</p>
+      <div className="page-rule" />
+      <div className="input-tabs">
+        <button className={`input-tab${inputMode==='text'?' input-tab--active':''}`} onClick={()=>setInputMode('text')}>Paste text</button>
+        <button className={`input-tab${inputMode==='url'?' input-tab--active':''}`} onClick={()=>setInputMode('url')}>Enter URL</button>
+      </div>
+      {inputMode==='text' ? <textarea className="jd-input" value={jdText} onChange={e=>setJdText(e.target.value)} rows={12} placeholder="Paste the full job description here…"/> : <input className="url-input" type="url" value={jdUrl} onChange={e=>setJdUrl(e.target.value)} onKeyDown={e=>e.key==='Enter'&&analyze()} placeholder="https://company.com/jobs/role"/>}
+      {error && <div className="error-box">{error}</div>}
+      <button className="analyze-btn" onClick={analyze} disabled={loading}>{loading?(loadingStep||'Analyzing…'):'Analyze job description'}</button>
+      {result && (
+        <div ref={resultRef}>
+          <div className="results-rule"/>
+          {result.summary && <p className="jd-summary">{result.summary}</p>}
+          <DemandBar demandSplit={result.demandSplit}/>
+          <div className="section-header"><div className="section-label">Best Match Profiles</div><p className="section-sub">These profiles are most naturally aligned with how this role demands people to think and work.</p></div>
+          {topProfiles.map((p,i)=><ProfileCard key={p.id} typeId={p.id} score={p.score} analysis={p.analysis} variant="full" rank={i+1}/>)}
+          <div className="section-header" style={{marginTop:56}}><div className="section-label">All Other Profiles</div><p className="section-sub">Expand any card to see where they'll thrive, where they'll need support, and how to help them.</p></div>
+          <div className="other-grid">{otherProfiles.map((p,i)=><ProfileCard key={p.id} typeId={p.id} score={p.score} analysis={p.analysis} variant="compact" rank={i+3}/>)}</div>
+          <div className="result-actions">
+            <button className="download-btn" onClick={()=>window.print()}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download PDF</button>
+            <button className="reset-btn" onClick={()=>{setResult(null);setJdText('');setJdUrl('');window.scrollTo({top:0,behavior:'smooth'});}}>← Analyze a different role</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function PortalJDPage() {
+  const router = useRouter();
+  const [me, setMe] = useState(null);
+  const [licensed, setLicensed] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/portal/me')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        setMe(data);
+        fetch('/api/portal/dashboard')
+          .then(r => r.ok ? r.json() : null)
+          .then(dash => {
+            const has = (dash?.licenses || []).some(l => l.type === 'jd_analyzer' && (!l.expires_at || new Date(l.expires_at) > new Date()));
+            setLicensed(has);
+          });
+      })
+      .catch(() => router.replace('/portal/login'));
+  }, [router]);
+
+  async function logout() {
+    await fetch('/api/portal/logout', { method: 'POST' });
+    router.push('/portal/login');
+  }
+
+  if (!me || licensed === null) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'sans-serif', color: '#94A3B8' }}>Loading…</div>;
+
+  return (
+    <>
+      <Head>
+        <title>JD Analyzer — {me.account.name} — Curio</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <style>{jdCss}</style>
+      </Head>
+      <nav className="nav">
+        <Link href="/portal/dashboard" className="nav-logo">Curio<span>.</span></Link>
+        <Link href="/portal/dashboard" className="nav-back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back to portal
+        </Link>
+      </nav>
+      {!licensed ? (
+        <div style={{ maxWidth: 860, margin: '80px auto', padding: '0 24px' }}>
+          <div style={{ background: '#FAFAF9', border: '1px solid #E7E5E4', borderLeft: '3px solid #059669', borderRadius: 8, padding: '40px 48px', maxWidth: 520 }}>
+            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1C1917', marginBottom: 12 }}>JD Analyzer not included</div>
+            <p style={{ fontSize: '0.95rem', color: '#78716C', lineHeight: 1.75 }}>Your account doesn't have access to the JD Analyzer. Contact your Curio account manager to upgrade.</p>
+          </div>
+        </div>
+      ) : (
+        <JDAnalyzer />
+      )}
+    </>
+  );
+}
+
+const jdCss = `
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+  body { background: #fff; color: #1C1917; font-family: 'DM Sans', system-ui, sans-serif; line-height: 1.6; }
+  .nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid #E7E5E4; padding: 0 clamp(24px,5vw,72px); height: 64px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-logo { font-family: 'Caveat', cursive; font-size: 1.5rem; font-weight: 700; color: #1C1917; text-decoration: none; }
+  .nav-logo span { color: #059669; }
+  .nav-back { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #78716C; text-decoration: none; }
+  .nav-back:hover { color: #059669; }
+  .page { max-width: 860px; margin: 0 auto; padding: 56px clamp(24px,5vw,72px) 100px; }
+  .page-label { display: inline-flex; align-items: center; gap: 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.17em; text-transform: uppercase; color: #059669; margin-bottom: 20px; }
+  .page-label::before { content: ''; display: block; width: 36px; height: 1px; background: #059669; flex-shrink: 0; }
+  .page-title { font-family: 'Caveat', cursive; font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 700; color: #1C1917; line-height: 1.12; margin-bottom: 16px; }
+  .page-subtitle { font-size: 1rem; color: #78716C; max-width: 580px; line-height: 1.75; margin-bottom: 48px; }
+  .page-rule { width: 100%; height: 1px; background: #E7E5E4; margin-bottom: 40px; }
+  .input-tabs { display: flex; margin-bottom: 12px; border-bottom: 1px solid #E7E5E4; }
+  .input-tab { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; color: #78716C; cursor: pointer; margin-bottom: -1px; transition: all 0.15s; }
+  .input-tab--active { color: #059669; border-bottom-color: #059669; font-weight: 600; }
+  .jd-input { width: 100%; padding: 16px 20px; background: #FAFAF9; border: 1px solid #E7E5E4; border-radius: 6px; color: #1C1917; font-family: 'DM Sans', sans-serif; font-size: 0.92rem; line-height: 1.7; resize: vertical; outline: none; transition: border-color 0.18s; }
+  .jd-input:focus { border-color: #059669; }
+  .url-input { width: 100%; padding: 16px 20px; background: #FAFAF9; border: 1px solid #E7E5E4; border-radius: 6px; color: #1C1917; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.18s; }
+  .url-input:focus { border-color: #059669; }
+  .error-box { background: rgba(244,63,94,0.05); border: 1px solid rgba(244,63,94,0.2); border-radius: 6px; padding: 14px 18px; color: #be123c; font-size: 0.9rem; margin-top: 12px; }
+  .analyze-btn { width: 100%; margin-top: 16px; padding: 18px 32px; background: #059669; border: none; border-radius: 6px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.18s ease; }
+  .analyze-btn:hover:not(:disabled) { background: #047857; }
+  .analyze-btn:disabled { background: #E7E5E4; color: #A8A29E; cursor: not-allowed; }
+  .results-rule { width: 100%; height: 1px; background: #E7E5E4; margin: 56px 0 40px; }
+  .jd-summary { font-size: 1rem; color: #57534E; line-height: 1.8; margin-bottom: 32px; max-width: 680px; }
+  .demand-wrap { margin-bottom: 48px; }
+  .demand-track { display: flex; height: 40px; border-radius: 6px; overflow: hidden; gap: 2px; }
+  .demand-legend { display: flex; gap: 32px; margin-top: 16px; flex-wrap: wrap; }
+  .demand-legend-item { display: flex; align-items: flex-start; gap: 10px; }
+  .demand-dot { width: 10px; height: 10px; border-radius: 2px; margin-top: 4px; flex-shrink: 0; }
+  .demand-legend-name { display: block; font-size: 0.875rem; font-weight: 700; }
+  .demand-legend-sub { display: block; font-size: 0.78rem; color: #A8A29E; margin-top: 1px; }
+  .section-header { margin-bottom: 24px; }
+  .section-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.17em; text-transform: uppercase; color: #059669; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-label::before { content: ''; display: block; width: 24px; height: 1px; background: #059669; }
+  .section-sub { font-size: 0.875rem; color: #78716C; line-height: 1.7; max-width: 580px; }
+  .score-ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+  .score-fit-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; white-space: nowrap; }
+  .profile-card--full { background: #FAFAF9; border: 1px solid #E7E5E4; border-left: 3px solid #059669; border-radius: 8px; padding: 32px; margin-bottom: 20px; }
+  .profile-card-header { display: flex; gap: 32px; align-items: flex-start; margin-bottom: 28px; }
+  .profile-card-meta { flex: 1; }
+  .best-match-badge { display: inline-block; background: rgba(5,150,105,0.1); color: #047857; border: 1px solid rgba(5,150,105,0.3); border-radius: 99px; padding: 3px 12px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .profile-combo { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #059669; margin-bottom: 4px; }
+  .profile-tagline { font-family: 'Caveat', cursive; font-size: 1.5rem; font-weight: 700; color: #1C1917; margin-bottom: 14px; line-height: 1.2; }
+  .profile-rationale { font-size: 0.92rem; color: #57534E; line-height: 1.75; }
+  .other-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .profile-card--compact { background: #FAFAF9; border: 1px solid #E7E5E4; border-radius: 8px; padding: 24px; }
+  .profile-card--compact .profile-card-header { margin-bottom: 0; gap: 20px; }
+  .profile-detail { margin-top: 8px; }
+  .profile-detail--hidden { display: none; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .result-card { background: #fff; border: 1px solid #E7E5E4; border-radius: 6px; padding: 22px; }
+  .result-card--accent { border-left: 2px solid #059669; }
+  .result-card-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #059669; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .result-card-label::before { content: ''; display: block; width: 14px; height: 1px; background: #059669; }
+  .bullet-list { display: flex; flex-direction: column; gap: 9px; }
+  .bullet-item { display: flex; gap: 11px; align-items: flex-start; }
+  .bullet-dot { width: 4px; height: 4px; border-radius: 50%; background: #059669; margin-top: 8px; flex-shrink: 0; }
+  .bullet-dot--muted { background: #A8A29E; }
+  .bullet-text { font-size: 0.875rem; color: #57534E; line-height: 1.65; }
+  .recs-list { display: flex; flex-direction: column; gap: 12px; }
+  .rec-item { display: flex; gap: 12px; align-items: flex-start; }
+  .rec-num { width: 20px; height: 20px; border-radius: 50%; background: rgba(5,150,105,0.12); color: #059669; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .expand-btn { margin-top: 16px; padding: 7px 0; background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; color: #059669; cursor: pointer; }
+  .result-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 40px; }
+  .download-btn { width: 100%; padding: 16px 24px; background: #0F172A; border: none; border-radius: 6px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .reset-btn { width: 100%; padding: 16px 24px; background: transparent; border: 1px solid #E7E5E4; border-radius: 6px; color: #A8A29E; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; }
+  .reset-btn:hover { border-color: #A8A29E; color: #1C1917; }
+  @media (max-width: 680px) { .other-grid { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr; } .profile-card-header { flex-direction: column-reverse; align-items: flex-start; gap: 16px; } }
+  @media print { .nav, .input-tabs, .jd-input, .url-input, .error-box, .analyze-btn, .results-rule, .expand-btn, .result-actions, .page-rule { display: none !important; } .page { padding: 0; max-width: 100%; } .profile-detail--hidden { display: block !important; } }
+`;
