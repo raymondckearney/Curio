@@ -23,21 +23,23 @@ export default async function handler(req, res) {
     const tokens = assessments.map(a => a.token).filter(Boolean);
     let tokenMap = {};
     if (tokens.length) {
-      const ids = tokens.map(t => `"${t}"`).join(',');
+      const ids = tokens.join(',');
       const tRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/tokens?token=in.(${ids})&select=token,name,email`,
+        `${SUPABASE_URL}/rest/v1/tokens?token=in.(${ids})&select=token,name,email,role,company`,
         { headers }
       );
       if (tRes.ok) {
         const rows = await tRes.json();
-        rows.forEach(r => { tokenMap[r.token] = { reg_name: r.name, reg_email: r.email }; });
+        rows.forEach(r => { tokenMap[r.token] = { reg_name: r.name, reg_email: r.email, reg_role: r.role, reg_company: r.company }; });
       }
     }
 
     const enriched = assessments.map(a => ({
       ...a,
-      reg_name:  tokenMap[a.token]?.reg_name  ?? null,
-      reg_email: tokenMap[a.token]?.reg_email ?? null,
+      reg_name:    tokenMap[a.token]?.reg_name    ?? null,
+      reg_email:   tokenMap[a.token]?.reg_email   ?? null,
+      reg_role:    tokenMap[a.token]?.reg_role    ?? null,
+      reg_company: tokenMap[a.token]?.reg_company ?? null,
     }));
 
     return res.status(200).json({ assessments: enriched });

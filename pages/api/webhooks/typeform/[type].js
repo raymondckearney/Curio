@@ -80,6 +80,7 @@ export default async function handler(req, res) {
     const name  = hidden.name  || null;
     const email = hidden.email || null;
     const token = hidden.token || null;
+    const role  = hidden.role  || null;
 
     const h_score = hidden.h_score != null ? parseInt(hidden.h_score, 10) : getAnswerNumber('h_score');
     const w_score = hidden.w_score != null ? parseInt(hidden.w_score, 10) : getAnswerNumber('w_score');
@@ -89,6 +90,7 @@ export default async function handler(req, res) {
       token,
       name,
       email,
+      role,
       type,
       h_score: isNaN(h_score) ? null : h_score,
       w_score: isNaN(w_score) ? null : w_score,

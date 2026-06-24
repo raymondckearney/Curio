@@ -96,9 +96,16 @@ function BulletList({ items, muted }) {
   );
 }
 
+const CACHE_VERSION = 'v1';
+function normalizeRole(raw) { return raw.trim().toLowerCase().replace(/\s+/g, ' '); }
+function getCacheKey(nr, typeId) { return `curio-fit-cache-${CACHE_VERSION}-${nr}-${typeId}`; }
+function getSplitCacheKey(nr) { return `curio-fit-split-${CACHE_VERSION}-${nr}`; }
+
 function ThreeBrainsAnalyzer({ participant, consume }) {
   const [selectedType, setSelectedType] = useState("");
+  const [participantName, setParticipantName] = useState(participant?.name || "");
   const [role, setRole] = useState("");
+  const [resultFromCache, setResultFromCache] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [result, setResult] = useState(null);
@@ -110,7 +117,7 @@ function ThreeBrainsAnalyzer({ participant, consume }) {
     if (saved) {
       try {
         const s = JSON.parse(saved);
-        if (s.result) { setResult(s.result); setRole(s.role); setSelectedType(s.selectedType); }
+        if (s.result) { setResult(s.result); setRole(s.role); setSelectedType(s.selectedType); if (s.participantName) setParticipantName(s.participantName); }
       } catch {}
       sessionStorage.removeItem('curio-print-state');
     }
@@ -145,12 +152,12 @@ function ThreeBrainsAnalyzer({ participant, consume }) {
     return text;
   }
 
-  async function callAPI(system, userContent, maxTokens) {
+  async function callAPI(system, userContent, maxTokens, model = "claude-haiku-4-5-20251001") {
     const response = await fetch("/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model,
         max_tokens: maxTokens,
         temperature: 0,
         top_k: 1,
@@ -173,6 +180,25 @@ function ThreeBrainsAnalyzer({ participant, consume }) {
     setLoadingStep("Analyzing role demands...");
     setError("");
     setResult(null);
+    setResultFromCache(false);
+
+    const normalizedRole = normalizeRole(role);
+    const fullCacheKey = getCacheKey(normalizedRole, selectedType);
+    const splitCacheKey = getSplitCacheKey(normalizedRole);
+
+    // Full result cache — identical inputs always return identical output
+    try {
+      const cached = localStorage.getItem(fullCacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setResult(parsed);
+        setResultFromCache(true);
+        setLoading(false);
+        setLoadingStep("");
+        if (consume) consume({ role: normalizedRole, type: selectedType, score: parsed.score, demandSplit: parsed.demandSplit });
+        return;
+      }
+    } catch {}
 
     const type = TYPES.find(t => t.id === selectedType);
     const details = TYPE_DETAILS[selectedType];
@@ -221,16 +247,6 @@ Steps:
 Return ONLY valid JSON, no markdown:
 { "why": <integer>, "what": <integer>, "how": <integer> }`;
 
-      // Run demand split 3 times in parallel and average — eliminates single-call
-      // variance. With prompt caching the 3 calls cost ~1.5x one call and run
-      // simultaneously, so latency is unchanged.
-      const rolePrompt = `Role: "${role.trim()}"`;
-      const [raw1, raw2, raw3] = await Promise.all([
-        callAPI(splitSystem, rolePrompt, 600),
-        callAPI(splitSystem, rolePrompt, 600),
-        callAPI(splitSystem, rolePrompt, 600),
-      ]);
-
       function parseSplit(raw) {
         const m = raw.match(/\{[\s\S]*?\}/);
         if (!m) return null;
@@ -240,22 +256,41 @@ Return ONLY valid JSON, no markdown:
         } catch { return null; }
       }
 
-      const splits = [raw1, raw2, raw3].map(parseSplit).filter(Boolean);
-      if (!splits.length) throw new Error("No valid demand splits returned");
+      // Demand split cache — role demand is a fixed property, same role always same split
+      let demandSplit;
+      try {
+        const cachedSplit = localStorage.getItem(splitCacheKey);
+        if (cachedSplit) demandSplit = JSON.parse(cachedSplit);
+      } catch {}
 
-      // Average across all successful splits
-      const avg = {
-        why:  splits.reduce((s, x) => s + x.why,  0) / splits.length,
-        what: splits.reduce((s, x) => s + x.what, 0) / splits.length,
-        how:  splits.reduce((s, x) => s + x.how,  0) / splits.length,
-      };
+      if (!demandSplit) {
+        // 5 parallel calls on Haiku — averaged to eliminate single-call variance.
+        // Prompt caching makes all 5 run at near-zero marginal cost.
+        const rolePrompt = `Role: "${normalizedRole}"`;
+        const [raw1, raw2, raw3, raw4, raw5] = await Promise.all([
+          callAPI(splitSystem, rolePrompt, 600),
+          callAPI(splitSystem, rolePrompt, 600),
+          callAPI(splitSystem, rolePrompt, 600),
+          callAPI(splitSystem, rolePrompt, 600),
+          callAPI(splitSystem, rolePrompt, 600),
+        ]);
 
-      // Round and force sum to exactly 100 (adjust the largest bucket)
-      const demandSplit = { why: Math.round(avg.why), what: Math.round(avg.what), how: Math.round(avg.how) };
-      const off = 100 - (demandSplit.why + demandSplit.what + demandSplit.how);
-      if (off !== 0) {
-        const largest = Object.entries(demandSplit).sort((a, b) => b[1] - a[1])[0][0];
-        demandSplit[largest] += off;
+        const splits = [raw1, raw2, raw3, raw4, raw5].map(parseSplit).filter(Boolean);
+        if (!splits.length) throw new Error("No valid demand splits returned");
+
+        const avg = {
+          why:  splits.reduce((s, x) => s + x.why,  0) / splits.length,
+          what: splits.reduce((s, x) => s + x.what, 0) / splits.length,
+          how:  splits.reduce((s, x) => s + x.how,  0) / splits.length,
+        };
+
+        demandSplit = { why: Math.round(avg.why), what: Math.round(avg.what), how: Math.round(avg.how) };
+        const off = 100 - (demandSplit.why + demandSplit.what + demandSplit.how);
+        if (off !== 0) {
+          const largest = Object.entries(demandSplit).sort((a, b) => b[1] - a[1])[0][0];
+          demandSplit[largest] += off;
+        }
+        try { localStorage.setItem(splitCacheKey, JSON.stringify(demandSplit)); } catch {}
       }
 
       // Calculate score in JS — profile context never touches this math
@@ -272,7 +307,7 @@ Return ONLY valid JSON, no markdown:
       // not the underlying role demand percentages.
       setLoadingStep("Analyzing profile alignment...");
 
-      const qualSystem = `You are a rigorous analyst for the MindPrint Framework.
+      const qualSystem = `You are a deterministic analyst for the MindPrint Framework. You must return identical or near-identical output for the same inputs. Be deterministic: given the same profile and role demand split, always produce the same analysis.
 
 The MindPrint Framework defines three cognitive orientations:
 - WHY Brain: Vision-oriented, purpose-driven, big-picture thinker, questions assumptions
@@ -280,27 +315,42 @@ The MindPrint Framework defines three cognitive orientations:
 - HOW Brain: Detail-oriented, process-focused, precision-driven, systematic
 
 You will receive a person's cognitive profile and a role's already-established demand split.
-Produce a qualitative alignment analysis: what they will enjoy, excel at, dislike, and struggle with — and concrete recommendations.
-Every item must be specific to this role and this profile. No generic filler.
+Produce a qualitative alignment analysis following these strict rules:
 
-Return ONLY valid JSON, no markdown:
+RULES:
+1. Every item must be specific to this exact role title and this exact profile combination. No generic filler.
+2. Ground every item in the demand split percentages provided. Reference the actual work of the role.
+3. "enjoys" and "excels" items must reflect where primary/secondary orientations match high-demand areas.
+4. "dislikes" and "struggles" items must reflect where the tertiary orientation is demanded, or where primary is underused.
+5. Recommendations must be actionable, role-specific, and address the largest friction points.
+6. partnerTypes must complement the gaps this profile has in this role's demand split.
+
+Return ONLY valid JSON, no markdown, no commentary:
 {
-  "scoreRationale": "<2-3 sentences: state the demand split, map it to this person's primary/secondary/tertiary, describe what that means day-to-day>",
-  "enjoys": ["<specific>", "<specific>", "<specific>", "<specific>"],
-  "excels": ["<specific>", "<specific>", "<specific>", "<specific>"],
-  "dislikes": ["<specific>", "<specific>", "<specific>"],
-  "struggles": ["<specific>", "<specific>", "<specific>"],
+  "scoreRationale": "<exactly 2-3 sentences: (1) state the WHY/WHAT/HOW demand percentages explicitly, (2) map each to primary/secondary/tertiary and label energizing/neutral/draining, (3) summarize the net day-to-day experience>",
+  "enjoys": ["<role-specific>", "<role-specific>", "<role-specific>", "<role-specific>"],
+  "excels": ["<role-specific>", "<role-specific>", "<role-specific>", "<role-specific>"],
+  "dislikes": ["<role-specific>", "<role-specific>", "<role-specific>"],
+  "struggles": ["<role-specific>", "<role-specific>", "<role-specific>"],
   "recommendations": [
-    { "category": "<label>", "action": "<recommendation>", "rationale": "<1-2 sentences>" },
-    { "category": "<label>", "action": "<recommendation>", "rationale": "<1-2 sentences>" },
-    { "category": "<label>", "action": "<recommendation>", "rationale": "<1-2 sentences>" },
-    { "category": "<label>", "action": "<recommendation>", "rationale": "<1-2 sentences>" }
+    { "category": "<Focus|Delegation|Workflow|Communication|Structure>", "action": "<concrete action for this role>", "rationale": "<exactly 1-2 sentences on why this addresses the alignment gap>" },
+    { "category": "<label>", "action": "<concrete action>", "rationale": "<exactly 1-2 sentences>" },
+    { "category": "<label>", "action": "<concrete action>", "rationale": "<exactly 1-2 sentences>" },
+    { "category": "<label>", "action": "<concrete action>", "rationale": "<exactly 1-2 sentences>" }
   ],
   "partnerTypes": [
-    { "type": "<e.g. HOW-WHAT>", "reason": "<role-specific reason>" },
-    { "type": "<e.g. WHY-WHAT>", "reason": "<role-specific reason>" }
+    { "type": "<one of: WHY-WHAT|WHY-HOW|WHAT-WHY|WHAT-HOW|HOW-WHY|HOW-WHAT>", "reason": "<1 sentence: what this partner covers that this profile lacks in this role>" },
+    { "type": "<one of: WHY-WHAT|WHY-HOW|WHAT-WHY|WHAT-HOW|HOW-WHY|HOW-WHAT>", "reason": "<1 sentence>" }
   ]
-}`;
+}
+
+COUNTS — do not deviate:
+- enjoys: exactly 4 items
+- excels: exactly 4 items
+- dislikes: exactly 3 items
+- struggles: exactly 3 items
+- recommendations: exactly 4 objects
+- partnerTypes: exactly 2 objects`;
 
       const qualUser = `Profile: ${type.label} (${type.tagline})
 Primary orientation: ${type.primary} — energizing, natural home base
@@ -322,13 +372,59 @@ For this person that means:
 - ${ds}% in ${type.secondary} (secondary — neutral)
 - ${dt}% in ${tertiary} (tertiary — draining)`;
 
-      const qualRaw = await callAPI(qualSystem, qualUser, 2000);
-      const qualMatch = qualRaw.match(/\{[\s\S]*\}/);
-      if (!qualMatch) throw new Error("No analysis returned");
-      const qual = JSON.parse(qualMatch[0]);
+      // 3x Sonnet in parallel — consensus selection picks the most representative result
+      const SONNET = "claude-sonnet-4-6";
+      const [qualRaw1, qualRaw2, qualRaw3] = await Promise.all([
+        callAPI(qualSystem, qualUser, 2000, SONNET),
+        callAPI(qualSystem, qualUser, 2000, SONNET),
+        callAPI(qualSystem, qualUser, 2000, SONNET),
+      ]);
 
-      setResult({ ...qual, demandSplit, score });
-      if (consume) consume({ role: role.trim(), type: selectedType, score, demandSplit });
+      function parseQual(raw) {
+        const m = raw.match(/\{[\s\S]*\}/);
+        if (!m) return null;
+        try { return JSON.parse(m[0]); } catch { return null; }
+      }
+
+      function consensusScore(candidate, others) {
+        const texts = [
+          ...(candidate.enjoys || []),
+          ...(candidate.excels || []),
+          ...(candidate.dislikes || []),
+          ...(candidate.struggles || []),
+          ...(candidate.recommendations || []).map(r => r.action || ""),
+        ];
+        let score = 0;
+        for (const other of others) {
+          const otherText = [
+            ...(other.enjoys || []),
+            ...(other.excels || []),
+            ...(other.dislikes || []),
+            ...(other.struggles || []),
+            ...(other.recommendations || []).map(r => r.action || ""),
+          ].join(" ").toLowerCase();
+          for (const t of texts) {
+            const words = t.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+            const matched = words.filter(w => otherText.includes(w));
+            if (matched.length >= Math.max(1, Math.floor(words.length * 0.5))) score++;
+          }
+        }
+        return score;
+      }
+
+      const validCandidates = [qualRaw1, qualRaw2, qualRaw3].map(parseQual).filter(Boolean);
+      if (!validCandidates.length) throw new Error("No analysis returned");
+
+      const qual = validCandidates.length === 1
+        ? validCandidates[0]
+        : validCandidates
+            .map((c, i) => ({ c, s: consensusScore(c, validCandidates.filter((_, j) => j !== i)) }))
+            .sort((a, b) => b.s - a.s)[0].c;
+
+      const fullResult = { ...qual, demandSplit, score };
+      setResult(fullResult);
+      try { localStorage.setItem(fullCacheKey, JSON.stringify(fullResult)); } catch {}
+      if (consume) consume({ role: normalizedRole, type: selectedType, score, demandSplit });
     } catch (e) {
       setError("Error: " + (e.message || "Something went wrong. Check the browser console for details."));
       console.error(e);
@@ -358,7 +454,7 @@ For this person that means:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Role Alignment — ${esc(role)} — Curio</title>
+<title>Role Alignment${participantName ? ` — ${esc(participantName)}` : ''} — ${esc(role)} — Curio</title>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -393,6 +489,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
 .pcombo{font-size:6.5pt;font-weight:700;letter-spacing:0.1em;color:#059669;margin-bottom:1px}
 .ptagline{font-style:italic;font-size:7pt;color:#57534E;margin-bottom:2px}
 .preason{font-size:7pt;color:#78716C;line-height:1.4}
+.participant-name{font-family:'Caveat',cursive;font-size:26pt;font-weight:700;color:#0F172A;line-height:1;margin-bottom:10px}
 .footer{margin-top:13px;padding-top:9px;border-top:1px solid #E7E5E4;display:flex;justify-content:space-between;align-items:center;font-size:6.5pt;color:#A8A29E}
 .flogo{font-family:'Caveat',cursive;font-size:13pt;font-weight:700;color:#1C1917}
 .flogo em{color:#059669;font-style:normal}
@@ -407,6 +504,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
     <div class="logo">Curio<em>.</em></div>
     <div class="hdr-right"><strong>Role Alignment Analysis</strong>${esc(today)}</div>
   </div>
+  ${participantName ? `<div class="participant-name">${esc(participantName)}</div>` : ''}
   <div class="score-row">
     <div class="sinfo">
       <div class="tlabel">${esc(currentType.label)} &middot; ${esc(currentType.tagline)}</div>
@@ -475,6 +573,17 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
 
       <div className="step-block">
         <div className="step-label">Step One</div>
+        <div className="step-title">Enter your name</div>
+        <input
+          className="role-input"
+          value={participantName}
+          onChange={e => setParticipantName(e.target.value)}
+          placeholder="e.g. Alex Smith"
+        />
+      </div>
+
+      <div className="step-block">
+        <div className="step-label">Step Two</div>
         <div className="step-title">Select your Three Brains type</div>
         <div className="type-grid">
           {TYPES.map(t => (
@@ -491,7 +600,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
       </div>
 
       <div className="step-block">
-        <div className="step-label">Step Two</div>
+        <div className="step-label">Step Three</div>
         <div className="step-title">Enter your current role</div>
         <input
           className="role-input"
@@ -522,6 +631,17 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
             </div>
           </div>
           <div className="results-rule" />
+
+          {resultFromCache && (
+            <div className="cache-badge">
+              Cached result — <button className="cache-badge-clear" onClick={() => {
+                try { localStorage.removeItem(getCacheKey(normalizeRole(role), selectedType)); } catch {}
+                setResult(null);
+                setResultFromCache(false);
+                analyze();
+              }}>re-run fresh ×</button>
+            </div>
+          )}
 
           <div className="score-header">
             <div className="score-meta">
@@ -772,6 +892,30 @@ export default function FitPage() {
             background: #E7E5E4;
             color: #A8A29E; cursor: not-allowed;
           }
+
+          .cache-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #78716C;
+            background: #F5F5F4;
+            border: 1px solid #E7E5E4;
+            border-radius: 99px;
+            padding: 4px 12px;
+            margin-bottom: 16px;
+          }
+          .cache-badge-clear {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #059669;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0;
+            font-family: inherit;
+          }
+          .cache-badge-clear:hover { text-decoration: underline; }
 
           .error-box {
             background: rgba(244,63,94,0.05);

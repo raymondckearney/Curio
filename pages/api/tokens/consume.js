@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { dbGet, dbPatch } from '../../../lib/supabase';
+import { syncAssessmentToNotion } from '../../../lib/notion';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -25,6 +26,12 @@ export default async function handler(req, res) {
     await sendNotification({ row, result_payload, usedAt });
   } catch (err) {
     console.error('[consume] email notification failed:', err);
+  }
+
+  try {
+    await syncAssessmentToNotion({ row, result_payload });
+  } catch (err) {
+    console.error('[consume] notion sync failed:', err);
   }
 
   return res.status(200).json({ success: true });

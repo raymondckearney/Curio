@@ -870,3 +870,231 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Insights List ─────────────────────────────────────────── */
+.insights-main {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.insights-hero {
+  background: var(--ink);
+  padding: 120px var(--pad-x) 72px;
+}
+
+.insights-heading {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin: 0 0 16px;
+}
+
+.insights-subhead {
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  color: rgba(255,255,255,0.65);
+  max-width: 520px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.insights-grid-section {
+  padding: 72px var(--pad-x) 100px;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.insight-card {
+  display: block;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--rule);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  overflow: hidden;
+}
+
+.insight-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.insight-card-inner {
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.insight-category {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #059669;
+}
+
+.insight-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.insight-excerpt {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0;
+  flex: 1;
+}
+
+.insight-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.insight-date, .insight-author {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.insights-empty {
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 60px 0;
+}
+
+/* ── Post Detail ───────────────────────────────────────────── */
+.post-main {
+  min-height: 100vh;
+  background: var(--paper);
+  padding-top: var(--nav-h);
+}
+
+.post-article {
+  padding: 60px 0 100px;
+}
+
+.post-container {
+  max-width: 760px;
+}
+
+.post-back {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #059669;
+  text-decoration: none;
+  margin-bottom: 28px;
+  transition: opacity 0.15s;
+}
+
+.post-back:hover { opacity: 0.7; }
+
+.post-categories {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.post-heading {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.75rem);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+  margin: 0 0 20px;
+}
+
+.post-byline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+}
+
+.post-byline-sep { color: var(--rule); }
+
+.post-hero-image {
+  margin-bottom: 48px;
+}
+
+.post-body {
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.post-h1 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 48px 0 16px;
+}
+
+.post-h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 40px 0 14px;
+}
+
+.post-h3 {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 32px 0 12px;
+}
+
+.post-blockquote {
+  border-left: 4px solid #059669;
+  margin: 32px 0;
+  padding: 12px 24px;
+  background: rgba(5,150,105,0.05);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: var(--ink);
+}
+
+.post-p {
+  margin: 0 0 20px;
+}
+
+@media (max-width: 1080px) {
+  .insights-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .insights-grid { grid-template-columns: 1fr; }
+  .insights-hero { padding: 100px 24px 48px; }
+  .insights-grid-section { padding: 48px 24px 72px; }
+}

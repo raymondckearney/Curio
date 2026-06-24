@@ -1,0 +1,47 @@
+import { getAdminSession } from '../../../../lib/adminSession';
+import { dbGet, dbPatch, dbDelete, dbQuery } from '../../../../lib/supabase';
+
+export default async function handler(req, res) {
+  if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { id } = req.query;
+
+  if (req.method === 'GET') {
+    try {
+      const [accounts, users, licenses] = await Promise.all([
+        dbGet('client_accounts', { id }),
+        dbQuery('client_users', { account_id: `eq.${id}`, select: 'id,email,name,role,last_login_at,created_at', order: 'created_at.asc' }),
+        dbQuery('account_licenses', { account_id: `eq.${id}`, select: '*', order: 'created_at.asc' }),
+      ]);
+      if (!accounts.length) return res.status(404).json({ error: 'Account not found' });
+      return res.status(200).json({ account: accounts[0], users, licenses });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  if (req.method === 'PATCH') {
+    const { name, notes, restrict_results } = req.body || {};
+    const update = {};
+    if (name !== undefined) update.name = name;
+    if (notes !== undefined) update.notes = notes;
+    if (restrict_results !== undefined) update.restrict_results = restrict_results;
+    try {
+      await dbPatch('client_accounts', { id }, update);
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    try {
+      await dbDelete('client_accounts', { id });
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}

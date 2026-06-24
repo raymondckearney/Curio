@@ -28,20 +28,16 @@ export default function AdminTokens() {
           <button style={s.signOut} onClick={() => fetch('/api/admin/logout', { method: 'POST' }).then(() => router.push('/admin/login'))}>Sign out</button>
         </header>
 
-        {/* Tab bar */}
         <div style={s.tabBar}>
-          <button
-            style={activeTab === 'tokens' ? { ...s.tab, ...s.tabActive } : s.tab}
-            onClick={() => setActiveTab('tokens')}
-          >
-            Tokens
-          </button>
-          <button
-            style={activeTab === 'assessments' ? { ...s.tab, ...s.tabActive } : s.tab}
-            onClick={() => setActiveTab('assessments')}
-          >
-            Assessments
-          </button>
+          {['tokens', 'assessments', 'accounts'].map(tab => (
+            <button
+              key={tab}
+              style={activeTab === tab ? { ...s.tab, ...s.tabActive } : s.tab}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
 
         <main style={s.main}>
@@ -50,14 +46,89 @@ export default function AdminTokens() {
               <GeneratePanel />
               <StatusPanel />
             </>
-          ) : (
+          ) : activeTab === 'assessments' ? (
             <AssessmentsPanel />
+          ) : (
+            <AccountsPanel />
           )}
         </main>
       </div>
     </>
   );
 }
+
+// ─── Shared: Send Link inline panel ──────────────────────────────────────────
+
+function buildDefaultMessage(name, tokenUrl) {
+  return `Hi ${name},
+
+I'd like to invite you to take the MindPrint™ Assessment — a short exercise that identifies how you're naturally wired to think through and solve problems.
+
+Your personal link: ${tokenUrl}
+
+This link is unique to you and can only be used once. It will take approximately 10 minutes to complete.
+
+Looking forward to sharing the results with you.
+
+Ray Kearney
+Curio`;
+}
+
+function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, onClose, onSent }) {
+  const [to, setTo] = useState(participantEmail || '');
+  const [subject, setSubject] = useState("You're invited to take the MindPrint™ Assessment");
+  const [message, setMessage] = useState(buildDefaultMessage(participantName || 'there', tokenUrl));
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
+  async function send() {
+    if (!to.trim()) return setError('Recipient email is required');
+    setSending(true);
+    setError('');
+    try {
+      const res = await fetch('/api/email/send-token-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, to: to.trim(), subject, message, participantEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send');
+      onSent();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div style={s.sendPanel}>
+      <div style={s.sendPanelGrid}>
+        <div style={s.sendField}>
+          <label style={s.sendLabel}>To</label>
+          <input style={s.sendInput} value={to} onChange={e => setTo(e.target.value)} placeholder="recipient@example.com" />
+        </div>
+        <div style={s.sendField}>
+          <label style={s.sendLabel}>Subject</label>
+          <input style={s.sendInput} value={subject} onChange={e => setSubject(e.target.value)} />
+        </div>
+        <div style={{ ...s.sendField, gridColumn: '1 / -1' }}>
+          <label style={s.sendLabel}>Message</label>
+          <textarea style={s.sendTextarea} rows={8} value={message} onChange={e => setMessage(e.target.value)} />
+        </div>
+      </div>
+      {error && <p style={s.error}>{error}</p>}
+      <div style={s.sendActions}>
+        <button style={s.btn} onClick={send} disabled={sending}>
+          {sending ? 'Sending…' : 'Send'}
+        </button>
+        <button style={s.btnSecondary} onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Generate Panel ───────────────────────────────────────────────────────────
 
 function GeneratePanel() {
   const [purpose, setPurpose] = useState('assessment');
@@ -68,10 +139,14 @@ function GeneratePanel() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [openSendLink, setOpenSendLink] = useState(null);
+  const [sentLinks, setSentLinks] = useState(new Set());
 
   async function generate() {
     setError('');
     setResults(null);
+    setOpenSendLink(null);
+    setSentLinks(new Set());
     const lines = participantText.trim().split('\n').filter(Boolean);
     const participants = lines.map(line => {
       const [name, email, company, role] = line.split(',').map(s => s.trim());
@@ -110,10 +185,6 @@ function GeneratePanel() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function copyOne(url) {
-    navigator.clipboard.writeText(url);
-  }
-
   return (
     <section style={s.panel}>
       <h2 style={s.panelTitle}>Generate Tokens</h2>
@@ -122,6 +193,7 @@ function GeneratePanel() {
         <select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}>
           <option value="assessment">Assessment</option>
           <option value="fit">Role Analyzer</option>
+          <option value="jd">JD Analyzer</option>
         </select>
       </div>
       <div style={s.fieldGroup}>
@@ -159,24 +231,58 @@ function GeneratePanel() {
             <table style={s.table}>
               <thead>
                 <tr>
-                  {['Name', 'Email', 'Company', 'Role', 'URL', ''].map(h => (
+                  {['Name', 'Email', 'Company', 'Role', 'URL', 'Copy', 'Send Link'].map(h => (
                     <th key={h} style={s.th}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {results.map((r, i) => (
-                  <tr key={i} style={i % 2 === 0 ? s.trEven : {}}>
-                    <td style={s.td}>{r.name}</td>
-                    <td style={s.td}>{r.email || '—'}</td>
-                    <td style={s.td}>{r.company || '—'}</td>
-                    <td style={s.td}>{r.role || '—'}</td>
-                    <td style={{ ...s.td, ...s.urlCell }}>{r.url}</td>
-                    <td style={s.td}>
-                      <button style={s.copyBtn} onClick={() => copyOne(r.url)}>Copy</button>
-                    </td>
-                  </tr>
-                ))}
+                {results.flatMap((r, i) => {
+                  const rows = [
+                    <tr key={r.token} style={i % 2 === 0 ? s.trEven : {}}>
+                      <td style={s.td}>{r.name}</td>
+                      <td style={s.td}>{r.email || '—'}</td>
+                      <td style={s.td}>{r.company || '—'}</td>
+                      <td style={s.td}>{r.role || '—'}</td>
+                      <td style={{ ...s.td, ...s.urlCell }}>{r.url}</td>
+                      <td style={s.td}>
+                        <button style={s.copyBtn} onClick={() => navigator.clipboard.writeText(r.url)}>Copy</button>
+                      </td>
+                      <td style={s.td}>
+                        {sentLinks.has(r.token) ? (
+                          <span style={s.sentBadge}>Sent ✓</span>
+                        ) : (
+                          <button
+                            style={openSendLink === r.token ? s.sendLinkBtnActive : s.sendLinkBtn}
+                            onClick={() => setOpenSendLink(openSendLink === r.token ? null : r.token)}
+                          >
+                            Send Link
+                          </button>
+                        )}
+                      </td>
+                    </tr>,
+                  ];
+                  if (openSendLink === r.token) {
+                    rows.push(
+                      <tr key={`${r.token}-panel`}>
+                        <td colSpan={7} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}>
+                          <SendLinkPanel
+                            token={r.token}
+                            participantName={r.name}
+                            participantEmail={r.email}
+                            tokenUrl={r.url}
+                            onClose={() => setOpenSendLink(null)}
+                            onSent={() => {
+                              setSentLinks(prev => new Set([...prev, r.token]));
+                              setOpenSendLink(null);
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return rows;
+                })}
               </tbody>
             </table>
           </div>
@@ -186,15 +292,24 @@ function GeneratePanel() {
   );
 }
 
+// ─── Status Panel ─────────────────────────────────────────────────────────────
+
 function StatusPanel() {
   const [engagementId, setEngagementId] = useState('');
   const [tokens, setTokens] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [openSendLink, setOpenSendLink] = useState(null);
+  const [sentLinks, setSentLinks] = useState(new Set());
+  const [sentProfiles, setSentProfiles] = useState(new Set());
+  const [sendingProfile, setSendingProfile] = useState(null);
 
   async function load() {
     setError('');
     setTokens(null);
+    setOpenSendLink(null);
+    setSentLinks(new Set());
+    setSentProfiles(new Set());
     if (!engagementId.trim()) return setError('Enter an Engagement ID');
     setLoading(true);
     try {
@@ -209,6 +324,32 @@ function StatusPanel() {
     }
   }
 
+  async function sendProfile(t) {
+    const profileRaw = typeof t.result_payload === 'object' ? t.result_payload?.type : t.result_payload;
+    const profile = profileRaw ? String(profileRaw).toUpperCase() : null;
+    if (!profile || !t.email) return;
+
+    setSendingProfile(t.token);
+    try {
+      const res = await fetch('/api/email/send-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_name: t.name,
+          participant_email: t.email,
+          profile,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setSentProfiles(prev => new Set([...prev, t.token]));
+    } catch (e) {
+      alert(`Failed to send profile: ${e.message}`);
+    } finally {
+      setSendingProfile(null);
+    }
+  }
+
   const used = tokens?.filter(t => t.used).length ?? 0;
 
   return (
@@ -217,7 +358,13 @@ function StatusPanel() {
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
         <div style={{ flex: 1 }}>
           <label style={s.label}>Engagement ID</label>
-          <input style={s.input} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2026-q1" onKeyDown={e => e.key === 'Enter' && load()} />
+          <input
+            style={s.input}
+            value={engagementId}
+            onChange={e => setEngagementId(e.target.value)}
+            placeholder="e.g. acme-2026-q1"
+            onKeyDown={e => e.key === 'Enter' && load()}
+          />
         </div>
         <button style={s.btn} onClick={load} disabled={loading}>{loading ? 'Loading…' : 'Load'}</button>
       </div>
@@ -232,31 +379,96 @@ function StatusPanel() {
             <table style={s.table}>
               <thead>
                 <tr>
-                  {['Name', 'Email', 'Company', 'Role', 'Status', 'Used At', 'Result'].map(h => (
+                  {['Name', 'Email', 'Company', 'Role', 'Status', 'Link', 'Used At', 'Result', 'Actions'].map(h => (
                     <th key={h} style={s.th}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {tokens.map((t, i) => (
-                  <tr key={i} style={i % 2 === 0 ? s.trEven : {}}>
-                    <td style={s.td}>{t.name}</td>
-                    <td style={s.td}>{t.email || '—'}</td>
-                    <td style={s.td}>{t.company || '—'}</td>
-                    <td style={s.td}>{t.role || '—'}</td>
-                    <td style={s.td}>
-                      <span style={t.used ? s.badgeUsed : s.badgePending}>
-                        {t.used ? 'Completed' : 'Pending'}
-                      </span>
-                    </td>
-                    <td style={s.td}>{t.used_at ? new Date(t.used_at).toLocaleString() : '—'}</td>
-                    <td style={s.td}>
-                      {t.result_payload ? (
-                        <code style={s.code}>{JSON.stringify(t.result_payload).slice(0, 60)}…</code>
-                      ) : '—'}
-                    </td>
-                  </tr>
-                ))}
+                {tokens.flatMap((t, i) => {
+                  const profileRaw = typeof t.result_payload === 'object' ? t.result_payload?.type : t.result_payload;
+                  const profile = profileRaw ? String(profileRaw).toUpperCase() : null;
+                  const canSendProfile = t.used && profile && t.email;
+                  const tokenUrl = `https://www.choosecurio.com/go/${t.token}`;
+
+                  const mainRow = (
+                    <tr key={t.token} style={i % 2 === 0 ? s.trEven : {}}>
+                      <td style={s.td}>{t.name}</td>
+                      <td style={s.td}>{t.email || '—'}</td>
+                      <td style={s.td}>{t.company || '—'}</td>
+                      <td style={s.td}>{t.role || '—'}</td>
+                      <td style={s.td}>
+                        <span style={t.used ? s.badgeUsed : s.badgePending}>
+                          {t.used ? 'Completed' : 'Pending'}
+                        </span>
+                      </td>
+                      <td style={s.td}>
+                        {(t.link_sent_at || sentLinks.has(t.token)) ? (
+                          <span style={s.badgeLinkSent}>Link Sent</span>
+                        ) : '—'}
+                      </td>
+                      <td style={s.td}>{t.used_at ? new Date(t.used_at).toLocaleString() : '—'}</td>
+                      <td style={s.td}>
+                        {profile ? (
+                          <span style={s.badgeType}>{profile}</span>
+                        ) : '—'}
+                      </td>
+                      <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {sentLinks.has(t.token) ? (
+                            <span style={s.sentBadge}>Sent ✓</span>
+                          ) : (
+                            <button
+                              style={openSendLink === t.token ? s.sendLinkBtnActive : s.sendLinkBtn}
+                              onClick={() => setOpenSendLink(openSendLink === t.token ? null : t.token)}
+                            >
+                              Send Link
+                            </button>
+                          )}
+                          {canSendProfile && (
+                            sentProfiles.has(t.token) ? (
+                              <span style={s.sentBadge}>Profile Sent ✓</span>
+                            ) : (
+                              <button
+                                style={s.sendProfileBtn}
+                                onClick={() => sendProfile(t)}
+                                disabled={sendingProfile === t.token}
+                              >
+                                {sendingProfile === t.token ? 'Sending…' : 'Send Profile'}
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+
+                  if (openSendLink !== t.token) return [mainRow];
+
+                  return [
+                    mainRow,
+                    <tr key={`${t.token}-panel`}>
+                      <td colSpan={9} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}>
+                        <SendLinkPanel
+                          token={t.token}
+                          participantName={t.name}
+                          participantEmail={t.email}
+                          tokenUrl={tokenUrl}
+                          onClose={() => setOpenSendLink(null)}
+                          onSent={() => {
+                            setSentLinks(prev => new Set([...prev, t.token]));
+                            setTokens(prev => prev.map(tok =>
+                              tok.token === t.token
+                                ? { ...tok, link_sent_at: new Date().toISOString() }
+                                : tok
+                            ));
+                            setOpenSendLink(null);
+                          }}
+                        />
+                      </td>
+                    </tr>,
+                  ];
+                })}
               </tbody>
             </table>
           </div>
@@ -266,10 +478,439 @@ function StatusPanel() {
   );
 }
 
+// ─── Fit Analysis constants ───────────────────────────────────────────────────
+
+const FIT_TYPES = [
+  { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "Purpose-driven, progress-oriented",   primary: "WHY",  secondary: "WHAT" },
+  { id: "WHY-HOW",  label: "WHY – HOW",  tagline: "Purpose-driven, precision-oriented",  primary: "WHY",  secondary: "HOW"  },
+  { id: "WHAT-WHY", label: "WHAT – WHY", tagline: "Progress-driven, purpose-oriented",   primary: "WHAT", secondary: "WHY"  },
+  { id: "WHAT-HOW", label: "WHAT – HOW", tagline: "Progress-driven, precision-oriented", primary: "WHAT", secondary: "HOW"  },
+  { id: "HOW-WHY",  label: "HOW – WHY",  tagline: "Precision-driven, purpose-oriented",  primary: "HOW",  secondary: "WHY"  },
+  { id: "HOW-WHAT", label: "HOW – WHAT", tagline: "Precision-driven, progress-oriented", primary: "HOW",  secondary: "WHAT" },
+];
+
+const FIT_TYPE_DETAILS = {
+  "WHY-WHAT": {
+    strengths: ["Strategic vision and big-picture thinking","Identifying opportunities and gaps","Setting direction and goals","Pitching and narrative building","Questioning the status quo","High-level roadmap planning"],
+    drains: ["Granular execution and task management","Following detailed processes","Documentation and administrative work","Repetitive or routine tasks","Working in the weeds for extended periods"],
+  },
+  "WHY-HOW": {
+    strengths: ["Systems thinking and framework design","Research synthesis and distilling insights","Diagnosing root causes","Writing thought leadership","Building comprehensive strategies","Connecting vision to execution detail"],
+    drains: ["Fast-paced iteration without analysis","Rushing to launch before it feels right","Pure action without sufficient grounding","Communicating to WHAT-dominant audiences"],
+  },
+  "WHAT-WHY": {
+    strengths: ["Building and maintaining momentum","Rallying teams around shared goals","Fast decision-making under ambiguity","Client-facing discovery and pitching","Running high-energy team sessions","Milestone-oriented project leadership"],
+    drains: ["Detailed process design and documentation","Administrative and compliance work","Deep analytical research","Managing granular task execution","Precision-oriented work for extended periods"],
+  },
+  "WHAT-HOW": {
+    strengths: ["Detailed project planning and management","Breaking initiatives into actionable steps","Building metrics and dashboards","Managing cross-functional execution","Running agile and iterative processes","Operationalizing workflows and processes"],
+    drains: ["Open-ended visioning without clear milestones","Work lacking defined next steps","Pure strategy without implementation path","Extended ambiguity about direction or goals"],
+  },
+  "HOW-WHY": {
+    strengths: ["Deep analytical work and root cause analysis","Process auditing and redesign","Synthesizing complex data into insights","Testing and validating approaches rigorously","Spotting inefficiencies","Mentoring on methodology and best practices"],
+    drains: ["Launching before full analysis is complete","High-velocity action-oriented environments","Communicating findings to non-technical audiences","Prioritizing when everything feels equally important"],
+  },
+  "HOW-WHAT": {
+    strengths: ["Designing operational processes end-to-end","Building organizational structures and operating models","Creating SOPs, playbooks, and documentation","Implementing systems and managing change","Identifying and resolving bottlenecks","Managing multi-workstream complexity"],
+    drains: ["Ambiguous open-ended creative work","Vision-setting without clear parameters","Work requiring frequent pivots without structure","Communication of 'why' to stakeholders"],
+  },
+};
+
+// ─── Fit Analysis Panel ───────────────────────────────────────────────────────
+
+function FitAnalysisPanel({ assessment, onClose }) {
+  const profileType = (assessment.type || '').toUpperCase().replace(/_/g, '-');
+  const [role, setRole] = useState(assessment.role || assessment.reg_role || '');
+  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [emailTo, setEmailTo] = useState(assessment.email || assessment.reg_email || '');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+
+  const type = FIT_TYPES.find(t => t.id === profileType);
+  const details = FIT_TYPE_DETAILS[profileType];
+  const tertiary = type ? ['WHY','WHAT','HOW'].find(b => b !== type.primary && b !== type.secondary) : null;
+
+  // Auto-run analysis when panel opens
+  useEffect(() => {
+    if (type && role.trim()) analyze();
+  }, []);
+
+  // Populate email draft once analysis completes
+  useEffect(() => {
+    if (!result) return;
+    const n = assessment.name || assessment.reg_name || 'there';
+    const pct = Math.round(result.score);
+    const label = pct>=75?'Strong Fit':pct>=60?'Good Fit':pct>=40?'Partial Fit':pct>=20?'Poor Fit':'Severe Mismatch';
+    const r = role.trim();
+    setEmailSubject(`Your MindPrint™ Role Fit Analysis — ${r}`);
+    setEmailBody(
+`Hi ${n},
+
+Attached is your MindPrint™ Role Fit Analysis for the ${r} position.
+
+The Role Fit Analysis evaluates how well your natural cognitive profile — the way you're wired to think, prioritize, and approach problems — aligns with the demands of a specific role. Rather than assessing your skills or experience, it identifies whether the type of thinking the role requires will energize or drain you.
+
+Attached you'll find:
+• Your fit score for the ${r} role (${pct}% — ${label})
+• What aspects of the role you're likely to enjoy and excel at
+• Areas where you may face more friction or drain
+• Specific recommendations for setting yourself up for success
+
+If you have any questions about your results, please don't hesitate to reach out.
+
+Curio`
+    );
+  }, [result]);
+
+  async function callAPI(system, userContent, maxTokens, model = 'claude-haiku-4-5-20251001') {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        temperature: 0,
+        top_k: 1,
+        system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content: userContent }],
+      }),
+    });
+    const ct = response.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || data.error);
+      return data.content?.[0]?.text || '';
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '', text = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (payload === '[DONE]') continue;
+        try {
+          const evt = JSON.parse(payload);
+          if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') text += evt.delta.text;
+        } catch {}
+      }
+    }
+    return text;
+  }
+
+  async function analyze() {
+    if (!role.trim() || !type) return;
+    setLoading(true);
+    setLoadingStep('Analyzing role demands…');
+    setError('');
+    setResult(null);
+
+    // The split system prompt (same as /fit)
+    const splitSystem = `You analyze job roles for the MindPrint Framework and estimate their absolute cognitive demand profile.
+
+The MindPrint Framework defines three cognitive orientations:
+- WHY: The work of choosing direction and defining purpose. WHY asks "what should we pursue and why does it matter?"
+- WHAT: The work of execution and momentum. WHAT asks "how do we move this forward?" It drives progress, manages relationships, coordinates people.
+- HOW: The work of correctness and completeness. HOW asks "is this right and does it hold up?" It covers process design, precision, analysis, documentation, systems, quality.
+
+CALIBRATION:
+- CEO / Founder: WHY 40-50%
+- Brand/Creative/Strategy leads: WHY 35-50%
+- Product Manager: WHY 25-35%, WHAT 35-45%, HOW 20-30%
+- UX Designer: WHY 20-30%, HOW 45-55%, WHAT 15-25%
+- Marketing Manager: WHY 20-30%, WHAT 45-55%, HOW 15-25%
+- Program/Project Manager: WHY 5-15%, WHAT 40-50%, HOW 40-50%
+- Engineer / Analyst / QA: WHY <10%, HOW dominant (55-70%)
+- Sales / Recruiter / Account Manager: WHY <10%, WHAT dominant (55-70%)
+
+Estimate what percentage of this role's core work demands each orientation. Must sum to exactly 100.
+Return ONLY valid JSON: { "why": <integer>, "what": <integer>, "how": <integer> }`;
+
+    const qualSystem = `You are a deterministic analyst for the MindPrint Framework. Given a cognitive profile and a role's demand split, produce a role alignment analysis.
+
+The MindPrint Framework defines three cognitive orientations:
+- WHY Brain: Vision-oriented, purpose-driven, big-picture thinker, questions assumptions
+- WHAT Brain: Action-oriented, momentum-driven, milestone-focused, values progress
+- HOW Brain: Detail-oriented, process-focused, precision-driven, systematic
+
+RULES:
+1. Every item must be specific to this exact role and profile combination
+2. Ground every item in the demand split percentages
+3. Recommendations must be actionable and role-specific
+4. partnerTypes must complement the gaps this profile has in this role
+
+Return ONLY valid JSON:
+{
+  "scoreRationale": "<exactly 2-3 sentences about fit>",
+  "enjoys": ["<role-specific>", "<role-specific>", "<role-specific>", "<role-specific>"],
+  "excels": ["<role-specific>", "<role-specific>", "<role-specific>", "<role-specific>"],
+  "dislikes": ["<role-specific>", "<role-specific>", "<role-specific>"],
+  "struggles": ["<role-specific>", "<role-specific>", "<role-specific>"],
+  "recommendations": [
+    { "category": "<Focus|Delegation|Workflow|Communication|Structure>", "action": "<concrete action>", "rationale": "<1-2 sentences>" },
+    { "category": "<label>", "action": "<concrete action>", "rationale": "<1-2 sentences>" },
+    { "category": "<label>", "action": "<concrete action>", "rationale": "<1-2 sentences>" },
+    { "category": "<label>", "action": "<concrete action>", "rationale": "<1-2 sentences>" }
+  ],
+  "partnerTypes": [
+    { "type": "<WHY-WHAT|WHY-HOW|WHAT-WHY|WHAT-HOW|HOW-WHY|HOW-WHAT>", "reason": "<1 sentence>" },
+    { "type": "<one of the above>", "reason": "<1 sentence>" }
+  ]
+}
+Counts: enjoys=4, excels=4, dislikes=3, struggles=3, recommendations=4, partnerTypes=2`;
+
+    function parseSplit(raw) {
+      const m = raw.match(/\{[\s\S]*?\}/);
+      if (!m) return null;
+      try {
+        const s = JSON.parse(m[0]);
+        return typeof s.why === 'number' && typeof s.what === 'number' && typeof s.how === 'number' ? s : null;
+      } catch { return null; }
+    }
+
+    function parseQual(raw) {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (!m) return null;
+      try { return JSON.parse(m[0]); } catch { return null; }
+    }
+
+    try {
+      const rolePrompt = `Role: "${role.trim()}"`;
+      const splitRaws = await Promise.all([
+        callAPI(splitSystem, rolePrompt, 600),
+        callAPI(splitSystem, rolePrompt, 600),
+        callAPI(splitSystem, rolePrompt, 600),
+        callAPI(splitSystem, rolePrompt, 600),
+        callAPI(splitSystem, rolePrompt, 600),
+      ]);
+      const splits = splitRaws.map(parseSplit).filter(Boolean);
+      if (!splits.length) throw new Error('Could not parse demand split');
+
+      const avg = {
+        why:  splits.reduce((s, x) => s + x.why,  0) / splits.length,
+        what: splits.reduce((s, x) => s + x.what, 0) / splits.length,
+        how:  splits.reduce((s, x) => s + x.how,  0) / splits.length,
+      };
+      let demandSplit = { why: Math.round(avg.why), what: Math.round(avg.what), how: Math.round(avg.how) };
+      const off = 100 - (demandSplit.why + demandSplit.what + demandSplit.how);
+      if (off !== 0) {
+        const largest = Object.entries(demandSplit).sort((a, b) => b[1] - a[1])[0][0];
+        demandSplit[largest] += off;
+      }
+
+      const splitMap = { WHY: demandSplit.why, WHAT: demandSplit.what, HOW: demandSplit.how };
+      const dp = splitMap[type.primary] || 0;
+      const ds = splitMap[type.secondary] || 0;
+      const dt = splitMap[tertiary] || 0;
+      const rawScore = dp * 1.25 + ds * 0.8 + dt * (-1.5);
+      const linear = Math.max(0, Math.min(1, (rawScore + 150) / 275));
+      const score = Math.round(Math.pow(linear, 1.5) * 100);
+
+      setLoadingStep('Building profile analysis…');
+
+      const qualUser = `Profile: ${type.label} (${type.tagline})
+Primary orientation: ${type.primary} — energizing
+Secondary orientation: ${type.secondary} — comfortable
+Tertiary orientation: ${tertiary} — draining
+
+What energizes this type: ${details.strengths.join(', ')}
+What drains this type: ${details.drains.join(', ')}
+
+Role: "${role.trim()}"
+Demand split: WHY ${demandSplit.why}%, WHAT ${demandSplit.what}%, HOW ${demandSplit.how}%
+
+For this person: ${dp}% in ${type.primary} (energizing), ${ds}% in ${type.secondary} (neutral), ${dt}% in ${tertiary} (draining)`;
+
+      const SONNET = 'claude-sonnet-4-6';
+      const qualRaws = await Promise.all([
+        callAPI(qualSystem, qualUser, 2000, SONNET),
+        callAPI(qualSystem, qualUser, 2000, SONNET),
+        callAPI(qualSystem, qualUser, 2000, SONNET),
+      ]);
+
+      const candidates = qualRaws.map(parseQual).filter(Boolean);
+      if (!candidates.length) throw new Error('No analysis returned');
+
+      function consensusScore(candidate, others) {
+        const texts = [...(candidate.enjoys||[]),...(candidate.excels||[]),...(candidate.dislikes||[]),...(candidate.struggles||[]),...(candidate.recommendations||[]).map(r=>r.action||'')];
+        let score = 0;
+        for (const other of others) {
+          const otherText = [...(other.enjoys||[]),...(other.excels||[]),...(other.dislikes||[]),...(other.struggles||[]),...(other.recommendations||[]).map(r=>r.action||'')].join(' ').toLowerCase();
+          for (const t of texts) {
+            const words = t.toLowerCase().split(/\s+/).filter(w=>w.length>4);
+            const matched = words.filter(w=>otherText.includes(w));
+            if (matched.length >= Math.max(1, Math.floor(words.length*0.5))) score++;
+          }
+        }
+        return score;
+      }
+
+      const qual = candidates.length === 1 ? candidates[0]
+        : candidates.map((c,i)=>({c,s:consensusScore(c,candidates.filter((_,j)=>j!==i))})).sort((a,b)=>b.s-a.s)[0].c;
+
+      setResult({ ...qual, demandSplit, score });
+    } catch (e) {
+      setError('Error: ' + (e.message || 'Something went wrong'));
+    } finally {
+      setLoading(false);
+      setLoadingStep('');
+    }
+  }
+
+  async function sendEmail() {
+    if (!emailTo.trim()) return setError('Email address is required');
+    const name = assessment.name || assessment.reg_name;
+    setSending(true);
+    setError('');
+    try {
+      const res = await fetch('/api/email/send-fit-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_name: name,
+          participant_email: emailTo.trim(),
+          profile_type: profileType,
+          role: role.trim(),
+          result,
+          email_subject: emailSubject,
+          email_body: emailBody,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setSent(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function downloadPDF() {
+    const esc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const pct = Math.round(result.score);
+    const color = pct>=75?'#059669':pct>=60?'#34D399':pct>=40?'#F59E0B':'#EF4444';
+    const label = pct>=75?'Strong fit':pct>=60?'Good fit':pct>=40?'Partial fit':pct>=20?'Poor fit':'Severe mismatch';
+    const labelBg = pct>=75?'rgba(5,150,105,0.08)':pct>=60?'rgba(52,211,153,0.08)':pct>=40?'rgba(245,158,11,0.08)':'rgba(239,68,68,0.08)';
+    const labelBorder = pct>=75?'rgba(5,150,105,0.3)':pct>=60?'rgba(52,211,153,0.3)':pct>=40?'rgba(245,158,11,0.3)':'rgba(239,68,68,0.3)';
+    const today = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    const r=36,circ=2*Math.PI*r,dash=(pct/100)*circ;
+    const participantName = assessment.name || assessment.reg_name || '';
+    const bullets = (items,dotColor) => items.map(i=>`<div class="bullet"><span class="dot" style="background:${dotColor}"></span><span class="btext">${esc(i)}</span></div>`).join('');
+
+    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Role Alignment${participantName?' — '+esc(participantName):''} — ${esc(role)} — Curio</title><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:1.5;background:#fff}.wrap{max-width:700px;margin:0 auto;padding:26px 30px}.hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid #059669;padding-bottom:11px;margin-bottom:16px}.logo{font-family:'Caveat',cursive;font-size:21pt;font-weight:700}.logo em{color:#059669;font-style:normal}.hdr-right{text-align:right;font-size:7pt;color:#78716C}.hdr-right strong{display:block;font-size:8pt;color:#1C1917;margin-bottom:1px}.pname{font-family:'Caveat',cursive;font-size:26pt;font-weight:700;margin-bottom:10px}.score-row{display:flex;align-items:center;gap:18px;padding:13px 15px;background:#FAFAF9;border:1px solid #E7E5E4;border-radius:6px;margin-bottom:9px}.sinfo{flex:1}.tlabel{font-size:6.5pt;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#059669;margin-bottom:3px}.rname{font-family:'Caveat',cursive;font-size:17pt;font-weight:700;line-height:1.1;margin-bottom:6px}.rationale{font-size:7.5pt;color:#57534E;line-height:1.6}.sring{flex-shrink:0;text-align:center}.fit-lbl{font-size:6pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 8px;border-radius:100px;display:inline-block;margin-top:4px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}.card{background:#FAFAF9;border:1px solid #E7E5E4;border-radius:5px;padding:11px 13px}.ca{border-left:2px solid #059669}.clabel{font-size:6pt;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:#059669;margin-bottom:7px}.bullet{display:flex;gap:6px;align-items:flex-start;margin-bottom:3px}.dot{width:4px;height:4px;border-radius:50%;margin-top:5px;flex-shrink:0}.btext{font-size:7.5pt;color:#57534E;line-height:1.45}.rec{padding:6px 0;border-bottom:1px solid #E7E5E4}.rec:last-child{border-bottom:none;padding-bottom:0}.rcat{font-size:6pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#059669;margin-bottom:1px}.raction{font-family:'Caveat',cursive;font-size:10.5pt;line-height:1.2;margin-bottom:1px}.rrat{font-size:7pt;color:#78716C;line-height:1.45}.footer{margin-top:13px;padding-top:9px;border-top:1px solid #E7E5E4;display:flex;justify-content:space-between;font-size:6.5pt;color:#A8A29E}.flogo{font-family:'Caveat',cursive;font-size:13pt;font-weight:700}.flogo em{color:#059669;font-style:normal}.print-btn{display:block;width:100%;padding:14px;margin-bottom:16px;background:#059669;color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:10pt;font-weight:700;cursor:pointer}@media print{@page{margin:12mm 10mm;size:A4 portrait}.wrap{padding:0;max-width:100%}.print-btn{display:none!important}}</style></head><body><div class="wrap"><button class="print-btn" onclick="this.style.display='none';window.print()">Save as PDF</button><div class="hdr"><div class="logo">Curio<em>.</em></div><div class="hdr-right"><strong>Role Alignment Analysis</strong>${esc(today)}</div></div>${participantName?`<div class="pname">${esc(participantName)}</div>`:''}<div class="score-row"><div class="sinfo"><div class="tlabel">${esc(type.label)} &middot; ${esc(type.tagline)}</div><div class="rname">${esc(role)}</div><div class="rationale">${esc(result.scoreRationale||'')}</div></div><div class="sring"><svg width="86" height="86" viewBox="0 0 86 86"><circle cx="43" cy="43" r="${r}" fill="none" stroke="#E7E5E4" stroke-width="6"/><circle cx="43" cy="43" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 43 43)"/><text x="43" y="38" text-anchor="middle" font-size="19" font-weight="700" fill="${color}" font-family="Caveat,cursive">${pct}%</text><text x="43" y="52" text-anchor="middle" font-size="7" fill="#A8A29E" font-family="DM Sans,sans-serif" letter-spacing="1">MATCH</text></svg><div class="fit-lbl" style="color:${color};background:${labelBg};border:1px solid ${labelBorder}">${esc(label)}</div></div></div><div class="g2"><div class="card ca"><div class="clabel">Likely enjoys</div>${bullets(result.enjoys||[],'#059669')}</div><div class="card ca"><div class="clabel">Likely excels at</div>${bullets(result.excels||[],'#059669')}</div></div><div class="g2"><div class="card"><div class="clabel">Likely dislikes</div>${bullets(result.dislikes||[],'#A8A29E')}</div><div class="card"><div class="clabel">May struggle with</div>${bullets(result.struggles||[],'#A8A29E')}</div></div><div class="card" style="margin-bottom:7px"><div class="clabel">Recommendations</div>${(result.recommendations||[]).map(rec=>`<div class="rec"><div class="rcat">${esc(rec.category)}</div><div class="raction">${esc(rec.action)}</div><div class="rrat">${esc(rec.rationale)}</div></div>`).join('')}</div><div class="footer"><div><div class="flogo">Curio<em>.</em></div><div>MindPrint Framework™ &middot; Role Alignment Analysis</div></div><div>choosecurio.com &middot; Generated ${esc(today)}</div></div></div></body></html>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
+  const pct = result ? Math.round(result.score) : 0;
+  const scoreColor = pct>=75?'#059669':pct>=60?'#34D399':pct>=40?'#F59E0B':'#EF4444';
+  const scoreLabel = pct>=75?'Strong Fit':pct>=60?'Good Fit':pct>=40?'Partial Fit':pct>=20?'Poor Fit':'Severe Mismatch';
+
+  return (
+    <div style={s.sendPanel}>
+      {/* Header row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Role Fit — {profileType}
+        </div>
+        <button style={s.btnSecondary} onClick={onClose}>Close</button>
+      </div>
+
+      {/* Role field + re-analyze */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          <label style={s.sendLabel}>Role</label>
+          <input
+            style={s.sendInput}
+            value={role}
+            onChange={e => setRole(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !loading && analyze()}
+            placeholder="e.g. Senior Product Manager, VP of Sales…"
+          />
+        </div>
+        <button style={s.btnSecondary} onClick={analyze} disabled={loading || !role.trim()}>
+          {loading ? (loadingStep || 'Analyzing…') : result ? 'Re-analyze' : 'Analyze'}
+        </button>
+      </div>
+
+      {/* Loading state */}
+      {loading && (
+        <div style={{ padding: '12px 0', fontSize: '0.875rem', color: '#64748B' }}>
+          {loadingStep || 'Analyzing…'}
+        </div>
+      )}
+
+      {error && <p style={s.error}>{error}</p>}
+
+      {/* Score banner + email composer */}
+      {result && !loading && (
+        <div>
+          {/* Compact score banner */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: `3px solid ${scoreColor}`, borderRadius: 6, padding: '10px 14px', marginBottom: 14 }}>
+            <span style={{ fontFamily: "'Caveat', cursive", fontSize: '1.4rem', fontWeight: 700, color: scoreColor }}>{pct}%</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151' }}>{scoreLabel}</span>
+            <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>· {type?.label}</span>
+          </div>
+
+          {/* Email composer */}
+          <div style={s.sendPanelGrid}>
+            <div style={s.sendField}>
+              <label style={s.sendLabel}>To</label>
+              <input style={s.sendInput} value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="recipient@example.com" />
+            </div>
+            <div style={s.sendField}>
+              <label style={s.sendLabel}>Subject</label>
+              <input style={s.sendInput} value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
+            </div>
+            <div style={{ ...s.sendField, gridColumn: '1 / -1' }}>
+              <label style={s.sendLabel}>Message <span style={{ fontWeight: 400, color: '#94A3B8' }}>(PDF analysis will be attached)</span></label>
+              <textarea style={{ ...s.sendTextarea, lineHeight: 1.7 }} rows={11} value={emailBody} onChange={e => setEmailBody(e.target.value)} />
+            </div>
+          </div>
+
+          <div style={s.sendActions}>
+            {sent ? (
+              <span style={s.sentBadge}>Email Sent ✓</span>
+            ) : (
+              <button style={s.btn} onClick={sendEmail} disabled={sending || !emailTo.trim()}>
+                {sending ? 'Sending…' : 'Send Email + PDF'}
+              </button>
+            )}
+            <button style={s.btnSecondary} onClick={downloadPDF}>Download PDF</button>
+            <button style={s.btnSecondary} onClick={onClose}>Close</button>
+          </div>
+          {!emailTo.trim() && (
+            <p style={{ ...s.error, marginTop: 6 }}>No email address on record for this participant.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Assessments Panel ────────────────────────────────────────────────────────
+
 function AssessmentsPanel() {
   const [assessments, setAssessments] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [openFitPanel, setOpenFitPanel] = useState(null);
 
   async function load() {
     setError('');
@@ -303,34 +944,60 @@ function AssessmentsPanel() {
             <table style={s.table}>
               <thead>
                 <tr>
-                  {['Reg. Name', 'Reg. Email', 'Quiz Name', 'Quiz Email', 'Company', 'Role', 'Type', 'H Score', 'W Score', 'Y Score', 'Submitted At'].map(h => (
+                  {['Reg. Name', 'Reg. Email', 'Quiz Name', 'Quiz Email', 'Company', 'Role', 'Type', 'H Score', 'W Score', 'Y Score', 'Submitted At', 'Actions'].map(h => (
                     <th key={h} style={s.th}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {assessments.map((a, i) => (
-                  <tr key={a.id || i} style={i % 2 === 0 ? s.trEven : {}}>
-                    <td style={s.td}>{a.reg_name || '—'}</td>
-                    <td style={s.td}>{a.reg_email || '—'}</td>
-                    <td style={s.td}>{a.name || '—'}</td>
-                    <td style={s.td}>{a.email || '—'}</td>
-                    <td style={s.td}>{a.company || '—'}</td>
-                    <td style={s.td}>{a.role || '—'}</td>
-                    <td style={s.td}>
-                      {a.type ? (
-                        <span style={s.badgeType}>{a.type.toUpperCase()}</span>
-                      ) : '—'}
-                    </td>
-                    <td style={s.td}>{a.h_score ?? '—'}</td>
-                    <td style={s.td}>{a.w_score ?? '—'}</td>
-                    <td style={s.td}>{a.y_score ?? '—'}</td>
-                    <td style={s.td}>{a.submitted_at ? new Date(a.submitted_at).toLocaleString() : '—'}</td>
-                  </tr>
-                ))}
+                {assessments.flatMap((a, i) => {
+                  const mainRow = (
+                    <tr key={a.id || i} style={i % 2 === 0 ? s.trEven : {}}>
+                      <td style={s.td}>{a.reg_name || '—'}</td>
+                      <td style={s.td}>{a.reg_email || '—'}</td>
+                      <td style={s.td}>{a.name || '—'}</td>
+                      <td style={s.td}>{a.email || '—'}</td>
+                      <td style={s.td}>{a.company || '—'}</td>
+                      <td style={s.td}>{a.role || '—'}</td>
+                      <td style={s.td}>
+                        {a.type ? (
+                          <span style={s.badgeType}>{a.type.toUpperCase()}</span>
+                        ) : '—'}
+                      </td>
+                      <td style={s.td}>{a.h_score ?? '—'}</td>
+                      <td style={s.td}>{a.w_score ?? '—'}</td>
+                      <td style={s.td}>{a.y_score ?? '—'}</td>
+                      <td style={s.td}>{a.submitted_at ? new Date(a.submitted_at).toLocaleString() : '—'}</td>
+                      <td style={s.td}>
+                        {a.type ? (
+                          <button
+                            style={openFitPanel === (a.id || i) ? s.sendLinkBtnActive : s.sendLinkBtn}
+                            onClick={() => setOpenFitPanel(openFitPanel === (a.id || i) ? null : (a.id || i))}
+                          >
+                            Role Fit
+                          </button>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  );
+
+                  if (openFitPanel !== (a.id || i)) return [mainRow];
+
+                  return [
+                    mainRow,
+                    <tr key={`${a.id || i}-fit`}>
+                      <td colSpan={12} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}>
+                        <FitAnalysisPanel
+                          assessment={a}
+                          onClose={() => setOpenFitPanel(null)}
+                        />
+                      </td>
+                    </tr>,
+                  ];
+                })}
                 {assessments.length === 0 && (
                   <tr>
-                    <td colSpan={11} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>
+                    <td colSpan={12} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>
                       No assessments yet.
                     </td>
                   </tr>
@@ -343,6 +1010,398 @@ function AssessmentsPanel() {
     </section>
   );
 }
+
+// ─── Accounts Panel ───────────────────────────────────────────────────────────
+
+function AccountsPanel() {
+  const [accounts, setAccounts] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newSlug, setNewSlug] = useState('');
+  const [newNotes, setNewNotes] = useState('');
+  const [openId, setOpenId] = useState(null);
+
+  async function load() {
+    setLoading(true); setError('');
+    try {
+      const res = await fetch('/api/admin/accounts');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setAccounts(data.accounts);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function create() {
+    if (!newName.trim() || !newSlug.trim()) return setError('Name and slug are required');
+    try {
+      const res = await fetch('/api/admin/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim(), slug: newSlug.trim(), notes: newNotes.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setNewName(''); setNewSlug(''); setNewNotes(''); setCreating(false);
+      load();
+    } catch (e) { setError(e.message); }
+  }
+
+  return (
+    <section style={s.panel}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Client Accounts</h2>
+        <button style={s.btn} onClick={() => setCreating(c => !c)}>
+          {creating ? 'Cancel' : '+ New Account'}
+        </button>
+      </div>
+
+      {creating && (
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: 20, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', marginBottom: 12 }}>
+            <div>
+              <label style={s.sendLabel}>Account Name</label>
+              <input style={s.sendInput} value={newName} onChange={e => { setNewName(e.target.value); if (!newSlug) setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')); }} placeholder="Acme Corp" />
+            </div>
+            <div>
+              <label style={s.sendLabel}>Slug (URL-safe ID)</label>
+              <input style={s.sendInput} value={newSlug} onChange={e => setNewSlug(e.target.value)} placeholder="acme-corp" />
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={s.sendLabel}>Notes (optional)</label>
+              <input style={s.sendInput} value={newNotes} onChange={e => setNewNotes(e.target.value)} placeholder="Internal notes about this account" />
+            </div>
+          </div>
+          {error && <p style={s.error}>{error}</p>}
+          <button style={s.btn} onClick={create}>Create Account</button>
+        </div>
+      )}
+
+      {loading && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>}
+      {error && !creating && <p style={s.error}>{error}</p>}
+
+      {accounts && accounts.length === 0 && (
+        <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No accounts yet. Create one above.</p>
+      )}
+
+      {accounts && accounts.length > 0 && (
+        <div>
+          {accounts.map(acc => (
+            <AccountRow key={acc.id} account={acc} open={openId === acc.id} onToggle={() => setOpenId(openId === acc.id ? null : acc.id)} onRefresh={load} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AccountRow({ account, open, onToggle, onRefresh }) {
+  const [detail, setDetail] = useState(null);
+  const [detailTab, setDetailTab] = useState('users');
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState('member');
+  const [userPwd, setUserPwd] = useState('');
+  const [licType, setLicType] = useState('assessment_tokens');
+  const [licQty, setLicQty] = useState('');
+  const [licExpiry, setLicExpiry] = useState('');
+  const [engId, setEngId] = useState('');
+  const [actionMsg, setActionMsg] = useState('');
+  const [actionErr, setActionErr] = useState('');
+  const [restrictResults, setRestrictResults] = useState(account.restrict_results || false);
+  const [acctTokens, setAcctTokens] = useState(null);
+  const [acctTokensErr, setAcctTokensErr] = useState('');
+
+  useEffect(() => {
+    if (open && !detail) {
+      fetch(`/api/admin/accounts/${account.id}`)
+        .then(r => r.json())
+        .then(data => { setDetail(data); setRestrictResults(data.account?.restrict_results || false); })
+        .catch(() => {});
+    }
+  }, [open, account.id]);
+
+  function loadAcctTokens() {
+    setAcctTokensErr('');
+    fetch(`/api/admin/accounts/${account.id}/tokens`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) setAcctTokensErr(data.error);
+        else setAcctTokens(data.tokens || []);
+      })
+      .catch(() => setAcctTokensErr('Failed to load tokens'));
+  }
+
+  useEffect(() => {
+    if (open && detailTab === 'tokens') loadAcctTokens();
+  }, [open, detailTab]);
+
+  async function addUser() {
+    if (!userEmail || !userPwd) return setActionErr('Email and password required');
+    const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail, name: userName, role: userRole, password: userPwd }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setActionErr(data.error || 'Failed');
+    setUserEmail(''); setUserName(''); setUserPwd(''); setUserRole('member');
+    setActionMsg('User added'); setActionErr('');
+    fetch(`/api/admin/accounts/${account.id}`).then(r => r.json()).then(setDetail);
+  }
+
+  async function removeUser(userId) {
+    const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) return setActionErr('Failed to remove user');
+    fetch(`/api/admin/accounts/${account.id}`).then(r => r.json()).then(setDetail);
+  }
+
+  async function addLicense() {
+    const res = await fetch(`/api/admin/accounts/${account.id}/licenses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: licType, quantity: licQty || undefined, expires_at: licExpiry || undefined }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setActionErr(data.error || 'Failed');
+    setLicQty(''); setLicExpiry('');
+    setActionMsg('License added'); setActionErr('');
+    fetch(`/api/admin/accounts/${account.id}`).then(r => r.json()).then(setDetail);
+    onRefresh();
+  }
+
+  async function removeLicense(licenseId) {
+    const res = await fetch(`/api/admin/accounts/${account.id}/licenses`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseId }),
+    });
+    if (!res.ok) return setActionErr('Failed to remove license');
+    fetch(`/api/admin/accounts/${account.id}`).then(r => r.json()).then(setDetail);
+    onRefresh();
+  }
+
+  async function linkEngagement() {
+    if (!engId.trim()) return setActionErr('Enter an engagement ID');
+    const res = await fetch(`/api/admin/accounts/${account.id}/link-engagement`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ engagement_id: engId.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setActionErr(data.error || 'Failed');
+    setEngId('');
+    setActionMsg(`Linked ${data.linked} token(s) to this account`); setActionErr('');
+    loadAcctTokens();
+  }
+
+  async function toggleRestrict(val) {
+    setRestrictResults(val);
+    await fetch(`/api/admin/accounts/${account.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restrict_results: val }),
+    });
+  }
+
+  const licSummary = (account.licenses || []).map(l => {
+    if (l.type === 'assessment_tokens') return `${l.quantity || '?'} Tokens`;
+    if (l.type === 'role_analyzer') return 'Role Fit';
+    if (l.type === 'jd_analyzer') return 'JD Analyzer';
+    return l.type;
+  }).join(', ');
+
+  return (
+    <div style={{ borderBottom: '1px solid #E2E8F0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', cursor: 'pointer' }} onClick={onToggle}>
+        <span style={{ fontSize: '0.7rem', color: '#94A3B8', transition: 'transform 0.2s', display: 'inline-block', transform: open ? 'rotate(90deg)' : 'none' }}>▶</span>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0F172A' }}>{account.name}</span>
+          <span style={{ marginLeft: 12, fontSize: '0.8rem', color: '#64748B' }}>{(account.users || []).length} user{(account.users||[]).length !== 1 ? 's' : ''}</span>
+          {licSummary && <span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#059669' }}>· {licSummary}</span>}
+        </div>
+        <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{new Date(account.created_at).toLocaleDateString()}</span>
+      </div>
+
+      {open && (
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: 20, marginBottom: 16 }}>
+          {!detail ? (
+            <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>
+          ) : (
+            <>
+              {actionMsg && <p style={{ color: '#059669', fontSize: '0.8rem', marginBottom: 8 }}>{actionMsg}</p>}
+              {actionErr && <p style={s.error}>{actionErr}</p>}
+
+              {/* Sub-tabs */}
+              <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #E2E8F0', marginBottom: 16 }}>
+                {['users', 'licenses', 'tokens', 'settings'].map(t => (
+                  <button key={t} onClick={() => setDetailTab(t)} style={{ ...s.tab, ...(detailTab === t ? s.tabActive : {}), padding: '8px 14px', fontSize: '0.8rem' }}>
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {detailTab === 'users' && (
+                <>
+                  {/* User list */}
+                  {(detail.users || []).length > 0 && (
+                    <table style={{ ...s.table, marginBottom: 16 }}>
+                      <thead><tr>{['Email','Name','Role','Last Login',''].map(h=><th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {detail.users.map((u, i) => (
+                          <tr key={u.id} style={i%2===0?s.trEven:{}}>
+                            <td style={s.td}>{u.email}</td>
+                            <td style={s.td}>{u.name||'—'}</td>
+                            <td style={s.td}><span style={{ ...s.badgeType, background: u.role==='owner'?'#FEF3C7':'#EFF6FF', color: u.role==='owner'?'#92400E':'#1D4ED8' }}>{u.role}</span></td>
+                            <td style={s.td}>{u.last_login_at ? new Date(u.last_login_at).toLocaleDateString() : 'Never'}</td>
+                            <td style={s.td}><button style={s.copyBtn} onClick={() => removeUser(u.id)}>Remove</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {/* Add user form */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 12 }}>Add User</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px' }}>
+                      <div><label style={s.sendLabel}>Email *</label><input style={s.sendInput} value={userEmail} onChange={e=>setUserEmail(e.target.value)} placeholder="user@company.com" /></div>
+                      <div><label style={s.sendLabel}>Name</label><input style={s.sendInput} value={userName} onChange={e=>setUserName(e.target.value)} placeholder="Full Name" /></div>
+                      <div>
+                        <label style={s.sendLabel}>Role</label>
+                        <select style={s.sendInput} value={userRole} onChange={e=>setUserRole(e.target.value)}>
+                          <option value="member">Member</option>
+                          <option value="owner">Owner</option>
+                        </select>
+                      </div>
+                      <div><label style={s.sendLabel}>Password *</label><input style={s.sendInput} type="password" value={userPwd} onChange={e=>setUserPwd(e.target.value)} placeholder="Initial password" /></div>
+                    </div>
+                    <button style={{ ...s.btn, marginTop: 12 }} onClick={addUser}>Add User</button>
+                  </div>
+                </>
+              )}
+
+              {detailTab === 'licenses' && (
+                <>
+                  {/* License list */}
+                  {(detail.licenses || []).length > 0 && (
+                    <table style={{ ...s.table, marginBottom: 16 }}>
+                      <thead><tr>{['Type','Quantity','Expires',''].map(h=><th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {detail.licenses.map((l, i) => (
+                          <tr key={l.id} style={i%2===0?s.trEven:{}}>
+                            <td style={s.td}><span style={s.badgeType}>{l.type.replace(/_/g,' ')}</span></td>
+                            <td style={s.td}>{l.quantity ?? '—'}</td>
+                            <td style={s.td}>{l.expires_at ? new Date(l.expires_at).toLocaleDateString() : 'No expiry'}</td>
+                            <td style={s.td}><button style={s.copyBtn} onClick={()=>removeLicense(l.id)}>Remove</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {/* Add license form */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 12 }}>Add License</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px 14px' }}>
+                      <div>
+                        <label style={s.sendLabel}>Type</label>
+                        <select style={s.sendInput} value={licType} onChange={e=>setLicType(e.target.value)}>
+                          <option value="assessment_tokens">Assessment Tokens</option>
+                          <option value="role_analyzer">Role Fit Analyzer</option>
+                          <option value="jd_analyzer">JD Analyzer</option>
+                        </select>
+                      </div>
+                      <div><label style={s.sendLabel}>Quantity (tokens only)</label><input style={s.sendInput} type="number" value={licQty} onChange={e=>setLicQty(e.target.value)} placeholder="e.g. 100" /></div>
+                      <div><label style={s.sendLabel}>Expiry Date (optional)</label><input style={s.sendInput} type="date" value={licExpiry} onChange={e=>setLicExpiry(e.target.value)} /></div>
+                    </div>
+                    <button style={{ ...s.btn, marginTop: 12 }} onClick={addLicense}>Add License</button>
+                  </div>
+                </>
+              )}
+
+              {detailTab === 'tokens' && (
+                <>
+                  {/* Link engagement */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16, marginBottom: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Link Token Engagement</p>
+                    <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: 12 }}>Paste an Engagement ID to link all its tokens to this account. The client will then see those tokens in their portal.</p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input style={{ ...s.sendInput, flex: 1 }} value={engId} onChange={e=>setEngId(e.target.value)} placeholder="e.g. acme-2026-q1" />
+                      <button style={s.btn} onClick={linkEngagement}>Link</button>
+                    </div>
+                    {actionMsg && <p style={{ color: '#059669', fontSize: '0.8rem', marginTop: 8 }}>{actionMsg}</p>}
+                    {actionErr && <p style={s.error}>{actionErr}</p>}
+                  </div>
+                  {/* Linked tokens list */}
+                  <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16 }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 12 }}>
+                      Linked Tokens {acctTokens ? `(${acctTokens.length})` : ''}
+                    </p>
+                    {acctTokensErr && <p style={s.error}>{acctTokensErr}</p>}
+                    {!acctTokens && !acctTokensErr && <p style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Loading…</p>}
+                    {acctTokens && acctTokens.length === 0 && (
+                      <p style={{ fontSize: '0.8rem', color: '#94A3B8' }}>No tokens linked yet. Use the form above to link an engagement.</p>
+                    )}
+                    {acctTokens && acctTokens.length > 0 && (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={s.table}>
+                          <thead><tr>{['Name','Email','Role','Engagement','Status','Date'].map(h=><th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                          <tbody>
+                            {acctTokens.map((t, i) => (
+                              <tr key={t.token} style={i%2===0?s.trEven:{}}>
+                                <td style={s.td}>{t.name||'—'}</td>
+                                <td style={s.td}>{t.email||'—'}</td>
+                                <td style={s.td}>{t.role||'—'}</td>
+                                <td style={s.td}><code style={{ fontSize: '0.75rem' }}>{t.engagement_id||'—'}</code></td>
+                                <td style={s.td}>
+                                  <span style={t.used ? { background:'#D1FAE5',color:'#065F46',padding:'2px 9px',borderRadius:99,fontSize:'0.78rem',fontWeight:600 } : { background:'#FEF3C7',color:'#92400E',padding:'2px 9px',borderRadius:99,fontSize:'0.78rem',fontWeight:600 }}>
+                                    {t.used ? 'Completed' : 'Pending'}
+                                  </span>
+                                </td>
+                                <td style={s.td}>{t.used_at ? new Date(t.used_at).toLocaleDateString() : new Date(t.created_at).toLocaleDateString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {detailTab === 'settings' && (
+                <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, padding: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0F172A' }}>Restrict result visibility</p>
+                      <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>When on, members only see their own assessment results. Owners always see everything.</p>
+                    </div>
+                    <button
+                      onClick={() => toggleRestrict(!restrictResults)}
+                      style={{ padding: '6px 16px', background: restrictResults ? '#059669' : '#E2E8F0', color: restrictResults ? '#fff' : '#374151', border: 'none', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}
+                    >
+                      {restrictResults ? 'Restricted' : 'Unrestricted'}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: 12 }}>Portal URL: <code style={s.code}>/portal/login</code></p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = {
   page: { minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' },
@@ -383,7 +1442,7 @@ const s = {
     borderBottom: '2px solid #059669',
     fontWeight: 600,
   },
-  main: { maxWidth: 900, margin: '0 auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 32 },
+  main: { maxWidth: 1100, margin: '0 auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 32 },
   panel: { background: '#fff', borderRadius: 12, padding: 32, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' },
   panelTitle: { fontSize: '1.1rem', fontWeight: 600, marginBottom: 24, marginTop: 0 },
   fieldGroup: { marginBottom: 16 },
@@ -402,10 +1461,23 @@ const s = {
   th: { textAlign: 'left', padding: '10px 12px', borderBottom: '2px solid #E2E8F0', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' },
   td: { padding: '10px 12px', borderBottom: '1px solid #F1F5F9', verticalAlign: 'middle' },
   trEven: { background: '#FAFAFA' },
-  urlCell: { fontFamily: 'monospace', fontSize: '0.75rem', color: '#64748B', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  urlCell: { fontFamily: 'monospace', fontSize: '0.75rem', color: '#64748B', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   copyBtn: { padding: '4px 10px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   summary: { fontSize: '0.95rem', marginBottom: 12, color: '#374151' },
-  badgeUsed: { background: '#D1FAE5', color: '#065F46', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600 },
-  badgePending: { background: '#FEF3C7', color: '#92400E', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600 },
+  badgeUsed: { background: '#D1FAE5', color: '#065F46', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap' },
+  badgePending: { background: '#FEF3C7', color: '#92400E', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap' },
+  badgeLinkSent: { background: '#EFF6FF', color: '#1D4ED8', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap' },
   badgeType: { background: '#EFF6FF', color: '#1D4ED8', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.05em' },
+  sentBadge: { color: '#059669', fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap' },
+  sendLinkBtn: { padding: '4px 10px', background: '#F0FDF4', color: '#059669', border: '1px solid #BBF7D0', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' },
+  sendLinkBtnActive: { padding: '4px 10px', background: '#059669', color: '#fff', border: '1px solid #059669', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' },
+  sendProfileBtn: { padding: '4px 10px', background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' },
+  // Send link panel
+  sendPanel: { padding: '20px 24px', background: '#F8FAFC', borderTop: '2px solid #059669' },
+  sendPanelGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', marginBottom: 12 },
+  sendField: {},
+  sendLabel: { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 },
+  sendInput: { width: '100%', padding: '8px 12px', borderRadius: 6, border: '1.5px solid #E2E8F0', fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', boxSizing: 'border-box' },
+  sendTextarea: { width: '100%', padding: '8px 12px', borderRadius: 6, border: '1.5px solid #E2E8F0', fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6 },
+  sendActions: { display: 'flex', gap: 8, marginTop: 4 },
 };
