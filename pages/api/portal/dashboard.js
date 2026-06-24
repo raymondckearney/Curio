@@ -12,12 +12,12 @@ export default async function handler(req, res) {
   try {
     const [licenses, tokens, account] = await Promise.all([
       dbGet('account_licenses', { account_id: accountId }),
-      dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token,consumed_at,name,email,role,used_at' }),
+      dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token,used,name,email,role,used_at' }),
       dbGet('client_accounts', { id: accountId }),
     ]);
 
     const tokenCount = tokens.length;
-    const usedTokens = tokens.filter(t => t.consumed_at).length;
+    const usedTokens = tokens.filter(t => t.used).length;
 
     // Recent assessments (last 5) via token lookup
     const tokenIds = tokens.map(t => t.token).filter(Boolean);

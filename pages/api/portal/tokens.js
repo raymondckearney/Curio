@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     const tokens = await dbQuery('tokens', {
       account_id: `eq.${session.accountId}`,
       order: 'created_at.desc',
-      select: 'token,name,email,role,company,consumed_at,used_at,link_sent_at,engagement_id,created_at',
+      select: 'token,name,email,role,company,used,used_at,link_sent_at,engagement_id,created_at',
     });
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.choosecurio.com';

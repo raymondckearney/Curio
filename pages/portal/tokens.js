@@ -35,7 +35,7 @@ export default function PortalTokens() {
   if (!me) return null;
 
   const total = tokens?.length || 0;
-  const used = tokens?.filter(t => t.consumed_at).length || 0;
+  const used = tokens?.filter(t => t.used).length || 0;
 
   return (
     <>
@@ -68,8 +68,8 @@ export default function PortalTokens() {
                         <td style={s.td}>{t.email || '—'}</td>
                         <td style={s.td}>{t.role || '—'}</td>
                         <td style={s.td}>
-                          <span style={t.consumed_at ? s.badgeUsed : s.badgePending}>
-                            {t.consumed_at ? 'Completed' : 'Pending'}
+                          <span style={t.used ? s.badgeUsed : s.badgePending}>
+                            {t.used ? 'Completed' : 'Pending'}
                           </span>
                         </td>
                         <td style={{ ...s.td, ...s.urlCell }}>{t.url}</td>
