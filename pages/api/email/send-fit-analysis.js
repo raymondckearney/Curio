@@ -59,7 +59,7 @@ function buildDefaultBody(name, role, result) {
 
 Attached is your MindPrint™ Role Fit Analysis for the ${role} position.
 
-The Role Fit Analysis evaluates how well your natural cognitive profile — the way you're wired to think, prioritize, and approach problems — aligns with the demands of a specific role. Rather than assessing your skills or experience, it identifies whether the type of thinking the role requires will energize or drain you.
+The Role Fit Analysis evaluates how well your natural cognitive profile (the way you're wired to think, prioritize, and approach problems) aligns with the demands of a specific role. Rather than assessing your skills or experience, it identifies whether the type of thinking the role requires will energize or drain you. It also provides strategies for how to address aspects of the role that are not naturally aligned to your profile.
 
 Attached you'll find:
 • Your fit score for the ${role} role (${pct}% — ${label})
