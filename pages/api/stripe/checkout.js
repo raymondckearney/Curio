@@ -8,6 +8,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'name, email, priceId, and product are required' });
   }
 
+  if (priceId.startsWith('prod_')) {
+    return res.status(500).json({ error: 'Configuration error: STRIPE_PRICE env vars must be price IDs (price_xxx), not product IDs (prod_xxx). Update in Vercel environment variables.' });
+  }
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
   try {
