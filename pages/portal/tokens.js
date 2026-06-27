@@ -34,12 +34,15 @@ export default function PortalTokens() {
     return fetch('/api/portal/tokens').then(r => r.ok ? r.json() : null);
   }, []);
 
+  const [dash, setDash] = useState(null);
+
   useEffect(() => {
     Promise.all([
       fetch('/api/portal/me').then(r => r.ok ? r.json() : Promise.reject()),
+      fetch('/api/portal/dashboard').then(r => r.ok ? r.json() : null),
       loadTokens(),
     ])
-      .then(([meData, tokData]) => { setMe(meData); setTokens(tokData?.tokens || []); })
+      .then(([meData, dashData, tokData]) => { setMe(meData); setDash(dashData); setTokens(tokData?.tokens || []); })
       .catch(() => router.replace('/portal/login'))
       .finally(() => setLoading(false));
   }, [router, loadTokens]);
@@ -120,7 +123,7 @@ export default function PortalTokens() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.page}>
-        <PortalNav me={me} onLogout={logout} active="tokens" />
+        <PortalNav me={me} onLogout={logout} active="tokens" isSelfServe={dash?.isSelfServe} hasFitToken={dash?.hasFitToken} />
         <main style={s.main}>
           <h1 style={s.pageTitle}>Assessment Tokens</h1>
 

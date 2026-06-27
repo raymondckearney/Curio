@@ -39,27 +39,34 @@ export default async function handler(req, res) {
     password_hash: hash,
   });
 
-  // Link purchase tokens to this account via engagement_id
-  if (stripe_session_id) {
-    try {
-      const purchases = await dbGet('purchases', { stripe_session_id });
+  // Link tokens to this account.
+  // Primary: match by email on the tokens table (set by webhook from buyer_email)
+  // Fallback: match by engagement_id via purchases table (requires purchases table to exist)
+  try {
+    const emailTokens = await dbQuery('tokens', {
+      email: `eq.${normalEmail}`,
+      account_id: 'is.null',
+    });
+    if (emailTokens.length) {
+      await Promise.all(
+        emailTokens.map(t => dbPatch('tokens', { token: t.token }, { account_id: account.id }))
+      );
+    } else if (stripe_session_id) {
+      // Fallback: try purchases table
+      const purchases = await dbGet('purchases', { stripe_session_id }).catch(() => []);
       if (purchases.length) {
         const { engagement_id } = purchases[0];
-        await dbQuery('tokens', {
+        const engTokens = await dbQuery('tokens', {
           engagement_id: `eq.${engagement_id}`,
           account_id: 'is.null',
-        }).then(async tokens => {
-          if (tokens.length) {
-            await Promise.all(
-              tokens.map(t => dbPatch('tokens', { token: t.token }, { account_id: account.id }))
-            );
-          }
-        });
+        }).catch(() => []);
+        await Promise.all(
+          engTokens.map(t => dbPatch('tokens', { token: t.token }, { account_id: account.id }))
+        );
       }
-    } catch (err) {
-      // Non-fatal — tokens can be linked manually by admin
-      console.error('[auth/signup] token linking failed:', err.message);
     }
+  } catch (err) {
+    console.error('[auth/signup] token linking failed:', err.message);
   }
 
   const sessionToken = createSessionToken(user.id, account.id, 'owner');

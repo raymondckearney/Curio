@@ -6,6 +6,7 @@ import { PortalNav } from './dashboard';
 export default function PortalResults() {
   const router = useRouter();
   const [me, setMe] = useState(null);
+  const [dash, setDash] = useState(null);
   const [assessments, setAssessments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
@@ -13,9 +14,10 @@ export default function PortalResults() {
   useEffect(() => {
     Promise.all([
       fetch('/api/portal/me').then(r => r.ok ? r.json() : Promise.reject()),
+      fetch('/api/portal/dashboard').then(r => r.ok ? r.json() : null),
       fetch('/api/portal/results').then(r => r.ok ? r.json() : null),
     ])
-      .then(([meData, resData]) => { setMe(meData); setAssessments(resData?.assessments || []); })
+      .then(([meData, dashData, resData]) => { setMe(meData); setDash(dashData); setAssessments(resData?.assessments || []); })
       .catch(() => router.replace('/portal/login'))
       .finally(() => setLoading(false));
   }, [router]);
@@ -48,7 +50,7 @@ export default function PortalResults() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.page}>
-        <PortalNav me={me} onLogout={logout} active="results" />
+        <PortalNav me={me} onLogout={logout} active="results" isSelfServe={dash?.isSelfServe} hasFitToken={dash?.hasFitToken} />
         <main style={s.main}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
             <div>

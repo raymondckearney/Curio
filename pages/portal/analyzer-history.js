@@ -14,19 +14,18 @@ function fmt(iso) {
 export default function AnalyzerHistory() {
   const router = useRouter();
   const [me, setMe] = useState(null);
+  const [dash, setDash] = useState(null);
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
   useEffect(() => {
-    fetch('/api/portal/me')
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(data => {
-        setMe(data);
-        return fetch('/api/portal/fit-results');
-      })
-      .then(r => r.ok ? r.json() : [])
-      .then(data => { setRuns(data); setLoading(false); })
+    Promise.all([
+      fetch('/api/portal/me').then(r => r.ok ? r.json() : Promise.reject()),
+      fetch('/api/portal/dashboard').then(r => r.ok ? r.json() : null),
+      fetch('/api/portal/fit-results').then(r => r.ok ? r.json() : []),
+    ])
+      .then(([meData, dashData, fitData]) => { setMe(meData); setDash(dashData); setRuns(fitData); setLoading(false); })
       .catch(() => router.replace('/portal/login'));
   }, [router]);
 
@@ -46,7 +45,7 @@ export default function AnalyzerHistory() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.page}>
-        <PortalNav me={me} onLogout={logout} active="analyzer-history" />
+        <PortalNav me={me} onLogout={logout} active="analyzer-history" isSelfServe={dash?.isSelfServe} hasFitToken={dash?.hasFitToken} />
 
         <main style={s.main}>
           <div style={s.header}>
