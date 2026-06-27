@@ -147,6 +147,8 @@ p  { line-height: 1.78; }
 }
 .nav-links a:hover { color: var(--gold); }
 .nav-right { display: flex; align-items: center; gap: 20px; }
+.nav-login { font-size: 0.875rem; font-weight: 600; color: var(--ink); text-decoration: none; transition: color 0.25s; }
+.nav-login:hover { color: var(--gold); }
 .hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 6px; }
 .hamburger span { display: block; width: 22px; height: 2px; background: var(--ink); border-radius: 2px; transition: background 0.25s; }
 
@@ -828,7 +830,7 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
   .energy-tertiary-text { border-left: none; }
   .app-header          { grid-template-columns: 1fr; gap: 16px; }
   .stats-row           { grid-template-columns: 1fr; }
-  .nav-links, .nav-right .btn { display: none; }
+  .nav-links, .nav-right .btn, .nav-login { display: none; }
   .hamburger           { display: flex; }
   .sixtypes-header     { grid-template-columns: 1fr; gap: 28px; }
   .t-bar-inner         { grid-template-columns: 1fr; gap: 20px; }

@@ -48,6 +48,7 @@ export default function Nav() {
             <li><Link href="/#cta">Work With Us</Link></li>
           </ul>
           <div className="nav-right">
+            <Link href="/portal/login" className="nav-login">Log in</Link>
             <button
               className="hamburger"
               id="hamburger"
@@ -76,6 +77,7 @@ export default function Nav() {
         <Link href="/types/" onClick={() => setMenuOpen(false)}>MindPrint™ Profiles</Link>
         <Link href="/insights" onClick={() => setMenuOpen(false)}>Insights</Link>
         <Link href="/#cta" onClick={() => setMenuOpen(false)}>Work With Us</Link>
+        <Link href="/portal/login" onClick={() => setMenuOpen(false)}>Log in</Link>
       </div>
     </>
   );
