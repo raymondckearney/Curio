@@ -21,6 +21,8 @@ export default function BuySuccess() {
   const product = session?.metadata?.product;
   const isCombo = product === 'assessment_analyzer';
 
+  const signupUrl = `/signup?${new URLSearchParams({ name, email, session_id: session_id || '' })}`;
+
   return (
     <>
       <Head>
@@ -46,7 +48,15 @@ export default function BuySuccess() {
                 ) : (
                   <p style={s.sub}>Your assessment link has been sent to <strong>{email}</strong>. Check your inbox — it should arrive within a minute.</p>
                 )}
-                <p style={s.note}>Don't see it? Check your spam folder or contact <a href="mailto:hello@choosecurio.com" style={s.link}>hello@choosecurio.com</a></p>
+
+                <div style={s.accountBox}>
+                  <p style={s.accountTitle}>Save your results</p>
+                  <p style={s.accountDesc}>Create a free account to access your assessment results and Role Analyzer history anytime.</p>
+                  <a href={signupUrl} style={s.accountBtn}>Create your account →</a>
+                  <p style={s.accountSkip}>Already have one? <a href="/portal/login" style={s.link}>Log in</a></p>
+                </div>
+
+                <p style={s.note}>Don't see your email? Check your spam folder or contact <a href="mailto:hello@choosecurio.com" style={s.link}>hello@choosecurio.com</a></p>
               </>
             )}
           </div>
@@ -65,7 +75,12 @@ const s = {
   card: { background: '#fff', borderRadius: 16, padding: '48px 40px', textAlign: 'center', maxWidth: 520, width: '100%', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #E2E8F0' },
   icon: { width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', color: '#059669', fontSize: '1.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' },
   title: { fontFamily: "'Caveat', cursive", fontSize: '2.2rem', fontWeight: 700, marginBottom: 16, color: '#0F172A' },
-  sub: { fontSize: '1rem', color: '#475569', lineHeight: 1.7, marginBottom: 20 },
+  sub: { fontSize: '1rem', color: '#475569', lineHeight: 1.7, marginBottom: 24 },
+  accountBox: { background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '24px', marginBottom: 24 },
+  accountTitle: { fontWeight: 700, color: '#065F46', fontSize: '1rem', margin: '0 0 6px' },
+  accountDesc: { fontSize: '0.875rem', color: '#047857', lineHeight: 1.6, margin: '0 0 16px' },
+  accountBtn: { display: 'inline-block', padding: '11px 24px', background: '#059669', color: '#fff', textDecoration: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.95rem' },
+  accountSkip: { fontSize: '0.8rem', color: '#6EE7B7', marginTop: 12, marginBottom: 0 },
   note: { fontSize: '0.85rem', color: '#94A3B8' },
   link: { color: '#059669', textDecoration: 'none', fontWeight: 500 },
 };
