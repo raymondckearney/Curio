@@ -134,7 +134,8 @@ export function PortalNav({ me, onLogout, active }) {
   const navLinks = [
     { href: '/portal/dashboard', label: 'Dashboard', key: 'dashboard' },
     { href: '/portal/tokens', label: 'Tokens', key: 'tokens' },
-    { href: '/portal/results', label: 'Results', key: 'results' },
+    { href: '/portal/results', label: 'Assessment Results', key: 'results' },
+    { href: '/portal/analyzer-history', label: 'Analyzer History', key: 'analyzer-history' },
   ];
 
   return (

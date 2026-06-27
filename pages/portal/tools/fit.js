@@ -58,7 +58,7 @@ function normalizeRole(raw) { return raw.trim().toLowerCase().replace(/\s+/g, ' 
 function getCacheKey(nr, typeId) { return `curio-fit-cache-${CACHE_VERSION}-${nr}-${typeId}`; }
 function getSplitCacheKey(nr) { return `curio-fit-split-${CACHE_VERSION}-${nr}`; }
 
-function FitAnalyzer() {
+function FitAnalyzer({ me }) {
   const [selectedType, setSelectedType] = useState("");
   const [participantName, setParticipantName] = useState("");
   const [role, setRole] = useState("");
@@ -66,6 +66,7 @@ function FitAnalyzer() {
   const [loadingStep, setLoadingStep] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
   const resultRef = useRef(null);
 
   useEffect(() => {
@@ -171,7 +172,21 @@ function FitAnalyzer() {
       const qual = candidates.length === 1 ? candidates[0] : candidates.map((c,i)=>({c,s:consensusScore(c,candidates.filter((_,j)=>j!==i))})).sort((a,b)=>b.s-a.s)[0].c;
       const fullResult = { ...qual, demandSplit, score };
       setResult(fullResult);
+      setSaved(false);
       try { localStorage.setItem(fullCacheKey, JSON.stringify(fullResult)); } catch {}
+      // Save to server
+      fetch('/api/portal/fit-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_name: participantName.trim() || null,
+          profile_type: selectedType,
+          role: role.trim(),
+          score,
+          demand_split: demandSplit,
+          result_payload: fullResult,
+        }),
+      }).then(r => r.ok && setSaved(true)).catch(() => {});
     } catch (e) {
       setError("Error: " + (e.message || "Something went wrong."));
     } finally {
@@ -270,7 +285,8 @@ function FitAnalyzer() {
           )}
 
           <div className="action-row">
-            <button className="reset-btn" style={{ marginTop: 0 }} onClick={() => { setResult(null); setRole(""); setSelectedType(""); setParticipantName(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+            {saved && <span style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 500 }}>✓ Saved to your history</span>}
+            <button className="reset-btn" style={{ marginTop: 0 }} onClick={() => { setResult(null); setRole(""); setSelectedType(""); setParticipantName(""); setSaved(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
               ← Analyze a different role
             </button>
           </div>
@@ -329,7 +345,7 @@ export default function PortalFitPage() {
           </div>
         </div>
       ) : (
-        <FitAnalyzer />
+        <FitAnalyzer me={me} />
       )}
     </>
   );
