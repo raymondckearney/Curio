@@ -19,6 +19,7 @@
     "react-dom": "^18.3.0",
     "resend": "^6.12.4",
     "sanity": "^3.75.0",
+    "stripe": "^22.3.0",
     "styled-components": "^6.4.2"
   }
 }
