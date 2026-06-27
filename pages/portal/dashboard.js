@@ -2,6 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import profiles from '../../lib/profiles';
 
 export default function PortalDashboard() {
   const router = useRouter();
@@ -34,45 +35,23 @@ export default function PortalDashboard() {
 
 // ── Self-serve view ────────────────────────────────────────────────────────────
 
-const PROFILE_COLORS = {
-  'why-what': '#059669', 'why-how': '#0891B2', 'what-why': '#7C3AED',
-  'what-how': '#2563EB', 'how-why': '#D97706', 'how-what': '#DC2626',
-};
+const PRIMARY_COLOR = { why: '#059669', what: '#2563EB', how: '#D97706' };
 
-function ProfileBrain({ type }) {
-  const color = PROFILE_COLORS[type?.toLowerCase()] || '#64748B';
-  const [primary, secondary] = (type || '').split('-');
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-      <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${color}18`, border: `3px solid ${color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontFamily: "'Caveat', cursive", fontSize: '1.1rem', fontWeight: 700, color, lineHeight: 1 }}>{primary}</span>
-        {secondary && <span style={{ fontSize: '0.65rem', color, fontWeight: 600, opacity: 0.7 }}>+ {secondary}</span>}
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar({ label, score, max = 100 }) {
-  const pct = Math.round((score / max) * 100);
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151' }}>{label}</span>
-        <span style={{ fontSize: '0.8rem', color: '#64748B' }}>{score}</span>
-      </div>
-      <div style={{ height: 6, background: '#E2E8F0', borderRadius: 99, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: '#059669', borderRadius: 99, transition: 'width 1s ease' }} />
-      </div>
-    </div>
-  );
+function profileColor(type) {
+  const primary = (type || '').split('-')[0];
+  return PRIMARY_COLOR[primary] || '#64748B';
 }
 
 function SelfServeDashboard({ me, data, onLogout }) {
   const firstName = me.user.name?.split(' ')[0] || '';
   const assessment = data?.myAssessment;
   const hasAnalyzer = data?.hasFitToken;
-  const type = assessment?.type;
-  const color = PROFILE_COLORS[type?.toLowerCase()] || '#64748B';
+  const typeKey = assessment?.type?.toLowerCase();
+  const profile = profiles[typeKey];
+  const color = profileColor(typeKey);
+  const completedDate = assessment?.submitted_at
+    ? new Date(assessment.submitted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null;
 
   return (
     <>
@@ -83,62 +62,85 @@ function SelfServeDashboard({ me, data, onLogout }) {
       </Head>
       <div style={s.page}>
         <PortalNav me={me} onLogout={onLogout} active="dashboard" isSelfServe hasFitToken={hasAnalyzer} />
-        <main style={s.selfMain}>
 
-          {assessment ? (
-            <>
-              <div style={s.selfHero}>
-                <p style={s.selfGreeting}>Welcome back{firstName ? `, ${firstName}` : ''}</p>
-                <h1 style={s.selfTitle}>Your MindPrint™ Profile</h1>
+        {assessment && profile ? (
+          <main style={s.selfMain}>
+            {/* Hero band */}
+            <div style={{ ...s.heroBand, background: `linear-gradient(135deg, ${color}0d 0%, ${color}05 100%)`, borderBottom: `1px solid ${color}22` }}>
+              <div style={s.heroInner}>
+                <div style={s.heroMeta}>
+                  <span style={{ ...s.profilePill, background: `${color}15`, color, border: `1px solid ${color}30` }}>
+                    MindPrint™ Profile
+                  </span>
+                  {completedDate && <span style={s.heroDate}>Completed {completedDate}</span>}
+                </div>
+                <h1 style={{ ...s.heroType, color }}>
+                  {profile.label}
+                </h1>
+                <p style={s.heroTagline}>{profile.tagline}</p>
+                <blockquote style={{ ...s.signal, borderLeftColor: color }}>
+                  <span style={{ color, fontSize: '1.2rem', lineHeight: 1, marginRight: 6 }}>"</span>
+                  {profile.signal.replace(/^"|"$/g, '')}
+                  <span style={{ color, fontSize: '1.2rem', lineHeight: 1, marginLeft: 4 }}>"</span>
+                </blockquote>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div style={s.contentWrap}>
+
+              {/* Who You Are */}
+              <div style={s.contentCard}>
+                <div style={{ ...s.cardLabel, color }}>Who You Are</div>
+                <p style={s.prose}>{profile.whoYouAre}</p>
               </div>
 
-              <div style={s.profileCard}>
-                <div style={s.profileLeft}>
-                  <ProfileBrain type={type} />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, color, marginBottom: 2 }}>
-                      {type?.toUpperCase()}
+              {/* Two-col: Superpower + Energizes */}
+              <div style={s.twoCol}>
+                <div style={{ ...s.contentCard, flex: 1 }}>
+                  <div style={{ ...s.cardLabel, color }}>Your Superpower</div>
+                  <p style={s.prose}>{profile.superpower}</p>
+                </div>
+                <div style={{ ...s.contentCard, flex: 1 }}>
+                  <div style={{ ...s.cardLabel, color }}>What Energizes You</div>
+                  <p style={s.prose}>{profile.energizes}</p>
+                </div>
+              </div>
+
+              {/* Roles */}
+              <div style={s.contentCard}>
+                <div style={{ ...s.cardLabel, color }}>Roles Where You Thrive</div>
+                <div style={s.roleGrid}>
+                  {profile.roles.slice(0, 6).map((r, i) => (
+                    <div key={i} style={{ ...s.roleChip, borderColor: `${color}30`, background: `${color}08` }}>
+                      <span style={{ ...s.roleDot, background: color }} />{r}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 500 }}>MindPrint™ Profile</div>
-                  </div>
-                </div>
-
-                <div style={s.profileDivider} />
-
-                <div style={s.profileRight}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: 16 }}>Cognitive Score Breakdown</div>
-                  {assessment.h_score != null && <ScoreBar label="HOW (Precision)" score={assessment.h_score} />}
-                  {assessment.w_score != null && <ScoreBar label="WHAT (Progress)" score={assessment.w_score} />}
-                  {assessment.y_score != null && <ScoreBar label="WHY (Purpose)" score={assessment.y_score} />}
-                  <p style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: 8 }}>
-                    Completed {assessment.submitted_at ? new Date(assessment.submitted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
-                  </p>
+                  ))}
                 </div>
               </div>
 
+              {/* Analyzer CTA */}
               {hasAnalyzer && (
-                <div style={s.analyzerCta}>
+                <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                   <div>
-                    <div style={{ fontWeight: 700, color: '#065F46', marginBottom: 4 }}>Role Alignment Analyzer</div>
-                    <div style={{ fontSize: '0.875rem', color: '#047857', lineHeight: 1.6 }}>See how your MindPrint™ profile fits specific roles and what energizes or drains you.</div>
+                    <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>See how your profile fits specific roles</div>
+                    <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Use the Role Alignment Analyzer to explore what energizes you, what drains you, and how you collaborate best — for any role you enter.</div>
                   </div>
-                  <Link href="/portal/tools/fit" style={s.analyzerBtn}>Open Analyzer →</Link>
+                  <Link href="/portal/tools/fit" style={{ ...s.analyzerBtn, background: color }}>Open Analyzer →</Link>
                 </div>
               )}
-            </>
-          ) : (
-            <div style={s.selfHero}>
-              <p style={s.selfGreeting}>Welcome{firstName ? `, ${firstName}` : ''}</p>
-              <h1 style={s.selfTitle}>Your account is ready.</h1>
-              <p style={{ color: '#64748B', fontSize: '1rem', lineHeight: 1.7, maxWidth: 480, margin: '0 auto' }}>
-                Your assessment results will appear here once you've completed your MindPrint™ assessment. Check your email for your assessment link.
-              </p>
-              <p style={{ marginTop: 20, fontSize: '0.875rem', color: '#94A3B8' }}>
-                Questions? <a href="mailto:hello@choosecurio.com" style={{ color: '#059669', textDecoration: 'none' }}>hello@choosecurio.com</a>
-              </p>
             </div>
-          )}
-        </main>
+          </main>
+        ) : (
+          <main style={s.selfMain}>
+            <div style={s.pendingWrap}>
+              <div style={s.pendingIcon}>◎</div>
+              <h1 style={s.pendingTitle}>Your account is ready.</h1>
+              <p style={s.pendingText}>Your MindPrint™ profile will appear here once you've completed your assessment. Check your email for the link.</p>
+              <p style={s.pendingContact}>Questions? <a href="mailto:hello@choosecurio.com" style={{ color: '#059669', textDecoration: 'none', fontWeight: 500 }}>hello@choosecurio.com</a></p>
+            </div>
+          </main>
+        )}
       </div>
     </>
   );
@@ -294,16 +296,30 @@ const s = {
   tabActive: { color: '#059669', borderBottom: '2px solid #059669', fontWeight: 600 },
 
   // Self-serve layout
-  selfMain: { maxWidth: 720, margin: '0 auto', padding: '56px 24px', textAlign: 'center' },
-  selfHero: { marginBottom: 40 },
-  selfGreeting: { fontSize: '0.95rem', color: '#64748B', marginBottom: 8, fontWeight: 500 },
-  selfTitle: { fontFamily: "'Caveat', cursive", fontSize: '2.4rem', fontWeight: 700, color: '#0F172A', marginBottom: 0 },
-  profileCard: { background: '#fff', borderRadius: 16, padding: '36px', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', border: '1px solid #E2E8F0', display: 'flex', gap: 32, alignItems: 'center', marginBottom: 24, textAlign: 'left' },
-  profileLeft: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, minWidth: 120 },
-  profileDivider: { width: 1, alignSelf: 'stretch', background: '#E2E8F0', flexShrink: 0 },
-  profileRight: { flex: 1 },
-  analyzerCta: { background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, textAlign: 'left' },
-  analyzerBtn: { display: 'inline-block', padding: '11px 22px', background: '#059669', color: '#fff', textDecoration: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.875rem', whiteSpace: 'nowrap', flexShrink: 0 },
+  selfMain: { minHeight: 'calc(100vh - 100px)' },
+  heroBand: { padding: '52px 24px 44px' },
+  heroInner: { maxWidth: 760, margin: '0 auto' },
+  heroMeta: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 },
+  profilePill: { fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', padding: '4px 12px', borderRadius: 99, textTransform: 'uppercase' },
+  heroDate: { fontSize: '0.8rem', color: '#94A3B8', fontWeight: 500 },
+  heroType: { fontFamily: "'Caveat', cursive", fontSize: '3.4rem', fontWeight: 700, lineHeight: 1, marginBottom: 8 },
+  heroTagline: { fontSize: '1.05rem', color: '#475569', fontWeight: 500, marginBottom: 24, letterSpacing: '0.01em' },
+  signal: { margin: 0, padding: '14px 20px', borderLeft: '3px solid', background: 'rgba(255,255,255,0.6)', borderRadius: '0 8px 8px 0', fontStyle: 'italic', fontSize: '0.975rem', color: '#374151', lineHeight: 1.7, maxWidth: 600 },
+  contentWrap: { maxWidth: 760, margin: '0 auto', padding: '36px 24px 64px' },
+  contentCard: { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '28px 32px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' },
+  cardLabel: { fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 },
+  prose: { fontSize: '0.95rem', color: '#374151', lineHeight: 1.8, margin: 0 },
+  twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 0 },
+  roleGrid: { display: 'flex', flexWrap: 'wrap', gap: 8 },
+  roleChip: { display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.825rem', color: '#374151', fontWeight: 500, padding: '7px 14px', borderRadius: 8, border: '1px solid' },
+  roleDot: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0 },
+  analyzerCta: { border: '1px solid', borderRadius: 14, padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, marginTop: 16 },
+  analyzerBtn: { display: 'inline-block', padding: '12px 24px', color: '#fff', textDecoration: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', flexShrink: 0 },
+  pendingWrap: { maxWidth: 480, margin: '0 auto', padding: '80px 24px', textAlign: 'center' },
+  pendingIcon: { fontSize: '2.5rem', color: '#CBD5E1', marginBottom: 20 },
+  pendingTitle: { fontFamily: "'Caveat', cursive", fontSize: '2.2rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 },
+  pendingText: { fontSize: '1rem', color: '#64748B', lineHeight: 1.7, marginBottom: 16 },
+  pendingContact: { fontSize: '0.875rem', color: '#94A3B8' },
 
   // Enterprise layout
   main: { maxWidth: 1100, margin: '0 auto', padding: '36px 24px' },
