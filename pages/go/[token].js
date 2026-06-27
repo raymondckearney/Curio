@@ -8,7 +8,10 @@ export async function getServerSideProps({ params }) {
     if (!rows.length) {
       return { redirect: { destination: '/go/invalid', permanent: false } };
     }
-    const { purpose, name, email, role } = rows[0];
+    const { purpose, name, email, role, used } = rows[0];
+    if (used) {
+      return { redirect: { destination: '/go/invalid?reason=used', permanent: false } };
+    }
     const qs = new URLSearchParams({ token });
     if (name)  qs.set('name', name);
     if (email) qs.set('email', email);

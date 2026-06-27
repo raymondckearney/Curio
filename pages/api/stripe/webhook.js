@@ -108,7 +108,7 @@ export default async function handler(req, res) {
       to: email,
       subject: 'Your MindPrint™ access is ready',
       html: `<!DOCTYPE html><html>
-<body style="margin:0;padding:0;background:#F8FAFC;font-family:'DM Sans',Helvetica,Arial,sans-serif">
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
 <div style="max-width:560px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
   <div style="background:#0F172A;padding:24px 32px">
     <span style="font-family:Georgia,serif;font-size:1.8rem;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span>

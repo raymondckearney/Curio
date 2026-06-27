@@ -1,7 +1,11 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 export default function InvalidLink() {
+  const { query } = useRouter();
+  const alreadyUsed = query.reason === 'used';
+
   return (
     <>
       <Head>
@@ -12,8 +16,17 @@ export default function InvalidLink() {
       <div style={s.page}>
         <div style={s.card}>
           <Link href="/" style={s.logo}>Curio<span style={s.dot}>.</span></Link>
-          <h1 style={s.title}>This link is invalid.</h1>
-          <p style={s.body}>The link you followed doesn't exist or has already been removed. Please contact your Curio coordinator for assistance.</p>
+          {alreadyUsed ? (
+            <>
+              <h1 style={s.title}>This link has already been used.</h1>
+              <p style={s.body}>Each assessment link is single-use. If you believe this is an error, contact <a href="mailto:hello@choosecurio.com" style={s.link}>hello@choosecurio.com</a>.</p>
+            </>
+          ) : (
+            <>
+              <h1 style={s.title}>This link is invalid.</h1>
+              <p style={s.body}>The link you followed doesn't exist or has already been removed. Please contact your Curio coordinator for assistance.</p>
+            </>
+          )}
         </div>
       </div>
     </>
