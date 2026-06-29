@@ -1,541 +1,371 @@
 import Head from 'next/head';
-import Link from 'next/link';
 import Layout from '../components/Layout';
 
 export default function Academic() {
   return (
     <Layout>
       <Head>
-        <title>Curio for Business Schools — MindPrint™ for Academic Programs</title>
-        <meta name="description" content="MindPrint™ gives business school students a precise language for how they think and work — transforming career outcomes, team dynamics, and classroom engagement." />
+        <title>Curio for Business Schools — MindPrint™</title>
+        <meta name="description" content="MindPrint™ gives business school students a precise, lasting framework for how they think and work — improving career outcomes, team effectiveness, and classroom engagement." />
       </Head>
 
       <style>{`
-        /* ── ACADEMIC PAGE STYLES ── */
+        /* ── ACADEMIC PAGE ── */
 
         /* Hero */
         #ac-hero {
-          padding: calc(var(--nav-h) + 80px) 0 90px;
+          padding: calc(var(--nav-h) + 90px) 0 100px;
           background: #0F172A;
-          overflow: hidden;
           position: relative;
+          overflow: hidden;
         }
-        .ac-hero-aura {
+        .ac-aura {
           position: absolute;
-          top: -120px; left: 50%;
-          transform: translateX(-30%);
-          width: 800px; height: 800px;
-          background: radial-gradient(circle, rgba(5,150,105,0.18) 0%, transparent 70%);
+          top: -160px; right: -100px;
+          width: 700px; height: 700px;
+          background: radial-gradient(circle, rgba(5,150,105,0.16) 0%, transparent 68%);
           pointer-events: none;
         }
-        .ac-hero-inner {
-          position: relative;
-          max-width: 860px;
-        }
-        .ac-hero-eyebrow {
+        .ac-hero-inner { position: relative; max-width: 820px; }
+        .ac-eyebrow {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          font-size: 0.72rem;
+          font-size: 0.7rem;
           font-weight: 800;
-          letter-spacing: 0.18em;
+          letter-spacing: 0.2em;
           text-transform: uppercase;
           color: var(--gold-light);
           margin-bottom: 28px;
         }
-        .ac-hero-eyebrow::before {
+        .ac-eyebrow::before {
           content: '';
-          display: block;
-          width: 28px; height: 2px;
+          width: 24px; height: 2px;
           background: var(--gold-light);
           border-radius: 2px;
+          flex-shrink: 0;
         }
         #ac-hero h1 {
-          font-size: clamp(2.6rem, 5.5vw, 4.6rem);
+          font-size: clamp(2.8rem, 5.5vw, 4.8rem);
           color: #fff;
-          line-height: 1.08;
-          margin-bottom: 28px;
+          line-height: 1.07;
+          margin-bottom: 26px;
         }
         #ac-hero h1 em {
           font-style: normal;
           color: var(--gold-light);
         }
-        .ac-hero-sub {
-          font-size: clamp(1rem, 1.8vw, 1.2rem);
-          color: rgba(255,255,255,0.72);
-          line-height: 1.72;
-          max-width: 640px;
+        .ac-hero-body {
+          font-size: clamp(1rem, 1.6vw, 1.15rem);
+          color: rgba(255,255,255,0.65);
+          line-height: 1.75;
+          max-width: 600px;
           margin-bottom: 44px;
         }
-        .ac-hero-btns {
-          display: flex;
-          gap: 16px;
-          flex-wrap: wrap;
-        }
+        .ac-hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
 
-        /* Stats bar */
-        #ac-stats {
-          background: var(--gold);
-          padding: 52px 0;
-        }
-        .ac-stats-grid {
+        /* Stats */
+        #ac-stats { background: var(--gold); padding: 54px 0; }
+        .ac-stats-row {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 0;
         }
         .ac-stat {
-          padding: 0 40px;
+          padding: 0 44px;
           text-align: center;
-          border-right: 1px solid rgba(255,255,255,0.25);
+          border-right: 1px solid rgba(255,255,255,0.22);
         }
         .ac-stat:last-child { border-right: none; }
         .ac-stat-num {
           font-family: var(--font-display);
-          font-size: clamp(2.6rem, 4vw, 3.8rem);
+          font-size: clamp(2.8rem, 4.5vw, 4rem);
           font-weight: 900;
           color: #fff;
           line-height: 1;
           margin-bottom: 10px;
         }
-        .ac-stat-desc {
-          font-size: 0.92rem;
-          color: rgba(255,255,255,0.88);
+        .ac-stat-text {
+          font-size: 0.9rem;
+          color: rgba(255,255,255,0.85);
           line-height: 1.55;
+          margin-bottom: 8px;
         }
         .ac-stat-source {
-          font-size: 0.68rem;
-          color: rgba(255,255,255,0.55);
-          letter-spacing: 0.08em;
+          font-size: 0.67rem;
+          font-weight: 600;
+          letter-spacing: 0.07em;
           text-transform: uppercase;
-          margin-top: 10px;
+          color: rgba(255,255,255,0.48);
         }
-        @media (max-width: 720px) {
-          .ac-stats-grid {
-            grid-template-columns: 1fr;
-            gap: 36px;
-          }
-          .ac-stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.2); padding: 0 0 36px; }
+        @media (max-width: 680px) {
+          .ac-stats-row { grid-template-columns: 1fr; gap: 36px; }
+          .ac-stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.18); padding: 0 0 36px; }
           .ac-stat:last-child { border-bottom: none; padding-bottom: 0; }
         }
 
         /* Problem */
-        #ac-problem {
-          padding: var(--section-y) 0;
-          background: var(--paper);
-        }
+        #ac-problem { padding: var(--section-y) 0; background: var(--paper); }
         .ac-problem-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 72px;
+          gap: 80px;
           align-items: center;
         }
-        .ac-problem-quote {
+        .ac-pull {
           font-family: var(--font-display);
-          font-size: clamp(1.5rem, 2.5vw, 2.2rem);
-          color: var(--ink);
-          line-height: 1.25;
+          font-size: clamp(1.6rem, 2.8vw, 2.4rem);
           font-style: italic;
-          margin-bottom: 16px;
+          color: var(--ink);
+          line-height: 1.22;
+          margin-bottom: 18px;
         }
-        .ac-problem-attr {
-          font-size: 0.78rem;
+        .ac-attr {
+          font-size: 0.74rem;
           font-weight: 700;
           letter-spacing: 0.1em;
           text-transform: uppercase;
           color: var(--gold);
         }
         .ac-problem-right p {
-          font-size: 1.05rem;
+          font-size: 1.02rem;
           color: var(--ink-soft);
-          line-height: 1.78;
-          margin-bottom: 20px;
+          line-height: 1.8;
+          margin-bottom: 18px;
         }
         .ac-problem-right p:last-child { margin-bottom: 0; }
         .ac-problem-right strong { color: var(--ink); }
-        @media (max-width: 840px) {
+        @media (max-width: 800px) {
           .ac-problem-grid { grid-template-columns: 1fr; gap: 40px; }
         }
 
         /* Framework */
-        #ac-framework {
-          padding: var(--section-y) 0;
-          background: var(--paper-warm);
-        }
-        .ac-framework-intro {
-          max-width: 680px;
-          margin-bottom: 56px;
-        }
-        .ac-framework-intro p {
-          font-size: 1.05rem;
+        #ac-framework { padding: var(--section-y) 0; background: var(--paper-warm); }
+        .ac-section-intro { max-width: 620px; margin-bottom: 52px; }
+        .ac-section-intro p {
+          font-size: 1.02rem;
           color: var(--ink-soft);
           line-height: 1.78;
-          margin-top: 18px;
+          margin-top: 16px;
         }
         .ac-lenses {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 24px;
+          gap: 20px;
         }
         .ac-lens {
           background: var(--paper);
           border: 1.5px solid var(--border);
+          border-top: 3px solid var(--gold);
           border-radius: var(--radius-card);
-          padding: 36px 32px;
-          transition: all 0.3s var(--ease);
+          padding: 32px 30px 34px;
+          transition: all 0.28s var(--ease);
         }
         .ac-lens:hover {
-          border-color: var(--gold);
-          transform: translateY(-4px);
+          border-top-color: var(--gold);
           box-shadow: var(--shadow-lg);
+          transform: translateY(-4px);
         }
         .ac-lens-tag {
-          display: inline-block;
-          font-size: 0.68rem;
+          font-size: 0.66rem;
           font-weight: 800;
-          letter-spacing: 0.2em;
+          letter-spacing: 0.22em;
           text-transform: uppercase;
-          background: var(--gold-pale);
           color: var(--gold);
-          padding: 4px 12px;
-          border-radius: 100px;
-          margin-bottom: 18px;
+          margin-bottom: 12px;
         }
         .ac-lens h3 {
-          font-size: 1.45rem;
+          font-size: 1.4rem;
           color: var(--ink);
-          margin-bottom: 14px;
+          margin-bottom: 12px;
         }
-        .ac-lens p {
-          font-size: 0.95rem;
-          color: var(--ink-soft);
-          line-height: 1.7;
-        }
-        @media (max-width: 840px) {
-          .ac-lenses { grid-template-columns: 1fr; }
-        }
+        .ac-lens p { font-size: 0.93rem; color: var(--ink-soft); line-height: 1.7; }
+        @media (max-width: 800px) { .ac-lenses { grid-template-columns: 1fr; } }
 
-        /* Audiences */
-        #ac-audiences {
-          padding: var(--section-y) 0;
-          background: var(--paper);
-        }
-        .ac-audiences-intro {
-          max-width: 640px;
-          margin-bottom: 64px;
-        }
-        .ac-audiences-intro p {
-          font-size: 1.05rem;
-          color: var(--ink-soft);
-          line-height: 1.78;
-          margin-top: 18px;
-        }
-        .ac-audiences-grid {
+        /* Who We Work With */
+        #ac-who { padding: var(--section-y) 0; background: var(--paper); }
+        .ac-who-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 32px;
+          gap: 28px;
+          margin-top: 52px;
         }
-        .ac-audience-card {
+        .ac-who-card {
           border: 1.5px solid var(--border);
           border-radius: var(--radius-card);
+          padding: 44px 40px;
+          transition: all 0.28s var(--ease);
+          position: relative;
           overflow: hidden;
         }
-        .ac-audience-card-header {
-          padding: 32px 36px 28px;
-          background: #0F172A;
+        .ac-who-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 3px;
+          background: var(--gold);
+          opacity: 0;
+          transition: opacity 0.28s var(--ease);
         }
-        .ac-audience-card-header .ac-hero-eyebrow {
-          margin-bottom: 14px;
-          font-size: 0.68rem;
-        }
-        .ac-audience-card-header h3 {
-          font-size: clamp(1.4rem, 2vw, 1.75rem);
-          color: #fff;
+        .ac-who-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); border-color: transparent; }
+        .ac-who-card:hover::before { opacity: 1; }
+        .ac-who-card .ac-eyebrow { color: var(--gold); margin-bottom: 14px; }
+        .ac-who-card .ac-eyebrow::before { background: var(--gold); }
+        .ac-who-card h3 {
+          font-size: clamp(1.3rem, 2vw, 1.65rem);
+          color: var(--ink);
           line-height: 1.2;
+          margin-bottom: 16px;
         }
-        .ac-audience-card-body {
-          padding: 32px 36px 36px;
-          background: var(--paper);
-        }
-        .ac-audience-card-body p {
-          font-size: 0.98rem;
+        .ac-who-card > p {
+          font-size: 0.97rem;
           color: var(--ink-soft);
-          line-height: 1.72;
+          line-height: 1.75;
           margin-bottom: 28px;
+          padding-bottom: 28px;
+          border-bottom: 1px solid var(--border);
         }
-        .ac-benefit-list {
-          list-style: none;
+        .ac-who-list { list-style: none; display: flex; flex-direction: column; gap: 13px; }
+        .ac-who-list li {
           display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-        .ac-benefit-list li {
-          display: flex;
-          gap: 12px;
+          gap: 13px;
           align-items: flex-start;
-          font-size: 0.95rem;
+          font-size: 0.93rem;
           color: var(--ink-soft);
           line-height: 1.55;
         }
-        .ac-benefit-list li::before {
+        .ac-who-list li::before {
           content: '';
           flex-shrink: 0;
-          width: 8px; height: 8px;
+          width: 7px; height: 7px;
           border-radius: 50%;
           background: var(--gold);
-          margin-top: 6px;
+          margin-top: 7px;
         }
-        .ac-benefit-list strong { color: var(--ink); }
-        @media (max-width: 840px) {
-          .ac-audiences-grid { grid-template-columns: 1fr; }
-        }
+        .ac-who-list strong { color: var(--ink); font-weight: 600; }
+        @media (max-width: 800px) { .ac-who-grid { grid-template-columns: 1fr; } }
 
-        /* Syllabus fit */
-        #ac-syllabus {
-          padding: var(--section-y) 0;
-          background: var(--cream);
-        }
-        .ac-syllabus-intro {
-          max-width: 640px;
-          margin-bottom: 56px;
-        }
-        .ac-syllabus-intro p {
-          font-size: 1.05rem;
-          color: var(--ink-soft);
-          line-height: 1.78;
-          margin-top: 18px;
-        }
-        .ac-syllabus-grid {
+        /* Outcomes */
+        #ac-outcomes { padding: var(--section-y) 0; background: var(--cream); }
+        .ac-outcomes-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(2, 1fr);
           gap: 20px;
+          margin-top: 52px;
         }
-        .ac-syllabus-card {
+        .ac-outcome {
           background: var(--paper);
           border: 1.5px solid var(--border);
           border-radius: var(--radius-card);
-          padding: 30px 28px;
-          transition: all 0.3s var(--ease);
+          padding: 34px 32px;
+          transition: all 0.28s var(--ease);
         }
-        .ac-syllabus-card:hover {
+        .ac-outcome:hover {
           border-color: var(--gold);
           box-shadow: var(--shadow);
           transform: translateY(-3px);
         }
-        .ac-syllabus-num {
-          font-family: var(--font-display);
-          font-size: 2.2rem;
-          font-weight: 900;
-          color: var(--gold);
-          line-height: 1;
-          margin-bottom: 12px;
-        }
-        .ac-syllabus-card h3 {
-          font-size: 1rem;
-          font-weight: 700;
-          font-family: var(--font-body);
-          color: var(--ink);
-          margin-bottom: 12px;
-        }
-        .ac-syllabus-card p {
-          font-size: 0.88rem;
-          color: var(--ink-soft);
-          line-height: 1.65;
-        }
-        @media (max-width: 1080px) {
-          .ac-syllabus-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 560px) {
-          .ac-syllabus-grid { grid-template-columns: 1fr; }
-        }
-
-        /* Outcomes */
-        #ac-outcomes {
-          padding: var(--section-y) 0;
-          background: var(--paper);
-        }
-        .ac-outcomes-intro {
-          max-width: 640px;
-          margin-bottom: 56px;
-        }
-        .ac-outcomes-intro p {
-          font-size: 1.05rem;
-          color: var(--ink-soft);
-          line-height: 1.78;
-          margin-top: 18px;
-        }
-        .ac-outcomes-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 24px;
-        }
-        .ac-outcome-card {
-          background: var(--paper-warm);
-          border: 1.5px solid var(--border);
-          border-radius: var(--radius-card);
-          padding: 32px 36px;
-          display: grid;
-          grid-template-columns: 64px 1fr;
-          gap: 20px;
-          align-items: flex-start;
-          transition: all 0.3s var(--ease);
-        }
-        .ac-outcome-card:hover {
-          border-color: var(--gold);
-          background: var(--paper);
-          box-shadow: var(--shadow);
-        }
         .ac-outcome-num {
           font-family: var(--font-display);
-          font-size: 2.8rem;
+          font-size: 2.4rem;
           font-weight: 900;
           color: var(--gold);
+          opacity: 0.35;
           line-height: 1;
-          opacity: 0.55;
+          margin-bottom: 14px;
         }
-        .ac-outcome-card h3 {
-          font-size: 1.05rem;
+        .ac-outcome h3 {
+          font-size: 1.02rem;
           font-family: var(--font-body);
           font-weight: 700;
           color: var(--ink);
           margin-bottom: 10px;
         }
-        .ac-outcome-card p {
-          font-size: 0.92rem;
+        .ac-outcome p {
+          font-size: 0.91rem;
           color: var(--ink-soft);
-          line-height: 1.68;
+          line-height: 1.7;
+          margin-bottom: 20px;
         }
-        @media (max-width: 720px) {
-          .ac-outcomes-grid { grid-template-columns: 1fr; }
-          .ac-outcome-card { grid-template-columns: 48px 1fr; }
+        .ac-outcome-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
         }
+        .ac-outcome-tag {
+          font-size: 0.66rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          background: var(--gold-pale);
+          color: var(--gold);
+          padding: 4px 10px;
+          border-radius: 100px;
+          border: 1px solid rgba(5,150,105,0.2);
+        }
+        @media (max-width: 680px) { .ac-outcomes-grid { grid-template-columns: 1fr; } }
 
-        /* Partnership tiers */
-        #ac-tiers {
-          padding: var(--section-y) 0;
-          background: #0F172A;
-        }
-        #ac-tiers .label { color: var(--gold-light); }
-        #ac-tiers .label::before { background: var(--gold-light); }
-        #ac-tiers h2 { color: #fff; }
-        .ac-tiers-sub {
-          font-size: 1.05rem;
-          color: rgba(255,255,255,0.62);
-          line-height: 1.72;
-          max-width: 580px;
-          margin-top: 18px;
+        /* How We Partner */
+        #ac-partner { padding: var(--section-y) 0; background: #0F172A; }
+        #ac-partner .label { color: var(--gold-light); }
+        #ac-partner .label::before { background: var(--gold-light); }
+        #ac-partner h2 { color: #fff; }
+        .ac-partner-sub {
+          font-size: 1.02rem;
+          color: rgba(255,255,255,0.58);
+          line-height: 1.75;
+          max-width: 560px;
+          margin-top: 16px;
           margin-bottom: 56px;
         }
-        .ac-tiers-grid {
+        .ac-partner-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 24px;
+          gap: 20px;
         }
-        .ac-tier-card {
-          background: rgba(255,255,255,0.05);
-          border: 1.5px solid rgba(255,255,255,0.1);
+        .ac-partner-card {
+          background: rgba(255,255,255,0.04);
+          border: 1.5px solid rgba(255,255,255,0.08);
           border-radius: var(--radius-card);
-          padding: 36px 32px;
-          transition: all 0.3s var(--ease);
+          padding: 36px 30px;
           display: flex;
           flex-direction: column;
+          transition: all 0.28s var(--ease);
         }
-        .ac-tier-card:hover {
-          background: rgba(255,255,255,0.08);
-          border-color: var(--gold-light);
+        .ac-partner-card:hover {
+          background: rgba(255,255,255,0.07);
+          border-color: rgba(52,211,153,0.4);
           transform: translateY(-4px);
         }
-        .ac-tier-step {
-          font-size: 0.68rem;
+        .ac-partner-step {
+          font-size: 0.66rem;
           font-weight: 800;
           letter-spacing: 0.2em;
           text-transform: uppercase;
           color: var(--gold-light);
           margin-bottom: 16px;
         }
-        .ac-tier-card h3 {
-          font-size: 1.6rem;
+        .ac-partner-card h3 {
+          font-size: 1.55rem;
           color: #fff;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
         }
-        .ac-tier-card p {
-          font-size: 0.94rem;
-          color: rgba(255,255,255,0.62);
+        .ac-partner-card p {
+          font-size: 0.92rem;
+          color: rgba(255,255,255,0.58);
           line-height: 1.72;
           flex: 1;
           margin-bottom: 28px;
         }
-        .ac-tier-pricing {
-          font-size: 0.72rem;
+        .ac-partner-pricing {
+          font-size: 0.68rem;
           font-weight: 800;
-          letter-spacing: 0.15em;
+          letter-spacing: 0.16em;
           text-transform: uppercase;
-          color: var(--gold-light);
+          color: rgba(52,211,153,0.75);
           padding-top: 20px;
-          border-top: 1px solid rgba(255,255,255,0.12);
+          border-top: 1px solid rgba(255,255,255,0.1);
         }
-        @media (max-width: 840px) {
-          .ac-tiers-grid { grid-template-columns: 1fr; }
-        }
-
-        /* How we work (faculty process) */
-        #ac-process {
-          padding: var(--section-y) 0;
-          background: var(--paper-warm);
-        }
-        .ac-process-intro {
-          max-width: 640px;
-          margin-bottom: 56px;
-        }
-        .ac-process-intro p {
-          font-size: 1.05rem;
-          color: var(--ink-soft);
-          line-height: 1.78;
-          margin-top: 18px;
-        }
-        .ac-process-steps {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 24px;
-        }
-        .ac-step {
-          background: var(--paper);
-          border: 1.5px solid var(--border);
-          border-radius: var(--radius-card);
-          padding: 32px 28px;
-          transition: all 0.3s var(--ease);
-        }
-        .ac-step:hover {
-          border-color: var(--gold);
-          box-shadow: var(--shadow);
-          transform: translateY(-3px);
-        }
-        .ac-step-num {
-          font-family: var(--font-display);
-          font-size: 2rem;
-          font-weight: 900;
-          color: var(--gold);
-          opacity: 0.4;
-          line-height: 1;
-          margin-bottom: 14px;
-        }
-        .ac-step h3 {
-          font-size: 1rem;
-          font-family: var(--font-body);
-          font-weight: 700;
-          color: var(--ink);
-          margin-bottom: 10px;
-        }
-        .ac-step p {
-          font-size: 0.88rem;
-          color: var(--ink-soft);
-          line-height: 1.68;
-        }
-        @media (max-width: 1080px) {
-          .ac-process-steps { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 560px) {
-          .ac-process-steps { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 800px) { .ac-partner-grid { grid-template-columns: 1fr; } }
 
         /* CTA */
         #ac-cta {
@@ -543,49 +373,41 @@ export default function Academic() {
           background: #065F46;
           text-align: center;
         }
-        #ac-cta .label { color: var(--gold-light); justify-content: center; }
+        #ac-cta .label { justify-content: center; color: var(--gold-light); }
         #ac-cta .label::before { display: none; }
-        #ac-cta h2 {
-          color: #fff;
-          max-width: 700px;
-          margin: 0 auto 24px;
-        }
-        .ac-cta-sub {
+        #ac-cta h2 { color: #fff; max-width: 640px; margin: 0 auto 22px; }
+        .ac-cta-body {
           font-size: 1.05rem;
-          color: rgba(255,255,255,0.72);
-          line-height: 1.72;
-          max-width: 520px;
+          color: rgba(255,255,255,0.65);
+          line-height: 1.75;
+          max-width: 500px;
           margin: 0 auto 44px;
         }
-        .ac-cta-btns {
-          display: flex;
-          gap: 16px;
-          justify-content: center;
-          flex-wrap: wrap;
-        }
-        .ac-cta-fine {
+        .ac-cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .ac-cta-contact {
           margin-top: 28px;
           font-size: 0.88rem;
-          color: rgba(255,255,255,0.5);
+          color: rgba(255,255,255,0.42);
         }
       `}</style>
 
       {/* ── HERO ── */}
       <section id="ac-hero">
-        <div className="ac-hero-aura" />
+        <div className="ac-aura" />
         <div className="container">
           <div className="ac-hero-inner reveal">
-            <div className="ac-hero-eyebrow">For Business Schools</div>
+            <div className="ac-eyebrow">Curio for Business Schools</div>
             <h1>
-              Your students leave with a degree.<br />
-              Do they leave knowing <em>how they think</em>?
+              Give your students a language<br />
+              for <em>how they think</em> —<br />
+              not just what they know.
             </h1>
-            <p className="ac-hero-sub">
-              MindPrint™ gives business school students a precise, portable understanding of how they approach complex problems — and how to work with people who approach them differently. Better career outcomes, richer team dynamics, more substantive advising conversations.
+            <p className="ac-hero-body">
+              MindPrint™ is a cognitive framework that helps business school students understand how they approach complex problems, what work energizes them, and how to collaborate with people who think differently. The result is better career decisions, stronger team dynamics, and students who know how to articulate their value.
             </p>
             <div className="ac-hero-btns">
               <a href="mailto:hello@choosecurio.com" className="btn btn-gold">Schedule a Conversation</a>
-              <a href="#ac-audiences" className="btn btn-ghost">See How It Works</a>
+              <a href="#ac-who" className="btn btn-ghost">Learn More</a>
             </div>
           </div>
         </div>
@@ -594,20 +416,20 @@ export default function Academic() {
       {/* ── STATS ── */}
       <section id="ac-stats">
         <div className="container">
-          <div className="ac-stats-grid">
+          <div className="ac-stats-row">
             <div className="ac-stat reveal">
               <div className="ac-stat-num">72%</div>
-              <div className="ac-stat-desc">of workers experience "Shift Shock" — realizing too late the role wasn't what they expected</div>
-              <div className="ac-stat-source">The Muse — 2,500 workers surveyed</div>
+              <div className="ac-stat-text">of new employees experience "Shift Shock" — realizing too late the role wasn't what they expected</div>
+              <div className="ac-stat-source">The Muse</div>
             </div>
             <div className="ac-stat reveal reveal-d1">
               <div className="ac-stat-num">$8.9T</div>
-              <div className="ac-stat-desc">lost annually to low employee engagement — roughly 9% of global GDP</div>
+              <div className="ac-stat-text">lost annually to low employee engagement — roughly 9% of global GDP</div>
               <div className="ac-stat-source">Gallup State of the Global Workplace, 2024</div>
             </div>
             <div className="ac-stat reveal reveal-d2">
               <div className="ac-stat-num">1 in 2</div>
-              <div className="ac-stat-desc">recent graduates say they didn't receive enough guidance when choosing their career path</div>
+              <div className="ac-stat-text">recent graduates say they didn't receive enough guidance when choosing their career path</div>
               <div className="ac-stat-source">Hult / Workplace Intelligence, 2024</div>
             </div>
           </div>
@@ -619,13 +441,12 @@ export default function Academic() {
         <div className="container">
           <div className="ac-problem-grid">
             <div className="reveal">
-              <p className="ac-problem-quote">"Someone starts a new job and realizes with surprise or regret, this isn't what I expected."</p>
-              <p className="ac-problem-attr">Kathryn Minshew, CEO & Co-Founder, The Muse — Yahoo Finance, 2022</p>
+              <p className="ac-pull">"Someone starts a new job and realizes with surprise or regret — this isn't what I expected."</p>
+              <p className="ac-attr">Kathryn Minshew, CEO, The Muse</p>
             </div>
             <div className="reveal reveal-d1">
-              <p>Career advisors hear this constantly. The tools to prevent it — self-assessments, personality inventories, strengths surveys — describe <strong>who students are</strong>, not how they think and work.</p>
-              <p>Every year, smart students take the wrong job. Not because they lack skills. Not because they interviewed poorly. Because they chose based on brand, salary, and gut feel — without a real picture of how they think, what work energizes them, and what environment they need to thrive.</p>
-              <p><strong>MindPrint™ closes that gap</strong> with a framework built specifically for problem-solving and role fit.</p>
+              <p>The tools most programs use to prepare students for careers — personality assessments, strengths inventories, self-reflection exercises — describe <strong>who someone is</strong>. They rarely address how someone thinks when the work gets hard, what environments sustain them, or where they'll hit a wall.</p>
+              <p>MindPrint™ fills that gap. It's a problem-solving framework, not a personality test — built specifically to help people understand their cognitive orientation and use it to make smarter decisions about their careers and teams.</p>
             </div>
           </div>
         </div>
@@ -634,207 +455,140 @@ export default function Academic() {
       {/* ── FRAMEWORK ── */}
       <section id="ac-framework">
         <div className="container">
-          <div className="ac-framework-intro reveal">
+          <div className="ac-section-intro reveal">
             <div className="label">The MindPrint™ Framework</div>
-            <h2>A shared language for how people actually think.</h2>
-            <p>Every person has a dominant problem-solving orientation — a mode that energizes them and one that drains them over time. MindPrint™ makes that visible. Three orientations combine into six distinct profiles, giving your entire cohort a common vocabulary from day one.</p>
+            <h2>A shared language for how people solve problems.</h2>
+            <p>Everyone draws on three cognitive orientations when tackling complex challenges. Each person has a natural hierarchy among them — their primary orientation is where they thrive and find energy, their tertiary is where thinking becomes a drain. MindPrint™ makes that hierarchy visible and actionable.</p>
           </div>
           <div className="ac-lenses">
             <div className="ac-lens reveal">
-              <div className="ac-lens-tag">WHY</div>
-              <h3>Purpose-Driven</h3>
-              <p>Anchors to meaning and direction. Energized by asking the right questions, understanding the reason behind the work, and orienting teams toward a clear purpose.</p>
+              <div className="ac-lens-tag">WHY · Purpose-Driven</div>
+              <h3>Meaning & Direction</h3>
+              <p>Anchored to purpose. Energized by framing the right questions, understanding why the work matters, and orienting groups toward a shared goal.</p>
             </div>
             <div className="ac-lens reveal reveal-d1">
-              <div className="ac-lens-tag">WHAT</div>
-              <h3>Progress-Driven</h3>
-              <p>Action-oriented and milestone-focused. Energized by momentum and tangible outcomes. Moves fast, rallies others, and thrives in roles that reward visible progress.</p>
+              <div className="ac-lens-tag">WHAT · Progress-Driven</div>
+              <h3>Momentum & Outcomes</h3>
+              <p>Action-oriented and milestone-focused. Energized by moving fast, rallying others, and delivering visible results. Thrives in roles that reward execution.</p>
             </div>
             <div className="ac-lens reveal reveal-d2">
-              <div className="ac-lens-tag">HOW</div>
-              <h3>Precision-Driven</h3>
-              <p>Detail-oriented and systems-aware. Energized by deep understanding and structured execution. Builds what others can't and surfaces what others overlook.</p>
+              <div className="ac-lens-tag">HOW · Precision-Driven</div>
+              <h3>Depth & Rigor</h3>
+              <p>Detail-oriented and systems-aware. Energized by deep understanding and structured execution. Builds what others can't and catches what others miss.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── TWO AUDIENCES ── */}
-      <section id="ac-audiences">
+      {/* ── WHO WE WORK WITH ── */}
+      <section id="ac-who">
         <div className="container">
-          <div className="ac-audiences-intro reveal">
+          <div className="ac-section-intro reveal">
             <div className="label">Who We Work With</div>
             <h2>Built for your whole program.</h2>
-            <p>MindPrint™ serves two distinct audiences within your institution — and the impact compounds when both are aligned.</p>
+            <p>MindPrint™ serves two distinct audiences within a business school — and the impact compounds when both are aligned around the same framework.</p>
           </div>
-          <div className="ac-audiences-grid">
-            {/* Career Services */}
-            <div className="ac-audience-card reveal">
-              <div className="ac-audience-card-header">
-                <div className="ac-hero-eyebrow">Career Services & Professional Development</div>
-                <h3>Help students land the right role — not just a role.</h3>
-              </div>
-              <div className="ac-audience-card-body">
-                <p>MindPrint™ integrates directly into advising sessions, giving students a cognitive vocabulary before they walk in the door — and giving advisors a shared framework that makes every conversation more substantive.</p>
-                <ul className="ac-benefit-list">
-                  <li><strong>Durable self-awareness</strong> — students leave with a portable understanding of how they think and work, a foundation for every career decision after graduation</li>
-                  <li><strong>Better role alignment</strong> — students evaluate opportunities through a cognitive-energy lens: will this work sustain me, or will I be grinding against my grain?</li>
-                  <li><strong>More informed advising</strong> — advisors gain a common framework that accelerates and deepens every student conversation</li>
-                  <li><strong>Stronger placement outcomes</strong> — students who understand their cognitive fit land roles they stay in and thrive in</li>
-                </ul>
-              </div>
+          <div className="ac-who-grid">
+            <div className="ac-who-card reveal">
+              <div className="ac-eyebrow">Career Services & Professional Development</div>
+              <h3>Help students land the right role — not just a role.</h3>
+              <p>MindPrint™ gives students a cognitive vocabulary before they ever sit down with an advisor — and gives your office a shared framework that makes every conversation faster and more substantive.</p>
+              <ul className="ac-who-list">
+                <li><strong>Stronger self-awareness</strong> — students arrive at advising sessions with a precise, portable understanding of how they work and what they need to thrive</li>
+                <li><strong>Better role alignment</strong> — students evaluate opportunities through a cognitive-energy lens, not just salary and brand</li>
+                <li><strong>Differentiated interview narratives</strong> — students can articulate how they think, not just what they've done</li>
+                <li><strong>Improved placement outcomes</strong> — students who understand their cognitive fit land roles they stay in and grow in</li>
+              </ul>
             </div>
-            {/* Faculty */}
-            <div className="ac-audience-card reveal reveal-d1">
-              <div className="ac-audience-card-header">
-                <div className="ac-hero-eyebrow">Faculty — OB, Leadership & Career Development</div>
-                <h3>A teaching tool students actually carry into their careers.</h3>
-              </div>
-              <div className="ac-audience-card-body">
-                <p>MindPrint™ isn't a personality test — it's a problem-solving framework. That distinction is what makes it teachable in a business context and gives students tools that will serve them long after the term ends.</p>
-                <ul className="ac-benefit-list">
-                  <li><strong>Problem-solving, not personality</strong> — built around how people approach ambiguous problems, directly relevant to case method and team projects</li>
-                  <li><strong>Maps to real team dynamics</strong> — includes a problem-type composition model students apply directly to their own project teams</li>
-                  <li><strong>Generates discussion immediately</strong> — students recognize themselves and teammates within minutes; the energy model produces honest, high-engagement conversation</li>
-                  <li><strong>Ties to real outcomes</strong> — self-awareness, collaboration, and fit-based job selection are all areas MindPrint™ directly addresses</li>
-                </ul>
-              </div>
+            <div className="ac-who-card reveal reveal-d1">
+              <div className="ac-eyebrow">Faculty — OB, Leadership & Career Development</div>
+              <h3>A teaching tool students carry into their careers.</h3>
+              <p>MindPrint™ isn't a personality test — it's a problem-solving framework. That distinction is what makes it teachable in a business context and ensures students find it useful long after the term ends.</p>
+              <ul className="ac-who-list">
+                <li><strong>Avoids the "horoscope" skepticism</strong> — built around how people approach ambiguous problems, not traits or archetypes</li>
+                <li><strong>Maps directly to team dynamics</strong> — students apply a problem-type composition model to their own project teams from day one</li>
+                <li><strong>Generates immediate discussion</strong> — students recognize themselves and teammates within minutes; the energy model produces honest, high-engagement conversation</li>
+                <li><strong>Ties to real outcomes</strong> — collaboration, leadership development, and career fit are all areas MindPrint™ directly addresses</li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── SYLLABUS FIT ── */}
-      <section id="ac-syllabus">
-        <div className="container">
-          <div className="ac-syllabus-intro reveal">
-            <div className="label">Where It Fits</div>
-            <h2>Modular by design.</h2>
-            <p>MindPrint™ is modular — a single session, a thread across a term, or a throughline from orientation to capstone. It slots into your existing syllabus without displacing what's already working.</p>
-          </div>
-          <div className="ac-syllabus-grid">
-            <div className="ac-syllabus-card reveal">
-              <div className="ac-syllabus-num">01</div>
-              <h3>Organizational Behavior</h3>
-              <p>Team-dynamics module. Students map their project team's collective composition and use the problem-type model to assign roles and predict friction before it happens.</p>
-            </div>
-            <div className="ac-syllabus-card reveal reveal-d1">
-              <div className="ac-syllabus-num">02</div>
-              <h3>Leadership Development</h3>
-              <p>Anchor self-awareness work. Students examine how their profile shapes their leadership instincts and where it creates blind spots with people who think differently.</p>
-            </div>
-            <div className="ac-syllabus-card reveal reveal-d2">
-              <div className="ac-syllabus-num">03</div>
-              <h3>Career Development</h3>
-              <p>Pair with Curio's Career Path Guide so students evaluate role fit through a cognitive-energy lens and prepare differentiated interview narratives that stand out.</p>
-            </div>
-            <div className="ac-syllabus-card reveal reveal-d3">
-              <div className="ac-syllabus-num">04</div>
-              <h3>Capstone / Practicum</h3>
-              <p>Team formation by cognitive profile. Teams assign roles by strength, anticipate friction early, and build a working agreement they can hold each other to.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── STUDENT OUTCOMES ── */}
+      {/* ── OUTCOMES ── */}
       <section id="ac-outcomes">
         <div className="container">
-          <div className="ac-outcomes-intro reveal">
-            <div className="label">What Your Students Leave With</div>
-            <h2>Outcomes that enhance your program.</h2>
-            <p>The MindPrint™ assessment and framework give students something tangible — a durable artifact and a shared language they'll draw on in every role, team, and career decision after they graduate.</p>
+          <div className="ac-section-intro reveal">
+            <div className="label">What Students Leave With</div>
+            <h2>Outcomes that outlast the program.</h2>
+            <p>MindPrint™ gives students something most assessments don't: a durable framework they'll reference throughout their career — not a result they look at once and forget.</p>
           </div>
           <div className="ac-outcomes-grid">
-            <div className="ac-outcome-card reveal">
+            <div className="ac-outcome reveal">
               <div className="ac-outcome-num">01</div>
-              <div>
-                <h3>A durable self-awareness</h3>
-                <p>Students leave with a precise, portable understanding of how they think and work — a foundation they'll draw on in every role, team, and career decision after graduation.</p>
+              <h3>A precise self-awareness</h3>
+              <p>Students leave with a clear, portable understanding of how they think and work — a foundation for every role, team, and career decision after graduation. Not a personality label, but an actionable model.</p>
+              <div className="ac-outcome-tags">
+                <span className="ac-outcome-tag">Career Development</span>
+                <span className="ac-outcome-tag">Leadership</span>
               </div>
             </div>
-            <div className="ac-outcome-card reveal reveal-d1">
+            <div className="ac-outcome reveal reveal-d1">
               <div className="ac-outcome-num">02</div>
-              <div>
-                <h3>Better role alignment</h3>
-                <p>Students evaluate opportunities through a cognitive-energy lens: will this work sustain me, or will I be grinding against my own grain? They land a better fit out of the program.</p>
+              <h3>Smarter career decisions</h3>
+              <p>Students learn to evaluate opportunities through a cognitive-energy lens — asking not just whether they can do the work, but whether the work will sustain them. They make choices they can stand behind.</p>
+              <div className="ac-outcome-tags">
+                <span className="ac-outcome-tag">Career Development</span>
+                <span className="ac-outcome-tag">Advising</span>
               </div>
             </div>
-            <div className="ac-outcome-card reveal reveal-d2">
+            <div className="ac-outcome reveal reveal-d2">
               <div className="ac-outcome-num">03</div>
-              <div>
-                <h3>More informed advising</h3>
-                <p>MindPrint™ gives advisors a shared language with students — faster, more substantive conversations about fit, direction, and what to look for in an opportunity.</p>
+              <h3>Real collaboration skills</h3>
+              <p>Students understand cognitive diversity before projects begin, so friction gets named and addressed rather than ignored. They enter team environments with a vocabulary for difference and a strategy for navigating it.</p>
+              <div className="ac-outcome-tags">
+                <span className="ac-outcome-tag">Organizational Behavior</span>
+                <span className="ac-outcome-tag">Capstone</span>
               </div>
             </div>
-            <div className="ac-outcome-card reveal reveal-d3">
+            <div className="ac-outcome reveal reveal-d3">
               <div className="ac-outcome-num">04</div>
-              <div>
-                <h3>Collaboration prowess</h3>
-                <p>Students understand cognitive diversity before projects start, so friction gets named and addressed — preparing them for the real-world business environment from day one.</p>
+              <h3>A standout professional narrative</h3>
+              <p>Students who understand how they think can articulate it — in interviews, in leadership conversations, in team settings. MindPrint™ gives them language that's specific, grounded, and hard to fake.</p>
+              <div className="ac-outcome-tags">
+                <span className="ac-outcome-tag">Career Development</span>
+                <span className="ac-outcome-tag">Leadership</span>
+                <span className="ac-outcome-tag">Capstone</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── TIERS ── */}
-      <section id="ac-tiers">
+      {/* ── HOW WE PARTNER ── */}
+      <section id="ac-partner">
         <div className="container">
           <div className="label reveal">How We Partner</div>
-          <h2 className="reveal">Built around your workflow.<br />Not another thing to manage.</h2>
-          <p className="ac-tiers-sub reveal reveal-d1">We meet your program where it is. Start simple and expand as you see results.</p>
-          <div className="ac-tiers-grid">
-            <div className="ac-tier-card reveal">
-              <div className="ac-tier-step">Start Here</div>
-              <h3>Advising Tool</h3>
-              <p>Cohort-wide assessment and individual profile reports. Integrates directly into advising sessions. Students arrive with a vocabulary. Advisors gain a common framework.</p>
-              <div className="ac-tier-pricing">Per-Student · Plug-In Ready</div>
+          <h2 className="reveal">Built around your program.<br />Not another thing to manage.</h2>
+          <p className="ac-partner-sub reveal reveal-d1">We meet you where you are. Start with a single cohort and expand as you see results — or go deep from day one.</p>
+          <div className="ac-partner-grid">
+            <div className="ac-partner-card reveal">
+              <div className="ac-partner-step">Start Here</div>
+              <h3>Assessment & Profiles</h3>
+              <p>Cohort-wide access to the MindPrint™ assessment with individual profile reports for every student. Plug directly into existing programming — orientation, advising, career prep, or team formation — with minimal lift on your end.</p>
+              <div className="ac-partner-pricing">Per-Student · Plug-In Ready</div>
             </div>
-            <div className="ac-tier-card reveal reveal-d1">
-              <div className="ac-tier-step">Add Impact</div>
-              <h3>Live Workshop</h3>
-              <p>Half-day MindPrint Live™ session: profile discovery, career mapping, interview prep, and team dynamics. Facilitated and delivered by Curio. High signal for your cohort.</p>
-              <div className="ac-tier-pricing">Per-Cohort · We Deliver</div>
+            <div className="ac-partner-card reveal reveal-d1">
+              <div className="ac-partner-step">Add Impact</div>
+              <h3>MindPrint Live™</h3>
+              <p>A facilitated half-day session delivered by Curio — covering profile discovery, the energy model, team dynamics, and career application. Students leave with a shared vocabulary and an immediate sense of how to use it.</p>
+              <div className="ac-partner-pricing">Per-Cohort · We Deliver</div>
             </div>
-            <div className="ac-tier-card reveal reveal-d2">
-              <div className="ac-tier-step">Go Deep</div>
+            <div className="ac-partner-card reveal reveal-d2">
+              <div className="ac-partner-step">Go Deep</div>
               <h3>Program Partner</h3>
-              <p>MindPrint™ as a program-wide thread — from orientation to placement. Co-developed curriculum, outcomes data, and a case study that sets your program apart.</p>
-              <div className="ac-tier-pricing">Annual Pricing · Full Integration</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FACULTY PROCESS ── */}
-      <section id="ac-process">
-        <div className="container">
-          <div className="ac-process-intro reveal">
-            <div className="label">Our Process</div>
-            <h2>How we work with faculty.</h2>
-            <p>This is a partnership. The goal is to augment your curriculum and better prepare students for the business world — not to hand you a tool and walk away.</p>
-          </div>
-          <div className="ac-process-steps">
-            <div className="ac-step reveal">
-              <div className="ac-step-num">01</div>
-              <h3>Profile Discovery</h3>
-              <p>We provide access for each student to take the MindPrint assessment and discover their profile, including natural alignment to types of work and roles in the business world.</p>
-            </div>
-            <div className="ac-step reveal reveal-d1">
-              <div className="ac-step-num">02</div>
-              <h3>MindPrint Live</h3>
-              <p>We facilitate an interactive session to ground students in the framework and give them a shared language to start seeing how they and their peers think differently — and what that means for work.</p>
-            </div>
-            <div className="ac-step reveal reveal-d2">
-              <div className="ac-step-num">03</div>
-              <h3>Contextual Applications</h3>
-              <p>We work with you to understand the makeup of your class and co-create activities and exercises to run throughout the semester — adding a new layer to your existing curriculum.</p>
-            </div>
-            <div className="ac-step reveal reveal-d3">
-              <div className="ac-step-num">04</div>
-              <h3>Build the Evidence Together</h3>
-              <p>Co-develop teaching notes and an outcomes study. Your classroom becomes the proof and foundation. We iterate with you to continue producing results in future classes.</p>
+              <p>MindPrint™ woven through your entire program — from orientation through placement. Co-developed curriculum, contextual exercises, outcomes data, and a partnership that compounds in value every term.</p>
+              <div className="ac-partner-pricing">Annual Pricing · Full Integration</div>
             </div>
           </div>
         </div>
@@ -845,18 +599,19 @@ export default function Academic() {
         <div className="container">
           <div className="label reveal">Get Started</div>
           <h2 className="reveal">Pilot it with one cohort<br />this semester.</h2>
-          <p className="ac-cta-sub reveal reveal-d1">
-            We design the pilot for your program, deliver it, and hand you the outcomes data. Low lift for your team. High signal for everyone — especially the students whose success you're invested in.
+          <p className="ac-cta-body reveal reveal-d1">
+            We design the pilot around your program, deliver it, and hand you the outcomes data. Low lift for your team. High signal for your students.
           </p>
           <div className="ac-cta-btns reveal reveal-d2">
-            <a href="mailto:hello@choosecurio.com" className="btn btn-outline" style={{ background: 'transparent', color: '#fff', borderColor: '#fff' }}>
+            <a
+              href="mailto:hello@choosecurio.com"
+              className="btn btn-outline"
+              style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.6)' }}
+            >
               Schedule a Conversation
             </a>
-            <a href="https://choosecurio.com" className="btn btn-gold">
-              choosecurio.com
-            </a>
           </div>
-          <p className="ac-cta-fine reveal reveal-d3">hello@choosecurio.com</p>
+          <p className="ac-cta-contact reveal reveal-d3">hello@choosecurio.com</p>
         </div>
       </section>
     </Layout>
