@@ -147,9 +147,9 @@ function FitAnalyzer({ me }) {
 
       const splitMap = { WHY: demandSplit.why, WHAT: demandSplit.what, HOW: demandSplit.how };
       const dp = splitMap[type.primary] || 0, ds = splitMap[type.secondary] || 0, dt = splitMap[tertiary] || 0;
-      const rawScore = dp * 1.25 + ds * 0.8 + dt * (-1.5);
-      const linear = Math.max(0, Math.min(1, (rawScore + 150) / 275));
-      const score = Math.round(Math.pow(linear, 1.5) * 100);
+      const rawScore = dp * 1.25 + ds * 0.9 + dt * (-1.0);
+      const linear = Math.max(0, Math.min(1, (rawScore + 100) / 225));
+      const score = Math.round(Math.pow(linear, 1.2) * 100);
 
       setLoadingStep("Analyzing profile alignment...");
       const qualUser = `Profile: ${type.label} (${type.tagline})\nPrimary orientation: ${type.primary} — energizing\nSecondary orientation: ${type.secondary} — comfortable\nTertiary orientation: ${tertiary} — draining\n\nWhat energizes this type: ${details.strengths.join(", ")}\nWhat drains this type: ${details.drains.join(", ")}\n\nRole: "${role.trim()}"\nDemand split: WHY ${demandSplit.why}%, WHAT ${demandSplit.what}%, HOW ${demandSplit.how}%\n\nFor this person: ${dp}% in ${type.primary} (energizing), ${ds}% in ${type.secondary} (neutral), ${dt}% in ${tertiary} (draining)`;
