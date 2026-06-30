@@ -1,5 +1,7 @@
 export const config = { runtime: 'edge' };
 
+import sourceOfTruth from '../../lib/mindprint-source-of-truth.js';
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -23,6 +25,12 @@ export default async function handler(req) {
 
   try {
     const body = await req.json();
+
+    // Prepend source of truth as first cached system block for every AI call
+    const sotBlock = { type: 'text', text: sourceOfTruth, cache_control: { type: 'ephemeral' } };
+    const existingSystem = Array.isArray(body.system) ? body.system : (body.system ? [{ type: 'text', text: body.system }] : []);
+    const system = [sotBlock, ...existingSystem];
+
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -31,7 +39,7 @@ export default async function handler(req) {
         'anthropic-version': '2023-06-01',
         'anthropic-beta': 'prompt-caching-2024-07-31',
       },
-      body: JSON.stringify({ ...body, stream: true }),
+      body: JSON.stringify({ ...body, system, stream: true }),
     });
 
     if (!upstream.ok) {
