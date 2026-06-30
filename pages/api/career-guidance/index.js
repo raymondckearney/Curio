@@ -73,11 +73,12 @@ Return valid JSON only. No markdown, no preamble, no explanation.
 Rules:
 - alignmentLabel: one of "STRONG SIGNAL", "GOOD SIGNAL", or "CONDITIONAL"
 - alignmentPercent: STRONG SIGNAL = 75-95, GOOD SIGNAL = 60-74, CONDITIONAL = 40-59
-- Select exactly 5 roles based on the inputs
-- Each role: exactly 3 energizing items, exactly 2 challenging items, exactly 3 strategies
-- fit: exactly 2 paragraphs separated by \\n\\n, ~80-100 words total
-- environmentNote: exactly 2 paragraphs separated by \\n\\n, ~60-80 words total
-- Each label: 2-4 words max. Each body: 1-2 sentences max.
+- alignmentLabel: one of "STRONG SIGNAL", "GOOD SIGNAL", or "CONDITIONAL"
+- alignmentPercent: STRONG SIGNAL = 75-95, GOOD SIGNAL = 60-74, CONDITIONAL = 40-59
+- Select 5-7 roles based on the inputs
+- Each role: 4-5 energizing items, 3-4 challenging items, 4-5 strategies
+- fit: 3-4 paragraphs separated by \\n\\n, ~150-200 words total
+- environmentNote: 2-3 paragraphs separated by \\n\\n
 - All prose must be substantive and specific to this profile and inputs — not generic career advice`;
 
   let raw;
