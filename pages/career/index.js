@@ -146,32 +146,65 @@ function RoleCard({ role, idx, color, defaultOpen }) {
   );
 }
 
-function SummarySidebar({ profile, profileDef, inputs, energizers, watchFors, color }) {
-  return (
-    <div style={{ background: '#0F172A', borderRadius: 12, padding: '20px 18px', borderLeft: `4px solid ${color}` }}>
-      <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, color, lineHeight: 1, marginBottom: 2 }}>{profile}</div>
-      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginBottom: 14 }}>{profileDef?.tagline}</div>
+const SIDEBAR_BG = '#064E3B'; // deep emerald
 
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 18 }}>
+function SummarySidebar({ profile, profileDef, inputs, energizers, watchFors, color }) {
+  const extraTags = [
+    inputs.values && { label: 'Values', value: inputs.values },
+    inputs.compensationPriority && inputs.compensationPriority !== 'Balanced' && { label: 'Compensation', value: inputs.compensationPriority },
+    inputs.discProfile && { label: 'DiSC', value: inputs.discProfile },
+  ].filter(Boolean);
+
+  return (
+    <div style={{ background: SIDEBAR_BG, borderRadius: 12, padding: '20px 18px', borderLeft: `4px solid ${color}` }}>
+      <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, color, lineHeight: 1, marginBottom: 2 }}>{profile}</div>
+      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginBottom: 14 }}>{profileDef?.tagline}</div>
+
+      {/* Primary input tags */}
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: extraTags.length || inputs.sfStrengths?.length ? 10 : 18 }}>
         {[inputs.careerLevel, inputs.roleOrientation, inputs.industry, inputs.riskEnvironment].filter(Boolean).map((v, i) => (
-          <span key={i} style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '2px 7px' }}>{v}</span>
+          <span key={i} style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '2px 7px' }}>{v}</span>
         ))}
       </div>
 
-      <div style={{ marginBottom: 14 }}>
+      {/* Extra inputs: values, compensation, DiSC */}
+      {extraTags.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          {extraTags.map((t, i) => (
+            <div key={i} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginBottom: 3, display: 'flex', gap: 6 }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0, marginTop: 1 }}>{t.label}</span>
+              <span>{t.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* StrengthsFinder selections */}
+      {inputs.sfStrengths?.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 5 }}>StrengthsFinder</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {inputs.sfStrengths.map((s, i) => (
+              <span key={i} style={{ fontSize: '0.6rem', fontWeight: 600, color: color, background: `${color}20`, border: `1px solid ${color}40`, borderRadius: 3, padding: '2px 7px' }}>{s}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginBottom: 14, paddingTop: (extraTags.length || inputs.sfStrengths?.length) ? 14 : 0, borderTop: (extraTags.length || inputs.sfStrengths?.length) ? '1px solid rgba(255,255,255,0.07)' : 'none' }}>
         <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 7 }}>⚡ Energizers</div>
         {energizers.map((e, i) => (
-          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginBottom: 4, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.45, marginBottom: 4, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
             <span style={{ color, flexShrink: 0 }}>·</span>{e}
           </div>
         ))}
       </div>
 
-      <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 7 }}>◆ Watch For</div>
+      <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 7 }}>◆ Watch For</div>
         {watchFors.map((w, i) => (
-          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.45, marginBottom: 4, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-            <span style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }}>·</span>{w}
+          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.45, marginBottom: 4, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+            <span style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>·</span>{w}
           </div>
         ))}
       </div>
@@ -298,6 +331,14 @@ ${roleHtml}
             watchFors={watchFors}
             color={color}
           />
+          {/* Download button under sidebar */}
+          <button
+            onClick={generatePDF}
+            style={{ width: '100%', marginTop: 10, padding: '11px 16px', background: 'transparent', border: `1px solid ${color}40`, borderRadius: 8, color, fontFamily: "'DM Sans', sans-serif", fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
+          </button>
         </div>
 
         {/* Main content */}
@@ -651,7 +692,7 @@ export default function CareerPage() {
         <ReportOutput
           report={report}
           profile={profile}
-          inputs={{ careerLevel, roleOrientation, industry, riskEnvironment }}
+          inputs={{ careerLevel, roleOrientation, industry, riskEnvironment, values, compensationPriority, discProfile, sfStrengths, otherAssessments }}
           onReset={() => { setReport(null); setProfile(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           color={color}
         />

@@ -61,7 +61,7 @@ Return valid JSON only. No markdown, no preamble, no explanation.
 }
 
 Rules:
-- Select exactly 3-4 roles based on the inputs
+- Select exactly 5-7 roles based on the inputs
 - Role titles must be specific, real job titles a person could search and apply for (e.g. "Product Manager", "UX Researcher", "Management Consultant", "Data Analyst") — never vague categories or composite titles like "Team Lead — Strategy or Operations"
 - energizers: 4-5 short phrases, max 12 words each — no full sentences
 - watchFors: 3-4 short phrases, max 12 words each — no full sentences
