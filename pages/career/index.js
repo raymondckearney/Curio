@@ -161,7 +161,7 @@ function RoleCard({ role, idx, color, defaultOpen }) {
   );
 }
 
-const SIDEBAR_BG = '#064E3B';
+const SIDEBAR_BG = '#0F172A';
 
 // Extracts complete roles + energizers/watchFors from a partial streaming JSON string
 function extractPartialReport(text) {
