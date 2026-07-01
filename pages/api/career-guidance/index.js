@@ -75,7 +75,7 @@ Rules:
 - alignmentPercent: STRONG SIGNAL = 75-95, GOOD SIGNAL = 60-74, CONDITIONAL = 40-59
 - alignmentLabel: one of "STRONG SIGNAL", "GOOD SIGNAL", or "CONDITIONAL"
 - alignmentPercent: STRONG SIGNAL = 75-95, GOOD SIGNAL = 60-74, CONDITIONAL = 40-59
-- Select 5-7 roles based on the inputs
+- Select 3-5 roles based on the inputs
 - Each role: 4-5 energizing items, 3-4 challenging items, 4-5 strategies
 - fit: 3-4 paragraphs separated by \\n\\n, ~150-200 words total
 - environmentNote: 2-3 paragraphs separated by \\n\\n
@@ -92,7 +92,7 @@ Rules:
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 8192,
+        max_tokens: 32000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
       }),
