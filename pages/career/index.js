@@ -153,73 +153,136 @@ function RoleCard({ role, idx, color, defaultOpen }) {
   );
 }
 
-const SIDEBAR_BG = '#064E3B'; // deep emerald
+const SIDEBAR_BG = '#064E3B';
 
-function SummarySidebar({ profile, profileDef, inputs, energizers, watchFors, color }) {
-  const extraTags = [
+// Extracts complete roles + energizers/watchFors from a partial streaming JSON string
+function extractPartialReport(text) {
+  const out = { energizers: null, watchFors: null, roles: [] };
+
+  function tryStringArray(key) {
+    const m = text.match(new RegExp(`"${key}"\\s*:\\s*(\\[[^\\[\\]]*\\])`, 's'));
+    if (m) try { return JSON.parse(m[1]); } catch {}
+    return null;
+  }
+  out.energizers = tryStringArray('energizers');
+  out.watchFors = tryStringArray('watchFors');
+
+  const rolesIdx = text.indexOf('"roles"');
+  if (rolesIdx === -1) return out;
+  const arrStart = text.indexOf('[', rolesIdx);
+  if (arrStart === -1) return out;
+
+  let i = arrStart + 1;
+  while (i < text.length) {
+    while (i < text.length && /[\s,]/.test(text[i])) i++;
+    if (i >= text.length || text[i] !== '{') break;
+    let depth = 0, inStr = false, esc = false, start = i;
+    for (; i < text.length; i++) {
+      const c = text[i];
+      if (esc) { esc = false; continue; }
+      if (c === '\\' && inStr) { esc = true; continue; }
+      if (c === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (c === '{' || c === '[') depth++;
+      else if (c === '}' || c === ']') {
+        depth--;
+        if (depth === 0) {
+          try { out.roles.push(JSON.parse(text.slice(start, i + 1))); } catch {}
+          i++; break;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function InputRow({ label, value, color }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr', gap: 8, padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <span style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5, paddingTop: 1 }}>{label}</span>
+      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>{value}</span>
+    </div>
+  );
+}
+
+function SummarySidebar({ profile, profileDef, inputs, energizers, watchFors, color, streaming }) {
+  const inputRows = [
+    { label: 'Level', value: inputs.careerLevel },
+    { label: 'Track', value: inputs.roleOrientation },
+    inputs.industry && { label: 'Industry', value: inputs.industry },
+    inputs.riskEnvironment && { label: 'Org Type', value: inputs.riskEnvironment },
     inputs.values && { label: 'Values', value: inputs.values },
-    inputs.compensationPriority && inputs.compensationPriority !== 'Balanced' && { label: 'Compensation', value: inputs.compensationPriority },
+    inputs.compensationPriority && inputs.compensationPriority !== 'Balanced' && { label: 'Comp.', value: inputs.compensationPriority },
     inputs.discProfile && { label: 'DiSC', value: inputs.discProfile },
   ].filter(Boolean);
 
   return (
-    <div style={{ background: SIDEBAR_BG, borderRadius: 12, padding: '20px 18px', borderLeft: `4px solid ${color}` }}>
-      <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, color, lineHeight: 1, marginBottom: 2 }}>{profile}</div>
-      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginBottom: 14 }}>{profileDef?.tagline}</div>
-
-      {/* Primary input tags */}
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: extraTags.length || inputs.sfStrengths?.length ? 10 : 18 }}>
-        {[inputs.careerLevel, inputs.roleOrientation, inputs.industry, inputs.riskEnvironment].filter(Boolean).map((v, i) => (
-          <span key={i} style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '2px 7px' }}>{v}</span>
-        ))}
+    <div style={{ background: SIDEBAR_BG, borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.18)' }}>
+      {/* Profile header */}
+      <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ fontFamily: "'Caveat', cursive", fontSize: '2rem', fontWeight: 700, color, lineHeight: 1, marginBottom: 2 }}>{profile}</div>
+        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>{profileDef?.tagline}</div>
       </div>
 
-      {/* Extra inputs: values, compensation, DiSC */}
-      {extraTags.length > 0 && (
-        <div style={{ marginBottom: 10 }}>
-          {extraTags.map((t, i) => (
-            <div key={i} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginBottom: 3, display: 'flex', gap: 6 }}>
-              <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0, marginTop: 1 }}>{t.label}</span>
-              <span>{t.value}</span>
+      {/* Inputs section */}
+      <div style={{ padding: '12px 18px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.12)' }}>
+        {inputRows.map((row, i) => <InputRow key={i} label={row.label} value={row.value} color={color} />)}
+        {inputs.sfStrengths?.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr', gap: 8, padding: '5px 0' }}>
+            <span style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', paddingTop: 2 }}>Strengths</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+              {inputs.sfStrengths.map((s, i) => (
+                <span key={i} style={{ fontSize: '0.58rem', fontWeight: 600, color, background: `${color}25`, border: `1px solid ${color}50`, borderRadius: 3, padding: '1px 6px' }}>{s}</span>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* StrengthsFinder selections */}
-      {inputs.sfStrengths?.length > 0 && (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 5 }}>StrengthsFinder</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {inputs.sfStrengths.map((s, i) => (
-              <span key={i} style={{ fontSize: '0.6rem', fontWeight: 600, color: color, background: `${color}20`, border: `1px solid ${color}40`, borderRadius: 3, padding: '2px 7px' }}>{s}</span>
-            ))}
           </div>
-        </div>
-      )}
-
-      <div style={{ marginBottom: 14, paddingTop: (extraTags.length || inputs.sfStrengths?.length) ? 14 : 0, borderTop: (extraTags.length || inputs.sfStrengths?.length) ? '1px solid rgba(255,255,255,0.07)' : 'none' }}>
-        <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 7 }}>⚡ Energizers</div>
-        {energizers.map((e, i) => (
-          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.45, marginBottom: 4, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-            <span style={{ color, flexShrink: 0 }}>·</span>{e}
-          </div>
-        ))}
+        )}
       </div>
 
-      <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 7 }}>◆ Watch For</div>
-        {watchFors.map((w, i) => (
-          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.45, marginBottom: 4, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+      {/* Energizers */}
+      <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 8 }}>⚡ Energizers</div>
+        {energizers ? energizers.map((e, i) => (
+          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5, marginBottom: 5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{ color, flexShrink: 0, fontWeight: 700 }}>·</span>{e}
+          </div>
+        )) : (
+          [1,2,3,4].map(i => <div key={i} style={{ height: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 4, marginBottom: 7, width: `${70 + i * 5}%` }} />)
+        )}
+      </div>
+
+      {/* Watch For */}
+      <div style={{ padding: '14px 18px' }}>
+        <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>◆ Watch For</div>
+        {watchFors ? watchFors.map((w, i) => (
+          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginBottom: 5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
             <span style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>·</span>{w}
           </div>
-        ))}
+        )) : (
+          [1,2,3].map(i => <div key={i} style={{ height: 10, background: 'rgba(255,255,255,0.06)', borderRadius: 4, marginBottom: 7, width: `${60 + i * 8}%` }} />)
+        )}
       </div>
     </div>
   );
 }
 
-function ReportOutput({ report, profile, inputs, onReset, color }) {
+function RoleSkeleton() {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '14px 20px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ width: 3, height: 26, borderRadius: 2, background: '#E2E8F0', flexShrink: 0 }} />
+      <div style={{ flex: 1 }}>
+        <div style={{ width: 32, height: 7, background: '#F1F5F9', borderRadius: 3, marginBottom: 7 }} />
+        <div style={{ width: '55%', height: 13, background: '#E2E8F0', borderRadius: 3 }} />
+      </div>
+      <div style={{ fontSize: '0.72rem', color: '#CBD5E1', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#CBD5E1', animation: 'pulse 1.4s ease-in-out infinite' }} />
+        Generating…
+      </div>
+    </div>
+  );
+}
+
+function ReportOutput({ report, profile, inputs, onReset, color, streaming }) {
   const { energizers, watchFors, roles, environmentNote, nextSteps } = report;
   const profileDef = PROFILES.find(p => p.id === profile);
 
@@ -337,15 +400,8 @@ ${roleHtml}
             energizers={energizers}
             watchFors={watchFors}
             color={color}
+            streaming={streaming}
           />
-          {/* Download button under sidebar */}
-          <button
-            onClick={generatePDF}
-            style={{ width: '100%', marginTop: 10, padding: '11px 16px', background: 'transparent', border: `1px solid ${color}40`, borderRadius: 8, color, fontFamily: "'DM Sans', sans-serif", fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download PDF
-          </button>
         </div>
 
         {/* Main content */}
@@ -355,43 +411,56 @@ ${roleHtml}
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color }}>Role Matches</div>
           </div>
 
+          {/* Thin streaming progress bar */}
+          {streaming && (
+            <div style={{ height: 3, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden', marginBottom: 16 }}>
+              <div style={{ height: '100%', background: `linear-gradient(90deg, ${color}, ${color}99)`, borderRadius: 99, animation: 'stream-pulse 1.5s ease-in-out infinite', transformOrigin: 'left' }} />
+              <style>{`@keyframes stream-pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }`}</style>
+            </div>
+          )}
+
           <div style={{ marginBottom: 28 }}>
             {roles.map((role, i) => (
               <RoleCard key={i} role={role} idx={i} color={color} defaultOpen={i === 0} />
             ))}
+            {/* Skeleton cards while still streaming */}
+            {streaming && [1, 2].map(i => <RoleSkeleton key={`sk-${i}`} />)}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}>
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ display: 'block', width: 14, height: 1, background: color }} />
-                A Note on Environment
-              </div>
-              {environmentNote.split('\n\n').map((p, i) => (
-                <p key={i} style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.75, marginBottom: i < environmentNote.split('\n\n').length - 1 ? 10 : 0 }}>{p}</p>
-              ))}
-            </div>
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ display: 'block', width: 14, height: 1, background: color }} />
-                What To Do Next
-              </div>
-              {nextSteps.map((step, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: i < nextSteps.length - 1 ? 12 : 0 }}>
-                  <span style={{ color, fontWeight: 700, fontSize: '0.9rem', lineHeight: 1, marginTop: 2, flexShrink: 0 }}>→</span>
-                  <span style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.65 }}>{step}</span>
+          {!streaming && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}>
+              <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ display: 'block', width: 14, height: 1, background: color }} />
+                  A Note on Environment
                 </div>
-              ))}
+                {environmentNote.split('\n\n').map((p, i) => (
+                  <p key={i} style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.75, marginBottom: i < environmentNote.split('\n\n').length - 1 ? 10 : 0 }}>{p}</p>
+                ))}
+              </div>
+              <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ display: 'block', width: 14, height: 1, background: color }} />
+                  What To Do Next
+                </div>
+                {nextSteps.map((step, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: i < nextSteps.length - 1 ? 12 : 0 }}>
+                    <span style={{ color, fontWeight: 700, fontSize: '0.9rem', lineHeight: 1, marginTop: 2, flexShrink: 0 }}>→</span>
+                    <span style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.65 }}>{step}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={generatePDF}
-              style={{ flex: 1, padding: '14px 20px', background: color, border: 'none', borderRadius: 8, color: '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              disabled={streaming}
+              style={{ flex: 1, padding: '14px 20px', background: streaming ? '#E2E8F0' : color, border: 'none', borderRadius: 8, color: streaming ? '#94A3B8' : '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: streaming ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download PDF
+              {streaming ? 'Generating…' : 'Download PDF'}
             </button>
             <button
               onClick={onReset}
@@ -418,15 +487,17 @@ export default function CareerPage() {
   const [sfStrengths, setSfStrengths] = useState([]);
   const [otherAssessments, setOtherAssessments] = useState('');
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const [progress, setProgress] = useState(0);
   const [phaseLabel, setPhaseLabel] = useState(PHASES[0].label);
-  const [report, setReport] = useState(null);
+  const [displayReport, setDisplayReport] = useState(null); // partial or final
+  const [report, setReport] = useState(null); // final only
   const [error, setError] = useState('');
   const outputRef = useRef(null);
 
   useEffect(() => {
-    if (report && outputRef.current) outputRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [report]);
+    if (displayReport && outputRef.current) outputRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [!!displayReport]);
 
   function buildOtherAssessments() {
     const parts = [];
@@ -438,7 +509,12 @@ export default function CareerPage() {
 
   async function generate() {
     if (!profile) return;
-    setLoading(true); setError(''); setReport(null); setProgress(0); setPhaseLabel(PHASES[0].label);
+    setLoading(true); setStreaming(true); setError('');
+    setReport(null); setDisplayReport(null);
+    setProgress(0); setPhaseLabel(PHASES[0].label);
+
+    let accumulated = '';
+
     try {
       const res = await fetch('/api/career-guidance', {
         method: 'POST',
@@ -475,13 +551,23 @@ export default function CareerPage() {
           let evt;
           try { evt = JSON.parse(line.slice(6)); } catch { continue; }
 
-          if (evt.type === 'progress') {
+          if (evt.type === 'delta') {
+            accumulated += evt.text;
             const pct = Math.min((evt.chars / EXPECTED_CHARS) * 100, 95);
             setProgress(pct);
             setPhaseLabel(getPhase(evt.chars));
+
+            // Try to show partial results as roles complete
+            const partial = extractPartialReport(accumulated);
+            if (partial.roles.length > 0) {
+              setDisplayReport(partial);
+              setLoading(false); // switch from spinner to partial layout
+            }
           } else if (evt.type === 'done') {
             setProgress(100);
             setReport(evt.report);
+            setDisplayReport(evt.report);
+            setStreaming(false);
           } else if (evt.type === 'error') {
             throw new Error(evt.error);
           }
@@ -489,8 +575,10 @@ export default function CareerPage() {
       }
     } catch (e) {
       setError(e.message || 'Something went wrong.');
+      setStreaming(false);
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   }
 

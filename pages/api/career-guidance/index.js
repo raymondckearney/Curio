@@ -144,8 +144,7 @@ Rules:
 
         if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
           accumulated += evt.delta.text;
-          // Send lightweight progress tick (char count only, not full text)
-          send(res, { type: 'progress', chars: accumulated.length });
+          send(res, { type: 'delta', text: evt.delta.text, chars: accumulated.length });
         }
       }
     }
