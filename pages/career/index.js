@@ -80,20 +80,27 @@ function StrengthsPicker({ selected, onChange }) {
 function RoleCard({ role, idx, color, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
+    <div style={{
+      background: open ? `${color}08` : '#fff',
+      border: `1px solid ${open ? color : '#E2E8F0'}`,
+      borderRadius: 10,
+      overflow: 'hidden',
+      marginBottom: 8,
+      transition: 'border-color 0.18s, background 0.18s',
+    }}>
       <button
         onClick={() => setOpen(o => !o)}
-        style={{ width: '100%', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16 }}
+        style={{ width: '100%', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16 }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 3, height: 28, borderRadius: 2, background: color, flexShrink: 0 }} />
+          <div style={{ width: open ? 4 : 3, height: open ? 32 : 26, borderRadius: 2, background: open ? color : '#CBD5E1', flexShrink: 0, transition: 'all 0.18s' }} />
           <div>
-            <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 2 }}>Role {idx + 1}</div>
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>{role.title}</div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: open ? color : '#94A3B8', marginBottom: 2, transition: 'color 0.18s' }}>Role {idx + 1}</div>
+            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.15rem', fontWeight: 700, color: open ? '#0F172A' : '#64748B', lineHeight: 1.2, transition: 'color 0.18s' }}>{role.title}</div>
           </div>
         </div>
-        <div style={{ width: 22, height: 22, borderRadius: '50%', background: open ? `${color}15` : '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <span style={{ fontSize: '0.55rem', color: open ? color : '#94A3B8' }}>{open ? '▲' : '▼'}</span>
+        <div style={{ width: 22, height: 22, borderRadius: '50%', background: open ? color : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.18s' }}>
+          <span style={{ fontSize: '0.55rem', color: open ? '#fff' : '#94A3B8' }}>{open ? '▲' : '▼'}</span>
         </div>
       </button>
 
