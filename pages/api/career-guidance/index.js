@@ -52,34 +52,32 @@ OTHER ASSESSMENTS: ${otherAssessments || 'None'}
 Return valid JSON only. No markdown, no preamble, no explanation.
 
 {
-  "alignmentLabel": "STRONG SIGNAL",
-  "alignmentPercent": 82,
-  "alignmentSentence": "...",
   "energizers": ["...", "...", "..."],
   "watchFors": ["...", "..."],
   "roles": [
     {
       "title": "...",
-      "fit": "paragraph1\\n\\nparagraph2\\n\\nparagraph3",
+      "fit": "paragraph1\\n\\nparagraph2",
       "energizing": [{ "label": "...", "body": "..." }],
       "challenging": [{ "label": "...", "body": "..." }],
       "strategies": [{ "label": "...", "body": "..." }]
     }
   ],
-  "environmentNote": "paragraph1\\n\\nparagraph2",
-  "nextSteps": ["...", "...", "...", "..."]
+  "environmentNote": "paragraph",
+  "nextSteps": ["...", "...", "..."]
 }
 
 Rules:
-- alignmentLabel: one of "STRONG SIGNAL", "GOOD SIGNAL", or "CONDITIONAL"
-- alignmentPercent: STRONG SIGNAL = 75-95, GOOD SIGNAL = 60-74, CONDITIONAL = 40-59
-- alignmentLabel: one of "STRONG SIGNAL", "GOOD SIGNAL", or "CONDITIONAL"
-- alignmentPercent: STRONG SIGNAL = 75-95, GOOD SIGNAL = 60-74, CONDITIONAL = 40-59
-- Select 3-5 roles based on the inputs
-- Each role: 4-5 energizing items, 3-4 challenging items, 4-5 strategies
-- fit: 3-4 paragraphs separated by \\n\\n, ~150-200 words total
-- environmentNote: 2-3 paragraphs separated by \\n\\n
-- All prose must be substantive and specific to this profile and inputs — not generic career advice`;
+- Select exactly 3-4 roles based on the inputs
+- Role titles must be specific, real job titles a person could search and apply for (e.g. "Product Manager", "UX Researcher", "Management Consultant", "Data Analyst") — never vague categories or composite titles like "Team Lead — Strategy or Operations"
+- energizers: 4-5 short phrases, max 12 words each — no full sentences
+- watchFors: 3-4 short phrases, max 12 words each — no full sentences
+- Each role: 3-4 energizing items, 2-3 challenging items, 3-4 strategies
+- fit: exactly 2 paragraphs separated by \\n\\n, ~70-90 words total
+- Each energizing/challenging/strategy body: 1 concise sentence, max 20 words
+- environmentNote: 1 paragraph, ~50 words
+- nextSteps: 3 concise action items
+- All prose must be specific to this profile and inputs — not generic career advice`;
 
   let raw;
   try {
@@ -98,7 +96,7 @@ Rules:
           {
             type: 'text',
             text: `${systemPromptDoc}\n\n---\n\n## MINDPRINT™ AI SOURCE OF TRUTH — AUTHORITATIVE, GOVERNS ALL OUTPUT\n\n${sourceOfTruth}\n\n---`,
-            cache_control: { type: 'ephemeral' },
+            cache_control: { type: 'ephemeral', ttl: '1h' },
           },
           {
             type: 'text',
