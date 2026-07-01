@@ -98,7 +98,7 @@ Rules:
           {
             type: 'text',
             text: `${systemPromptDoc}\n\n---\n\n## MINDPRINT™ AI SOURCE OF TRUTH — AUTHORITATIVE, GOVERNS ALL OUTPUT\n\n${sourceOfTruth}\n\n---`,
-            cache_control: { type: 'ephemeral' },
+            cache_control: { type: 'ephemeral', ttl: '1h' },
           },
           {
             type: 'text',
