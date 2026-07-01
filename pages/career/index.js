@@ -456,7 +456,7 @@ export default function CareerPage() {
           Find a role that energizes YOU!
         </h1>
         <p style={{ fontSize: '1rem', color: '#78716C', maxWidth: 560, lineHeight: 1.75, marginBottom: 52 }}>
-          The more detail you provide below, the more customized the output. We'll generate a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.
+          The more detail you provide below, the more customized the output. We'll generate a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think. You can even add your results from any other assessments you've taken to provide a more comprehensive output.
         </p>
         <div style={{ height: 1, background: '#E7E5E4', marginBottom: 48 }} />
 
@@ -491,7 +491,7 @@ export default function CareerPage() {
               <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#059669', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ display: 'block', width: 20, height: 1, background: '#059669' }} />Step Two
               </div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.4rem', fontWeight: 700, color: '#1C1917', marginBottom: 24 }}>Tell us about yourself</div>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.4rem', fontWeight: 700, color: '#1C1917', marginBottom: 24 }}>Tell us about yourself and your career preferences</div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
@@ -504,7 +504,7 @@ export default function CareerPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Role Orientation</label>
+                  <label style={lbl}>Career Track</label>
                   <select value={roleOrientation} onChange={e => setRoleOrientation(e.target.value)} style={sel}>
                     <option>Open to Both</option>
                     <option>Individual Contributor</option>
@@ -516,7 +516,7 @@ export default function CareerPage() {
                   <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g. technology, healthcare, finance" style={inp} />
                 </div>
                 <div>
-                  <label style={lbl}>Work Environment</label>
+                  <label style={lbl}>Organization Type</label>
                   <select value={riskEnvironment} onChange={e => setRiskEnvironment(e.target.value)} style={sel}>
                     <option value="">Not specified</option>
                     <option>High-growth / Startup</option>
@@ -533,8 +533,8 @@ export default function CareerPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={lbl}>Values &amp; Work Orientation</label>
-                  <input value={values} onChange={e => setValues(e.target.value)} placeholder="e.g. mission-driven, autonomy, impact" style={inp} />
+                  <label style={lbl}>What Matters Most to You</label>
+                  <input value={values} onChange={e => setValues(e.target.value)} placeholder="e.g. autonomy, work-life balance, social impact, creativity, job security" style={inp} />
                 </div>
                 <div>
                   <label style={lbl}>DiSC Profile</label>
