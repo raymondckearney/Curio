@@ -73,10 +73,10 @@ Rules:
 - energizers: 4-5 short phrases, max 12 words each — no full sentences
 - watchFors: 3-4 short phrases, max 12 words each — no full sentences
 - Each role: 3-4 energizing items, 2-3 challenging items, 3-4 strategies
-- fit: exactly 2 paragraphs separated by \\n\\n, ~70-90 words total
-- Each energizing/challenging/strategy body: 1 concise sentence, max 20 words
-- environmentNote: 1 paragraph, ~50 words
-- nextSteps: 3 concise action items
+- fit: exactly 2 paragraphs separated by \\n\\n, 80-120 words total
+- Each energizing/challenging/strategy body: 1-2 concise sentences, max 30 words
+- environmentNote: 1-2 paragraphs, ~70 words
+- nextSteps: 3-4 concise action items
 - All prose must be specific to this profile and inputs — not generic career advice`;
 
   let raw;
