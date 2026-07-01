@@ -89,11 +89,22 @@ Rules:
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'prompt-caching-2024-07-31',
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 16000,
-        system: systemPrompt,
+        system: [
+          {
+            type: 'text',
+            text: `${systemPromptDoc}\n\n---\n\n## MINDPRINT™ AI SOURCE OF TRUTH — AUTHORITATIVE, GOVERNS ALL OUTPUT\n\n${sourceOfTruth}\n\n---`,
+            cache_control: { type: 'ephemeral' },
+          },
+          {
+            type: 'text',
+            text: `\nACTIVE PROFILE FOR THIS REQUEST: ${profile}\nApply Section 4 of the Source of Truth for this profile to every generation decision.`,
+          },
+        ],
         messages: [{ role: 'user', content: userMessage }],
       }),
     });
