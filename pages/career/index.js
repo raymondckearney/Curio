@@ -26,13 +26,22 @@ const STRENGTHSFINDER_34 = [
 
 function profileColor(id) { return PRIMARY_COLOR[id?.split('-')[0]] || '#64748B'; }
 
-const LOADING_MSGS = [
-  'Analyzing your profile…',
-  'Selecting best-fit roles…',
-  'Writing your career guidance…',
-  'Building role deep-dives…',
-  'Almost there…',
+// Phases mapped to character thresholds of the streaming JSON response
+const PHASES = [
+  { threshold: 0,     label: 'Analyzing your profile…' },
+  { threshold: 800,   label: 'Identifying best-fit roles…' },
+  { threshold: 2500,  label: 'Writing your role matches…' },
+  { threshold: 5000,  label: 'Building energizers & strategies…' },
+  { threshold: 8000,  label: 'Adding final details…' },
+  { threshold: 11000, label: 'Almost ready…' },
 ];
+const EXPECTED_CHARS = 14000; // typical output size for progress estimation
+
+function getPhase(chars) {
+  let phase = PHASES[0];
+  for (const p of PHASES) { if (chars >= p.threshold) phase = p; else break; }
+  return phase.label;
+}
 
 function StrengthsPicker({ selected, onChange }) {
   function toggle(s) {
@@ -361,22 +370,15 @@ export default function CareerPage() {
   const [sfStrengths, setSfStrengths] = useState([]);
   const [otherAssessments, setOtherAssessments] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingMsg, setLoadingMsg] = useState(LOADING_MSGS[0]);
+  const [progress, setProgress] = useState(0);
+  const [phaseLabel, setPhaseLabel] = useState(PHASES[0].label);
   const [report, setReport] = useState(null);
   const [error, setError] = useState('');
   const outputRef = useRef(null);
-  const timerRef = useRef(null);
 
   useEffect(() => {
     if (report && outputRef.current) outputRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [report]);
-
-  useEffect(() => {
-    if (!loading) { clearInterval(timerRef.current); return; }
-    let i = 0;
-    timerRef.current = setInterval(() => { i = (i + 1) % LOADING_MSGS.length; setLoadingMsg(LOADING_MSGS[i]); }, 12000);
-    return () => clearInterval(timerRef.current);
-  }, [loading]);
 
   function buildOtherAssessments() {
     const parts = [];
@@ -388,7 +390,7 @@ export default function CareerPage() {
 
   async function generate() {
     if (!profile) return;
-    setLoading(true); setError(''); setReport(null); setLoadingMsg(LOADING_MSGS[0]);
+    setLoading(true); setError(''); setReport(null); setProgress(0); setPhaseLabel(PHASES[0].label);
     try {
       const res = await fetch('/api/career-guidance', {
         method: 'POST',
@@ -402,9 +404,41 @@ export default function CareerPage() {
           otherAssessments: buildOtherAssessments(),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Generation failed');
-      setReport(data);
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Generation failed');
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          let evt;
+          try { evt = JSON.parse(line.slice(6)); } catch { continue; }
+
+          if (evt.type === 'progress') {
+            const pct = Math.min((evt.chars / EXPECTED_CHARS) * 100, 95);
+            setProgress(pct);
+            setPhaseLabel(getPhase(evt.chars));
+          } else if (evt.type === 'done') {
+            setProgress(100);
+            setReport(evt.report);
+          } else if (evt.type === 'error') {
+            throw new Error(evt.error);
+          }
+        }
+      }
     } catch (e) {
       setError(e.message || 'Something went wrong.');
     } finally {
@@ -568,11 +602,41 @@ export default function CareerPage() {
         )}
 
         {loading && (
-          <div style={{ textAlign: 'center', padding: '80px 24px 120px' }}>
-            <div style={{ display: 'inline-block', width: 44, height: 44, border: `3px solid ${profileColor(profile)}20`, borderTop: `3px solid ${profileColor(profile)}`, borderRadius: '50%', animation: 'spin 0.9s linear infinite', marginBottom: 24 }} />
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.6rem', fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>{loadingMsg}</div>
-            <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>This takes about 30 seconds</div>
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+          <div style={{ padding: '72px 0 120px' }}>
+            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.7rem', fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>{phaseLabel}</div>
+            <div style={{ fontSize: '0.82rem', color: '#94A3B8', marginBottom: 28 }}>Generating your personalized report…</div>
+
+            {/* Progress track */}
+            <div style={{ position: 'relative', height: 6, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{
+                position: 'absolute', left: 0, top: 0, height: '100%', borderRadius: 99,
+                background: `linear-gradient(90deg, ${color}, ${color}cc)`,
+                width: progress + '%',
+                transition: 'width 0.4s ease',
+              }} />
+            </div>
+
+            {/* Percentage + animated dots */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{
+                    width: 5, height: 5, borderRadius: '50%', background: color,
+                    animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                  }} />
+                ))}
+              </div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, color, fontVariantNumeric: 'tabular-nums' }}>
+                {Math.round(progress)}%
+              </div>
+            </div>
+
+            <style>{`
+              @keyframes pulse {
+                0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+                40% { opacity: 1; transform: scale(1); }
+              }
+            `}</style>
           </div>
         )}
 
