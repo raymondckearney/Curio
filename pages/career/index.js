@@ -369,9 +369,9 @@ p{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:5px}
   </div>
   <div>
     <div class="sum-label" style="color:${esc(c)}">⚡ Energizers</div>
-    ${energizers.map(e => `<div class="sum-item"><span style="color:${esc(c)}">·</span><span style="color:rgba(255,255,255,0.7)">${esc(e)}</span></div>`).join('')}
+    ${(energizers||[]).map(e => `<div class="sum-item"><span style="color:${esc(c)}">·</span><span style="color:rgba(255,255,255,0.7)">${esc(e)}</span></div>`).join('')}
     <div class="sum-label" style="color:rgba(255,255,255,0.35);margin-top:10px">◆ Watch For</div>
-    ${watchFors.map(w => `<div class="sum-item"><span style="color:rgba(255,255,255,0.25)">·</span><span style="color:rgba(255,255,255,0.5)">${esc(w)}</span></div>`).join('')}
+    ${(watchFors||[]).map(w => `<div class="sum-item"><span style="color:rgba(255,255,255,0.25)">·</span><span style="color:rgba(255,255,255,0.5)">${esc(w)}</span></div>`).join('')}
   </div>
 </div>
 ${roleHtml}
@@ -381,7 +381,7 @@ ${roleHtml}
 </div>
 <div>
   <div class="sec-label" style="color:${esc(c)};font-size:6pt;margin-bottom:6px">What To Do Next</div>
-  ${nextSteps.map(s => `<div class="next-step"><span style="color:${esc(c)};font-weight:700">→</span>${esc(s)}</div>`).join('')}
+  ${(nextSteps||[]).map(s => `<div class="next-step"><span style="color:${esc(c)};font-weight:700">→</span>${esc(s)}</div>`).join('')}
 </div>
 <div class="footer"><div>Curio · MindPrint Career Guidance</div><div>choosecurio.com · ${esc(today)}</div></div>
 </div></body></html>`;
@@ -435,7 +435,7 @@ ${roleHtml}
             {streaming && [1, 2].map(i => <RoleSkeleton key={`sk-${i}`} />)}
           </div>
 
-          {!streaming && (
+          {!streaming && environmentNote && nextSteps && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}>
               <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
                 <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -464,7 +464,7 @@ ${roleHtml}
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={generatePDF}
-              disabled={streaming}
+              disabled={streaming || !energizers || !nextSteps}
               style={{ flex: 1, padding: '14px 20px', background: streaming ? '#E2E8F0' : color, border: 'none', borderRadius: 8, color: streaming ? '#94A3B8' : '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: streaming ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
