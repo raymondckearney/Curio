@@ -99,8 +99,16 @@ function RoleCard({ role, idx, color, defaultOpen }) {
             <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.15rem', fontWeight: 700, color: open ? '#0F172A' : '#64748B', lineHeight: 1.2, transition: 'color 0.18s' }}>{role.title}</div>
           </div>
         </div>
-        <div style={{ width: 22, height: 22, borderRadius: '50%', background: open ? color : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.18s' }}>
-          <span style={{ fontSize: '0.55rem', color: open ? '#fff' : '#94A3B8' }}>{open ? '▲' : '▼'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          {role.fitScore && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: open ? `${color}15` : '#F8FAFC', border: `1px solid ${open ? color + '40' : '#E2E8F0'}`, borderRadius: 20, padding: '4px 10px', transition: 'all 0.18s' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: open ? color : '#94A3B8', fontVariantNumeric: 'tabular-nums', transition: 'color 0.18s' }}>{role.fitScore}%</span>
+              <span style={{ fontSize: '0.62rem', color: open ? color + 'cc' : '#CBD5E1', transition: 'color 0.18s' }}>{role.fitLabel || 'Fit'}</span>
+            </div>
+          )}
+          <div style={{ width: 22, height: 22, borderRadius: '50%', background: open ? color : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.18s' }}>
+            <span style={{ fontSize: '0.55rem', color: open ? '#fff' : '#94A3B8' }}>{open ? '▲' : '▼'}</span>
+          </div>
         </div>
       </button>
 
@@ -616,7 +624,7 @@ export default function CareerPage() {
         </Link>
       </nav>
 
-      <div ref={outputRef} style={{ maxWidth: 820, margin: '0 auto', padding: '64px clamp(24px,5vw,72px) 0' }}>
+      <div ref={outputRef} style={{ maxWidth: 960, margin: '0 auto', padding: '64px clamp(24px,5vw,72px) 0' }}>
         {/* Page header */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.17em', textTransform: 'uppercase', color: '#059669', marginBottom: 20 }}>
           <span style={{ display: 'block', width: 36, height: 1, background: '#059669' }} />
@@ -630,7 +638,7 @@ export default function CareerPage() {
         </p>
         <div style={{ height: 1, background: '#E7E5E4', marginBottom: 48 }} />
 
-        {!loading && !report && (
+        {!loading && !displayReport && (
           <>
             {/* Step 1: Profile */}
             <div style={{ marginBottom: 48 }}>
@@ -783,13 +791,14 @@ export default function CareerPage() {
         )}
       </div>
 
-      {report && (
+      {displayReport && (
         <ReportOutput
-          report={report}
+          report={displayReport}
           profile={profile}
           inputs={{ careerLevel, roleOrientation, industry, riskEnvironment, values, compensationPriority, discProfile, sfStrengths, otherAssessments }}
-          onReset={() => { setReport(null); setProfile(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onReset={() => { setReport(null); setDisplayReport(null); setProfile(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           color={color}
+          streaming={streaming}
         />
       )}
     </>
