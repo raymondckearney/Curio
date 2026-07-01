@@ -13,10 +13,8 @@ const PROFILES = [
 
 const PRIMARY_COLOR = { WHY: '#059669', WHAT: '#2563EB', HOW: '#D97706' };
 const PRIMARY_LIGHT = { WHY: '#D1FAE5', WHAT: '#DBEAFE', HOW: '#FEF3C7' };
-const PRIMARY_MID   = { WHY: '#6EE7B7', WHAT: '#93C5FD', HOW: '#FCD34D' };
 
 function profileColor(id) { return PRIMARY_COLOR[id?.split('-')[0]] || '#64748B'; }
-function profileLight(id) { return PRIMARY_LIGHT[id?.split('-')[0]] || '#F8FAFC'; }
 
 const LOADING_MSGS = [
   'Analyzing your profile…',
@@ -26,70 +24,71 @@ const LOADING_MSGS = [
   'Almost there…',
 ];
 
-function AlignBar({ pct, color }) {
-  const [width, setWidth] = useState(0);
-  useEffect(() => { const t = setTimeout(() => setWidth(pct), 120); return () => clearTimeout(t); }, [pct]);
-  return (
-    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 99, height: 6, overflow: 'hidden', marginTop: 8 }}>
-      <div style={{ height: '100%', width: width + '%', background: color, borderRadius: 99, transition: 'width 1s ease' }} />
-    </div>
-  );
-}
-
-function LabeledList({ items, accent }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      {items.map((item, i) => (
-        <div key={i} style={{ padding: '14px 0', borderBottom: i < items.length - 1 ? '1px solid #F1F5F9' : 'none' }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: accent, marginBottom: 5 }}>{item.label}</div>
-          <div style={{ fontSize: '0.9rem', color: '#374151', lineHeight: 1.75 }}>{item.body}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function RoleCard({ role, idx, color, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+    <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
       <button
         onClick={() => setOpen(o => !o)}
-        style={{ width: '100%', padding: '22px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16 }}
+        style={{ width: '100%', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16 }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 4, height: 36, borderRadius: 2, background: color, flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 3, height: 28, borderRadius: 2, background: color, flexShrink: 0 }} />
           <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color, marginBottom: 3 }}>Role {idx + 1}</div>
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.3rem', fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>{role.title}</div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 2 }}>Role {idx + 1}</div>
+            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.15rem', fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>{role.title}</div>
           </div>
         </div>
-        <div style={{ fontSize: '0.75rem', color: '#94A3B8', flexShrink: 0 }}>{open ? '▲' : '▼'}</div>
+        <div style={{ width: 22, height: 22, borderRadius: '50%', background: open ? `${color}15` : '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: '0.55rem', color: open ? color : '#94A3B8' }}>{open ? '▲' : '▼'}</span>
+        </div>
       </button>
 
       {open && (
         <div style={{ borderTop: '1px solid #F1F5F9' }}>
-          {/* Why this role */}
-          <div style={{ padding: '28px 28px 24px' }}>
-            <div style={sectionLabel(color)}>Why This Role Is a Strong Match</div>
+          {/* Fit */}
+          <div style={{ padding: '16px 20px 12px' }}>
             {role.fit.split('\n\n').map((p, i) => (
-              <p key={i} style={{ fontSize: '0.93rem', color: '#374151', lineHeight: 1.8, marginBottom: 14, margin: i === role.fit.split('\n\n').length - 1 ? 0 : undefined }}>{p}</p>
+              <p key={i} style={{ fontSize: '0.875rem', color: '#374151', lineHeight: 1.75, marginBottom: i < role.fit.split('\n\n').length - 1 ? 10 : 0 }}>{p}</p>
             ))}
           </div>
 
-          <div style={{ borderTop: '1px solid #F8FAFC', background: '#FAFBFC', padding: '24px 28px' }}>
-            <div style={sectionLabel('#059669')}>What You Will Find Energizing and Excel At</div>
-            <LabeledList items={role.energizing} accent="#059669" />
+          {/* Energizing + Challenging side by side */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 20px 12px' }}>
+            <div style={{ background: '#F0FDF4', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: '#059669', marginBottom: 10 }}>⚡ Energizing</div>
+              {role.energizing.map((item, i) => (
+                <div key={i} style={{ marginBottom: i < role.energizing.length - 1 ? 9 : 0 }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#059669', marginBottom: 2 }}>{item.label}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#374151', lineHeight: 1.5 }}>{item.body}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 10 }}>◆ Challenging</div>
+              {role.challenging.map((item, i) => (
+                <div key={i} style={{ marginBottom: i < role.challenging.length - 1 ? 9 : 0 }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748B', marginBottom: 2 }}>{item.label}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#374151', lineHeight: 1.5 }}>{item.body}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div style={{ borderTop: '1px solid #F8FAFC', padding: '24px 28px' }}>
-            <div style={sectionLabel('#94A3B8')}>What Will Still Be Challenging</div>
-            <LabeledList items={role.challenging} accent="#94A3B8" />
-          </div>
-
-          <div style={{ borderTop: '1px solid #F8FAFC', background: '#FAFBFC', padding: '24px 28px' }}>
-            <div style={sectionLabel(color)}>Strategies to Bring Into This Role</div>
-            <LabeledList items={role.strategies} accent={color} />
+          {/* Strategies */}
+          <div style={{ borderTop: '1px solid #F1F5F9', padding: '12px 20px 16px' }}>
+            <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 10 }}>Strategies</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px' }}>
+              {role.strategies.map((item, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <span style={{ color, fontWeight: 700, fontSize: '0.7rem', flexShrink: 0, marginTop: 2 }}>→</span>
+                  <div>
+                    <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#374151', marginBottom: 1 }}>{item.label}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748B', lineHeight: 1.45 }}>{item.body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -97,12 +96,45 @@ function RoleCard({ role, idx, color, defaultOpen }) {
   );
 }
 
-function sectionLabel(color) {
-  return { fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 };
+function SummarySidebar({ profile, profileDef, inputs, energizers, watchFors, roles, color }) {
+  return (
+    <div style={{ background: '#0F172A', borderRadius: 12, padding: '24px 22px', borderLeft: `4px solid ${color}` }}>
+      <div style={{ fontFamily: "'Caveat', cursive", fontSize: '2rem', fontWeight: 700, color, lineHeight: 1, marginBottom: 4 }}>{profile}</div>
+      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: 16 }}>{profileDef?.tagline}</div>
+
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 22 }}>
+        {[inputs.careerLevel, inputs.roleOrientation, inputs.industry, inputs.riskEnvironment].filter(Boolean).map((v, i) => (
+          <span key={i} style={{ fontSize: '0.62rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '2px 8px' }}>{v}</span>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 8 }}>⚡ Energizers</div>
+        {energizers.map((e, i) => (
+          <div key={i} style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginBottom: 5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{ color, flexShrink: 0, marginTop: 1 }}>·</span>{e}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>◆ Watch For</div>
+        {watchFors.map((w, i) => (
+          <div key={i} style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: 5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0, marginTop: 1 }}>·</span>{w}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.07)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)' }}>
+        {roles.length} roles matched
+      </div>
+    </div>
+  );
 }
 
 function ReportOutput({ report, profile, inputs, onReset, color }) {
-  const { alignmentLabel, alignmentPercent, alignmentSentence, energizers, watchFors, roles, environmentNote, nextSteps } = report;
+  const { energizers, watchFors, roles, environmentNote, nextSteps } = report;
   const profileDef = PROFILES.find(p => p.id === profile);
 
   function generatePDF() {
@@ -113,14 +145,22 @@ function ReportOutput({ report, profile, inputs, onReset, color }) {
       <div class="role-block">
         <div class="role-num">Role ${ri + 1}</div>
         <div class="role-title">${esc(role.title)}</div>
-        <div class="sec-label" style="color:${esc(c)}">Why This Role Is a Strong Match</div>
+        <div class="sec-label" style="color:${esc(c)}">Why This Role Fits</div>
         ${role.fit.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}
-        <div class="sec-label" style="color:#059669">What You Will Find Energizing and Excel At</div>
-        ${role.energizing.map(item => `<div class="labeled-item"><div class="item-label" style="color:#059669">${esc(item.label)}</div><div class="item-body">${esc(item.body)}</div></div>`).join('')}
-        <div class="sec-label" style="color:#94A3B8">What Will Still Be Challenging</div>
-        ${role.challenging.map(item => `<div class="labeled-item"><div class="item-label" style="color:#94A3B8">${esc(item.label)}</div><div class="item-body">${esc(item.body)}</div></div>`).join('')}
-        <div class="sec-label" style="color:${esc(c)}">Strategies to Bring Into This Role</div>
-        ${role.strategies.map(item => `<div class="labeled-item"><div class="item-label" style="color:${esc(c)}">${esc(item.label)}</div><div class="item-body">${esc(item.body)}</div></div>`).join('')}
+        <div class="two-col">
+          <div class="col-box green">
+            <div class="col-hdr" style="color:#059669">⚡ Energizing</div>
+            ${role.energizing.map(item => `<div class="mini-item"><span class="mini-label" style="color:#059669">${esc(item.label)}</span> ${esc(item.body)}</div>`).join('')}
+          </div>
+          <div class="col-box gray">
+            <div class="col-hdr" style="color:#64748B">◆ Challenging</div>
+            ${role.challenging.map(item => `<div class="mini-item"><span class="mini-label" style="color:#64748B">${esc(item.label)}</span> ${esc(item.body)}</div>`).join('')}
+          </div>
+        </div>
+        <div class="sec-label" style="color:${esc(c)}">Strategies</div>
+        <div class="strat-grid">
+          ${role.strategies.map(item => `<div class="strat-item"><span class="arrow" style="color:${esc(c)}">→</span><div><span class="mini-label">${esc(item.label)}</span> ${esc(item.body)}</div></div>`).join('')}
+        </div>
       </div>`).join('');
 
     const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
@@ -133,64 +173,59 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
 .hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2.5px solid ${esc(c)};padding-bottom:12px;margin-bottom:20px}
 .logo{font-family:'Caveat',cursive;font-size:22pt;font-weight:700;color:#0F172A}.logo em{color:${esc(c)};font-style:normal}
 .hdr-right{text-align:right;font-size:7pt;color:#64748B}
-.summary-box{background:#0F172A;border-radius:8px;padding:22px 24px;margin-bottom:20px;border-left:4px solid ${esc(c)}}
-.profile-code{font-family:'Caveat',cursive;font-size:24pt;font-weight:700;color:${esc(c)};line-height:1}
-.profile-tagline{font-size:8pt;color:rgba(255,255,255,0.65);margin-top:2px;margin-bottom:14px}
-.inputs-row{font-size:7pt;color:rgba(255,255,255,0.5);margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap}
-.align-label{display:inline-block;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:3px 10px;font-size:6.5pt;font-weight:700;letter-spacing:0.12em;color:${esc(c)};margin-bottom:6px}
-.align-pct{font-family:'Caveat',cursive;font-size:26pt;font-weight:700;color:${esc(c)};line-height:1}
-.align-sent{font-size:8pt;color:rgba(255,255,255,0.75);line-height:1.6;margin-top:6px;margin-bottom:14px}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mini-label{font-size:6pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:5px}
-.mini-item{font-size:7.5pt;color:rgba(255,255,255,0.7);line-height:1.5;margin-bottom:3px;display:flex;gap:6px}
-.role-block{border:1px solid #E2E8F0;border-radius:6px;padding:16px 18px;margin-bottom:12px;page-break-inside:avoid}
-.role-num{font-size:6pt;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${esc(c)};margin-bottom:2px}
-.role-title{font-family:'Caveat',cursive;font-size:15pt;font-weight:700;color:#0F172A;margin-bottom:10px}
-.sec-label{font-size:6pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin:10px 0 6px}
-p{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:6px}
-.labeled-item{padding:5px 0;border-bottom:1px solid #F1F5F9}
-.item-label{font-size:6pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px}
-.item-body{font-size:7.5pt;color:#374151;line-height:1.5}
-.env-section{margin-bottom:12px}
-.next-step{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:5px;display:flex;gap:6px}
-.arrow{color:${esc(c)};font-weight:700}
-.footer{margin-top:14px;padding-top:10px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;font-size:6.5pt;color:#94A3B8}
-.print-btn{display:block;width:100%;padding:14px;margin-bottom:16px;background:${esc(c)};color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:9pt;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer}
+.summary-box{background:#0F172A;border-radius:8px;padding:20px 22px;margin-bottom:20px;border-left:4px solid ${esc(c)};display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.profile-block{}
+.profile-code{font-family:'Caveat',cursive;font-size:22pt;font-weight:700;color:${esc(c)};line-height:1}
+.profile-tagline{font-size:7.5pt;color:rgba(255,255,255,0.45);margin-top:2px;margin-bottom:10px}
+.inputs-row{font-size:6.5pt;color:rgba(255,255,255,0.4);display:flex;gap:8px;flex-wrap:wrap}
+.tag{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:3px;padding:2px 7px}
+.sum-label{font-size:5.5pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px}
+.sum-item{font-size:7.5pt;line-height:1.5;margin-bottom:4px;display:flex;gap:6px}
+.role-block{border:1px solid #E2E8F0;border-radius:6px;padding:14px 16px;margin-bottom:10px;page-break-inside:avoid}
+.role-num{font-size:5.5pt;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${esc(c)};margin-bottom:2px}
+.role-title{font-family:'Caveat',cursive;font-size:14pt;font-weight:700;color:#0F172A;margin-bottom:8px}
+.sec-label{font-size:5.5pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin:9px 0 5px}
+p{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:5px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.col-box{border-radius:4px;padding:8px 10px}
+.col-box.green{background:#F0FDF4}.col-box.gray{background:#F8FAFC}
+.col-hdr{font-size:5.5pt;font-weight:700;letter-spacing:0.11em;text-transform:uppercase;margin-bottom:6px}
+.mini-item{font-size:7pt;color:#374151;line-height:1.5;margin-bottom:4px}
+.mini-label{font-weight:700}
+.strat-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.strat-item{font-size:7pt;color:#374151;line-height:1.5;display:flex;gap:5px}
+.arrow{font-weight:700;flex-shrink:0}
+.env-section{margin-bottom:10px}
+.next-step{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:4px;display:flex;gap:6px}
+.footer{margin-top:12px;padding-top:8px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;font-size:6.5pt;color:#94A3B8}
+.print-btn{display:block;width:100%;padding:12px;margin-bottom:14px;background:${esc(c)};color:#fff;border:none;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:9pt;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer}
 @media print{@page{margin:12mm 10mm;size:A4 portrait}body{font-size:8pt}.wrap{padding:0;max-width:100%}.print-btn{display:none!important}}
 </style></head><body><div class="wrap">
 <button class="print-btn" onclick="this.style.display='none';window.print()">Save as PDF</button>
 <div class="hdr"><div class="logo">Curio<em>.</em></div><div class="hdr-right"><strong>Career Guidance Report</strong><br>${esc(today)}</div></div>
 <div class="summary-box">
-  <div class="profile-code">${esc(profile)}</div>
-  <div class="profile-tagline">${esc(profileDef?.tagline || '')}</div>
-  <div class="inputs-row">
-    <span>${esc(inputs.careerLevel)}</span>
-    <span>${esc(inputs.roleOrientation)}</span>
-    ${inputs.industry ? `<span>${esc(inputs.industry)}</span>` : ''}
-    ${inputs.riskEnvironment ? `<span>${esc(inputs.riskEnvironment)}</span>` : ''}
+  <div class="profile-block">
+    <div class="profile-code">${esc(profile)}</div>
+    <div class="profile-tagline">${esc(profileDef?.tagline || '')}</div>
+    <div class="inputs-row">
+      ${[inputs.careerLevel, inputs.roleOrientation, inputs.industry, inputs.riskEnvironment].filter(Boolean).map(v => `<span class="tag">${esc(v)}</span>`).join('')}
+    </div>
   </div>
-  <div class="align-label">${esc(alignmentLabel)}</div>
-  <div class="align-pct">${esc(alignmentPercent)}%</div>
-  <div class="align-sent">${esc(alignmentSentence)}</div>
-  <div class="two-col">
-    <div>
-      <div class="mini-label" style="color:${esc(c)}">⚡ Energizers</div>
-      ${energizers.map(e => `<div class="mini-item"><span style="color:${esc(c)}">⚡</span>${esc(e)}</div>`).join('')}
-    </div>
-    <div>
-      <div class="mini-label" style="color:rgba(255,255,255,0.5)">◆ Watch for</div>
-      ${watchFors.map(w => `<div class="mini-item"><span style="color:rgba(255,255,255,0.4)">◆</span>${esc(w)}</div>`).join('')}
-    </div>
+  <div>
+    <div class="sum-label" style="color:${esc(c)}">⚡ Energizers</div>
+    ${energizers.map(e => `<div class="sum-item"><span style="color:${esc(c)}">·</span><span style="color:rgba(255,255,255,0.7)">${esc(e)}</span></div>`).join('')}
+    <div class="sum-label" style="color:rgba(255,255,255,0.35);margin-top:10px">◆ Watch For</div>
+    ${watchFors.map(w => `<div class="sum-item"><span style="color:rgba(255,255,255,0.25)">·</span><span style="color:rgba(255,255,255,0.5)">${esc(w)}</span></div>`).join('')}
   </div>
 </div>
 ${roleHtml}
 <div class="env-section">
-  <div class="sec-label" style="color:${esc(c)};font-size:7pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px">A Note on Environment</div>
+  <div class="sec-label" style="color:${esc(c)};font-size:6pt;margin-bottom:6px">A Note on Environment</div>
   ${environmentNote.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}
 </div>
 <div>
-  <div class="sec-label" style="color:${esc(c)};font-size:7pt;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px">What To Do Next</div>
-  ${nextSteps.map(s => `<div class="next-step"><span class="arrow">→</span>${esc(s)}</div>`).join('')}
+  <div class="sec-label" style="color:${esc(c)};font-size:6pt;margin-bottom:6px">What To Do Next</div>
+  ${nextSteps.map(s => `<div class="next-step"><span style="color:${esc(c)};font-weight:700">→</span>${esc(s)}</div>`).join('')}
 </div>
 <div class="footer"><div>Curio · MindPrint Career Guidance</div><div>choosecurio.com · ${esc(today)}</div></div>
 </div></body></html>`;
@@ -204,108 +239,80 @@ ${roleHtml}
   }
 
   return (
-    <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 clamp(24px,5vw,72px) 100px' }}>
-      {/* Rule */}
-      <div style={{ height: 1, background: '#E2E8F0', margin: '56px 0 48px' }} />
+    <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 clamp(20px,4vw,56px) 80px' }}>
+      <div style={{ height: 1, background: '#E2E8F0', margin: '48px 0 40px' }} />
 
-      {/* Block 1: Summary */}
-      <div style={{ background: '#0F172A', borderRadius: 14, padding: '36px 40px', marginBottom: 40, borderLeft: `5px solid ${color}`, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: `${color}08`, pointerEvents: 'none' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 24, marginBottom: 24 }}>
-          <div>
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '2.8rem', fontWeight: 700, color, lineHeight: 1, marginBottom: 4 }}>{profile}</div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)', marginBottom: 16 }}>{profileDef?.tagline}</div>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {[inputs.careerLevel, inputs.roleOrientation, inputs.industry, inputs.riskEnvironment].filter(Boolean).map((v, i) => (
-                <span key={i} style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '3px 10px' }}>{v}</span>
+      <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
+        {/* Sticky left sidebar */}
+        <div style={{ width: 268, flexShrink: 0, position: 'sticky', top: 80 }}>
+          <SummarySidebar
+            profile={profile}
+            profileDef={profileDef}
+            inputs={inputs}
+            energizers={energizers}
+            watchFors={watchFors}
+            roles={roles}
+            color={color}
+          />
+        </div>
+
+        {/* Main content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Role section header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 24, height: 1, background: color }} />
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color }}>Role Matches</div>
+          </div>
+
+          {/* Role cards */}
+          <div style={{ marginBottom: 28 }}>
+            {roles.map((role, i) => (
+              <RoleCard key={i} role={role} idx={i} color={color} defaultOpen={i === 0} />
+            ))}
+          </div>
+
+          {/* Environment + Next Steps */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}>
+            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 20px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ display: 'block', width: 14, height: 1, background: color }} />
+                A Note on Environment
+              </div>
+              {environmentNote.split('\n\n').map((p, i) => (
+                <p key={i} style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.75, marginBottom: i < environmentNote.split('\n\n').length - 1 ? 10 : 0 }}>{p}</p>
+              ))}
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 20px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ display: 'block', width: 14, height: 1, background: color }} />
+                What To Do Next
+              </div>
+              {nextSteps.map((step, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: i < nextSteps.length - 1 ? 12 : 0 }}>
+                  <span style={{ color, fontWeight: 700, fontSize: '0.9rem', lineHeight: 1, marginTop: 2, flexShrink: 0 }}>→</span>
+                  <span style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.65 }}>{step}</span>
+                </div>
               ))}
             </div>
           </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color, marginBottom: 4 }}>{alignmentLabel}</div>
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '3.5rem', fontWeight: 700, color, lineHeight: 1 }}>{alignmentPercent}%</div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={generatePDF}
+              style={{ flex: 1, padding: '14px 20px', background: color, border: 'none', borderRadius: 8, color: '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download PDF
+            </button>
+            <button
+              onClick={onReset}
+              style={{ padding: '14px 20px', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: 8, color: '#94A3B8', fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem', cursor: 'pointer' }}
+            >
+              ← Start over
+            </button>
           </div>
         </div>
-        <AlignBar pct={alignmentPercent} color={color} />
-        <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.75, marginTop: 16, marginBottom: 28 }}>{alignmentSentence}</p>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          <div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color, marginBottom: 12 }}>⚡ What Will Energize You</div>
-            {energizers.map((e, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>
-                <span style={{ color, fontSize: '0.75rem', marginTop: 2, flexShrink: 0 }}>⚡</span>
-                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>{e}</span>
-              </div>
-            ))}
-          </div>
-          <div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>◆ Watch For</div>
-            {watchFors.map((w, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>
-                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', marginTop: 2, flexShrink: 0 }}>◆</span>
-                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>{w}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)' }}>
-          {roles.length} roles identified for your profile and inputs
-        </div>
-      </div>
-
-      {/* Block 2: Role Deep-Dives */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <div style={{ width: 32, height: 1, background: color }} />
-          <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color }}>Role Deep-Dives</div>
-        </div>
-        {roles.map((role, i) => (
-          <RoleCard key={i} role={role} idx={i} color={color} defaultOpen={i === 0} />
-        ))}
-      </div>
-
-      {/* Block 3: Closing */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 40 }}>
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '28px 28px' }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ display: 'block', width: 16, height: 1, background: color }} />
-            A Note on Environment
-          </div>
-          {environmentNote.split('\n\n').map((p, i) => (
-            <p key={i} style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.8, marginBottom: i < environmentNote.split('\n\n').length - 1 ? 14 : 0 }}>{p}</p>
-          ))}
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '28px 28px' }}>
-          <div style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ display: 'block', width: 16, height: 1, background: color }} />
-            What To Do Next
-          </div>
-          {nextSteps.map((step, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: i < nextSteps.length - 1 ? 16 : 0 }}>
-              <span style={{ color, fontWeight: 700, fontSize: '1rem', lineHeight: 1, marginTop: 2, flexShrink: 0 }}>→</span>
-              <span style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.7 }}>{step}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: 12 }}>
-        <button
-          onClick={generatePDF}
-          style={{ flex: 1, padding: '16px 24px', background: color, border: 'none', borderRadius: 8, color: '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download PDF Report
-        </button>
-        <button
-          onClick={onReset}
-          style={{ padding: '16px 24px', background: 'transparent', border: '1px solid #E2E8F0', borderRadius: 8, color: '#94A3B8', fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', cursor: 'pointer' }}
-        >
-          ← Start over
-        </button>
       </div>
     </div>
   );
@@ -391,7 +398,6 @@ export default function CareerPage() {
       </nav>
 
       <div ref={outputRef} style={{ maxWidth: 820, margin: '0 auto', padding: '64px clamp(24px,5vw,72px) 0' }}>
-        {/* Page header */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.17em', textTransform: 'uppercase', color: '#059669', marginBottom: 20 }}>
           <span style={{ display: 'block', width: 36, height: 1, background: '#059669' }} />
           Career Guidance
@@ -404,10 +410,8 @@ export default function CareerPage() {
         </p>
         <div style={{ height: 1, background: '#E7E5E4', marginBottom: 48 }} />
 
-        {/* Form */}
         {!loading && !report && (
           <>
-            {/* Step 1: Profile */}
             <div style={{ marginBottom: 48 }}>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#059669', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ display: 'block', width: 20, height: 1, background: '#059669' }} />Step One
@@ -431,7 +435,6 @@ export default function CareerPage() {
               </div>
             </div>
 
-            {/* Step 2: Career level + orientation */}
             <div style={{ marginBottom: 48 }}>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#059669', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ display: 'block', width: 20, height: 1, background: '#059669' }} />Step Two
@@ -458,7 +461,6 @@ export default function CareerPage() {
               </div>
             </div>
 
-            {/* Optional inputs */}
             <div style={{ marginBottom: 48 }}>
               <button
                 onClick={() => setShowOptional(o => !o)}
@@ -515,7 +517,6 @@ export default function CareerPage() {
           </>
         )}
 
-        {/* Loading */}
         {loading && (
           <div style={{ textAlign: 'center', padding: '80px 24px 120px' }}>
             <div style={{ display: 'inline-block', width: 44, height: 44, border: `3px solid ${profileColor(profile)}20`, borderTop: `3px solid ${profileColor(profile)}`, borderRadius: '50%', animation: 'spin 0.9s linear infinite', marginBottom: 24 }} />
