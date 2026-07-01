@@ -50,6 +50,8 @@ Return valid JSON only. No markdown, no preamble, no explanation.
   "roles": [
     {
       "title": "...",
+      "fitScore": 92,
+      "fitLabel": "Strong Fit",
       "fit": "paragraph1\\n\\nparagraph2",
       "energizing": [{ "label": "...", "body": "..." }],
       "challenging": [{ "label": "...", "body": "..." }],
@@ -61,8 +63,10 @@ Return valid JSON only. No markdown, no preamble, no explanation.
 }
 
 Rules:
-- Select exactly 5-7 roles based on the inputs
+- Select exactly 5-7 roles based on the inputs, ordered from highest to lowest fit
 - Role titles must be specific, real job titles a person could search and apply for (e.g. "Product Manager", "UX Researcher", "Management Consultant", "Data Analyst") — never vague categories or composite titles like "Team Lead — Strategy or Operations"
+- fitScore: integer 70-99 reflecting how well this profile/inputs map to this role (no two roles may share the same score)
+- fitLabel: one of "Strong Fit", "Great Fit", or "Good Fit" based on fitScore (85+ = Strong/Great, 70-84 = Good Fit)
 - energizers: 4-5 short phrases, max 12 words each — no full sentences
 - watchFors: 3-4 short phrases, max 12 words each — no full sentences
 - Each role: 3-4 energizing items, 2-3 challenging items, 3-4 strategies
