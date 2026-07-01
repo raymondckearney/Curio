@@ -12,7 +12,17 @@ const PROFILES = [
 ];
 
 const PRIMARY_COLOR = { WHY: '#059669', WHAT: '#2563EB', HOW: '#D97706' };
-const PRIMARY_LIGHT = { WHY: '#D1FAE5', WHAT: '#DBEAFE', HOW: '#FEF3C7' };
+
+const DISC_OPTIONS = ['', 'D', 'Di', 'DC', 'i', 'iD', 'iS', 'S', 'Si', 'SC', 'C', 'CD', 'CS'];
+
+const STRENGTHSFINDER_34 = [
+  'Achiever','Activator','Adaptability','Analytical','Arranger','Belief','Command',
+  'Communication','Competition','Connectedness','Consistency','Context','Deliberative',
+  'Developer','Discipline','Empathy','Focus','Futuristic','Harmony','Ideation',
+  'Includer','Individualization','Input','Intellection','Learner','Maximizer',
+  'Positivity','Relator','Responsibility','Restorative','Self-Assurance','Significance',
+  'Strategic','Woo',
+];
 
 function profileColor(id) { return PRIMARY_COLOR[id?.split('-')[0]] || '#64748B'; }
 
@@ -23,6 +33,40 @@ const LOADING_MSGS = [
   'Building role deep-dives…',
   'Almost there…',
 ];
+
+function StrengthsPicker({ selected, onChange }) {
+  function toggle(s) {
+    if (selected.includes(s)) onChange(selected.filter(x => x !== s));
+    else if (selected.length < 5) onChange([...selected, s]);
+  }
+  return (
+    <div>
+      <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: 10 }}>
+        Select up to 5 <span style={{ color: selected.length === 5 ? '#D97706' : '#94A3B8' }}>({selected.length}/5 selected)</span>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {STRENGTHSFINDER_34.map(s => {
+          const active = selected.includes(s);
+          const disabled = !active && selected.length >= 5;
+          return (
+            <button
+              key={s}
+              onClick={() => toggle(s)}
+              disabled={disabled}
+              style={{
+                padding: '5px 12px', borderRadius: 20, border: `1px solid ${active ? '#2563EB' : '#E2E8F0'}`,
+                background: active ? '#EFF6FF' : disabled ? '#F8FAFC' : '#fff',
+                color: active ? '#2563EB' : disabled ? '#CBD5E1' : '#374151',
+                fontFamily: "'DM Sans', sans-serif", fontSize: '0.78rem', fontWeight: active ? 600 : 400,
+                cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.12s',
+              }}
+            >{s}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function RoleCard({ role, idx, color, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -46,14 +90,12 @@ function RoleCard({ role, idx, color, defaultOpen }) {
 
       {open && (
         <div style={{ borderTop: '1px solid #F1F5F9' }}>
-          {/* Fit */}
           <div style={{ padding: '16px 20px 12px' }}>
             {role.fit.split('\n\n').map((p, i) => (
               <p key={i} style={{ fontSize: '0.875rem', color: '#374151', lineHeight: 1.75, marginBottom: i < role.fit.split('\n\n').length - 1 ? 10 : 0 }}>{p}</p>
             ))}
           </div>
 
-          {/* Energizing + Challenging side by side */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 20px 12px' }}>
             <div style={{ background: '#F0FDF4', borderRadius: 8, padding: '12px 14px' }}>
               <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: '#059669', marginBottom: 10 }}>⚡ Energizing</div>
@@ -75,7 +117,6 @@ function RoleCard({ role, idx, color, defaultOpen }) {
             </div>
           </div>
 
-          {/* Strategies */}
           <div style={{ borderTop: '1px solid #F1F5F9', padding: '12px 20px 16px' }}>
             <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 10 }}>Strategies</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px' }}>
@@ -96,38 +137,34 @@ function RoleCard({ role, idx, color, defaultOpen }) {
   );
 }
 
-function SummarySidebar({ profile, profileDef, inputs, energizers, watchFors, roles, color }) {
+function SummarySidebar({ profile, profileDef, inputs, energizers, watchFors, color }) {
   return (
-    <div style={{ background: '#0F172A', borderRadius: 12, padding: '24px 22px', borderLeft: `4px solid ${color}` }}>
-      <div style={{ fontFamily: "'Caveat', cursive", fontSize: '2rem', fontWeight: 700, color, lineHeight: 1, marginBottom: 4 }}>{profile}</div>
-      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: 16 }}>{profileDef?.tagline}</div>
+    <div style={{ background: '#0F172A', borderRadius: 12, padding: '20px 18px', borderLeft: `4px solid ${color}` }}>
+      <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, color, lineHeight: 1, marginBottom: 2 }}>{profile}</div>
+      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginBottom: 14 }}>{profileDef?.tagline}</div>
 
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 22 }}>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 18 }}>
         {[inputs.careerLevel, inputs.roleOrientation, inputs.industry, inputs.riskEnvironment].filter(Boolean).map((v, i) => (
-          <span key={i} style={{ fontSize: '0.62rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '2px 8px' }}>{v}</span>
+          <span key={i} style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '2px 7px' }}>{v}</span>
         ))}
       </div>
 
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 8 }}>⚡ Energizers</div>
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 7 }}>⚡ Energizers</div>
         {energizers.map((e, i) => (
-          <div key={i} style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginBottom: 5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <span style={{ color, flexShrink: 0, marginTop: 1 }}>·</span>{e}
+          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginBottom: 4, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+            <span style={{ color, flexShrink: 0 }}>·</span>{e}
           </div>
         ))}
       </div>
 
-      <div style={{ paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>◆ Watch For</div>
+      <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 7 }}>◆ Watch For</div>
         {watchFors.map((w, i) => (
-          <div key={i} style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: 5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <span style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0, marginTop: 1 }}>·</span>{w}
+          <div key={i} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.45, marginBottom: 4, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+            <span style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }}>·</span>{w}
           </div>
         ))}
-      </div>
-
-      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.07)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)' }}>
-        {roles.length} roles matched
       </div>
     </div>
   );
@@ -174,7 +211,6 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:8.5pt;line-height:
 .logo{font-family:'Caveat',cursive;font-size:22pt;font-weight:700;color:#0F172A}.logo em{color:${esc(c)};font-style:normal}
 .hdr-right{text-align:right;font-size:7pt;color:#64748B}
 .summary-box{background:#0F172A;border-radius:8px;padding:20px 22px;margin-bottom:20px;border-left:4px solid ${esc(c)};display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.profile-block{}
 .profile-code{font-family:'Caveat',cursive;font-size:22pt;font-weight:700;color:${esc(c)};line-height:1}
 .profile-tagline{font-size:7.5pt;color:rgba(255,255,255,0.45);margin-top:2px;margin-bottom:10px}
 .inputs-row{font-size:6.5pt;color:rgba(255,255,255,0.4);display:flex;gap:8px;flex-wrap:wrap}
@@ -204,7 +240,7 @@ p{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:5px}
 <button class="print-btn" onclick="this.style.display='none';window.print()">Save as PDF</button>
 <div class="hdr"><div class="logo">Curio<em>.</em></div><div class="hdr-right"><strong>Career Guidance Report</strong><br>${esc(today)}</div></div>
 <div class="summary-box">
-  <div class="profile-block">
+  <div>
     <div class="profile-code">${esc(profile)}</div>
     <div class="profile-tagline">${esc(profileDef?.tagline || '')}</div>
     <div class="inputs-row">
@@ -239,41 +275,37 @@ ${roleHtml}
   }
 
   return (
-    <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 clamp(20px,4vw,56px) 80px' }}>
+    <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 clamp(16px,3vw,40px) 80px' }}>
       <div style={{ height: 1, background: '#E2E8F0', margin: '48px 0 40px' }} />
 
-      <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start' }}>
         {/* Sticky left sidebar */}
-        <div style={{ width: 268, flexShrink: 0, position: 'sticky', top: 80 }}>
+        <div style={{ width: 300, flexShrink: 0, position: 'sticky', top: 80 }}>
           <SummarySidebar
             profile={profile}
             profileDef={profileDef}
             inputs={inputs}
             energizers={energizers}
             watchFors={watchFors}
-            roles={roles}
             color={color}
           />
         </div>
 
         {/* Main content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Role section header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <div style={{ width: 24, height: 1, background: color }} />
             <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color }}>Role Matches</div>
           </div>
 
-          {/* Role cards */}
           <div style={{ marginBottom: 28 }}>
             {roles.map((role, i) => (
               <RoleCard key={i} role={role} idx={i} color={color} defaultOpen={i === 0} />
             ))}
           </div>
 
-          {/* Environment + Next Steps */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}>
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 20px' }}>
+            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
               <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ display: 'block', width: 14, height: 1, background: color }} />
                 A Note on Environment
@@ -282,7 +314,7 @@ ${roleHtml}
                 <p key={i} style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.75, marginBottom: i < environmentNote.split('\n\n').length - 1 ? 10 : 0 }}>{p}</p>
               ))}
             </div>
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px 20px' }}>
+            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: '20px' }}>
               <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.13em', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ display: 'block', width: 14, height: 1, background: color }} />
                 What To Do Next
@@ -296,7 +328,6 @@ ${roleHtml}
             </div>
           </div>
 
-          {/* Actions */}
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={generatePDF}
@@ -326,8 +357,9 @@ export default function CareerPage() {
   const [riskEnvironment, setRiskEnvironment] = useState('');
   const [values, setValues] = useState('');
   const [compensationPriority, setCompensationPriority] = useState('Balanced');
+  const [discProfile, setDiscProfile] = useState('');
+  const [sfStrengths, setSfStrengths] = useState([]);
   const [otherAssessments, setOtherAssessments] = useState('');
-  const [showOptional, setShowOptional] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MSGS[0]);
   const [report, setReport] = useState(null);
@@ -346,6 +378,14 @@ export default function CareerPage() {
     return () => clearInterval(timerRef.current);
   }, [loading]);
 
+  function buildOtherAssessments() {
+    const parts = [];
+    if (discProfile) parts.push(`DiSC: ${discProfile}`);
+    if (sfStrengths.length > 0) parts.push(`StrengthsFinder: ${sfStrengths.join(', ')}`);
+    if (otherAssessments.trim()) parts.push(otherAssessments.trim());
+    return parts.join(' | ') || undefined;
+  }
+
   async function generate() {
     if (!profile) return;
     setLoading(true); setError(''); setReport(null); setLoadingMsg(LOADING_MSGS[0]);
@@ -353,7 +393,14 @@ export default function CareerPage() {
       const res = await fetch('/api/career-guidance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile, careerLevel, roleOrientation, industry: industry || undefined, riskEnvironment: riskEnvironment || undefined, values: values || undefined, compensationPriority, otherAssessments: otherAssessments || undefined }),
+        body: JSON.stringify({
+          profile, careerLevel, roleOrientation,
+          industry: industry || undefined,
+          riskEnvironment: riskEnvironment || undefined,
+          values: values || undefined,
+          compensationPriority,
+          otherAssessments: buildOtherAssessments(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
@@ -379,6 +426,8 @@ export default function CareerPage() {
     color: '#1C1917', fontFamily: "'DM Sans', sans-serif", fontSize: '0.9rem', outline: 'none',
   };
 
+  const lbl = { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 8 };
+
   return (
     <>
       <Head>
@@ -398,20 +447,22 @@ export default function CareerPage() {
       </nav>
 
       <div ref={outputRef} style={{ maxWidth: 820, margin: '0 auto', padding: '64px clamp(24px,5vw,72px) 0' }}>
+        {/* Page header */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.17em', textTransform: 'uppercase', color: '#059669', marginBottom: 20 }}>
           <span style={{ display: 'block', width: 36, height: 1, background: '#059669' }} />
-          Career Guidance
+          AI Powered Career Guidance Tool
         </div>
         <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(2.2rem,4vw,3.2rem)', fontWeight: 700, color: '#1C1917', lineHeight: 1.12, marginBottom: 16 }}>
-          Where does your way of<br />thinking take your career?
+          Find a role that energizes YOU!
         </h1>
         <p style={{ fontSize: '1rem', color: '#78716C', maxWidth: 560, lineHeight: 1.75, marginBottom: 52 }}>
-          Select your MindPrint profile and tell us where you are in your career. We'll generate a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.
+          The more detail you provide below, the more customized the output. We'll generate a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.
         </p>
         <div style={{ height: 1, background: '#E7E5E4', marginBottom: 48 }} />
 
         {!loading && !report && (
           <>
+            {/* Step 1: Profile */}
             <div style={{ marginBottom: 48 }}>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#059669', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ display: 'block', width: 20, height: 1, background: '#059669' }} />Step One
@@ -435,14 +486,16 @@ export default function CareerPage() {
               </div>
             </div>
 
+            {/* Step 2: Career details */}
             <div style={{ marginBottom: 48 }}>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#059669', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ display: 'block', width: 20, height: 1, background: '#059669' }} />Step Two
               </div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.4rem', fontWeight: 700, color: '#1C1917', marginBottom: 24 }}>Where are you in your career?</div>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.4rem', fontWeight: 700, color: '#1C1917', marginBottom: 24 }}>Tell us about yourself</div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 8 }}>Career Level</label>
+                  <label style={lbl}>Career Level</label>
                   <select value={careerLevel} onChange={e => setCareerLevel(e.target.value)} style={sel}>
                     <option>Student / Pre-Career</option>
                     <option>Early Career (0–4 years)</option>
@@ -451,60 +504,57 @@ export default function CareerPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 8 }}>Role Orientation</label>
+                  <label style={lbl}>Role Orientation</label>
                   <select value={roleOrientation} onChange={e => setRoleOrientation(e.target.value)} style={sel}>
                     <option>Open to Both</option>
                     <option>Individual Contributor</option>
                     <option>Management</option>
                   </select>
                 </div>
+                <div>
+                  <label style={lbl}>Industry</label>
+                  <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g. technology, healthcare, finance" style={inp} />
+                </div>
+                <div>
+                  <label style={lbl}>Work Environment</label>
+                  <select value={riskEnvironment} onChange={e => setRiskEnvironment(e.target.value)} style={sel}>
+                    <option value="">Not specified</option>
+                    <option>High-growth / Startup</option>
+                    <option>Established company</option>
+                    <option>Large institution / Government</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={lbl}>Compensation Priority</label>
+                  <select value={compensationPriority} onChange={e => setCompensationPriority(e.target.value)} style={sel}>
+                    <option>Balanced</option>
+                    <option>Primary consideration</option>
+                    <option>Secondary to mission / fit</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={lbl}>Values &amp; Work Orientation</label>
+                  <input value={values} onChange={e => setValues(e.target.value)} placeholder="e.g. mission-driven, autonomy, impact" style={inp} />
+                </div>
+                <div>
+                  <label style={lbl}>DiSC Profile</label>
+                  <select value={discProfile} onChange={e => setDiscProfile(e.target.value)} style={sel}>
+                    {DISC_OPTIONS.map(o => <option key={o} value={o}>{o || 'Not taken / Unknown'}</option>)}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            <div style={{ marginBottom: 48 }}>
-              <button
-                onClick={() => setShowOptional(o => !o)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'DM Sans', sans-serif" }}
-              >
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ display: 'block', width: 20, height: 1, background: '#CBD5E1' }} />Optional Details (add for a more specific report)
-                </div>
-                <span style={{ fontSize: '0.75rem', color: '#CBD5E1' }}>{showOptional ? '▲' : '▼'}</span>
-              </button>
+              {/* StrengthsFinder */}
+              <div style={{ marginTop: 16 }}>
+                <label style={lbl}>StrengthsFinder Top 5</label>
+                <StrengthsPicker selected={sfStrengths} onChange={setSfStrengths} />
+              </div>
 
-              {showOptional && (
-                <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 8 }}>Industry</label>
-                    <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g. technology, healthcare, finance" style={inp} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 8 }}>Work Environment</label>
-                    <select value={riskEnvironment} onChange={e => setRiskEnvironment(e.target.value)} style={sel}>
-                      <option value="">Not specified</option>
-                      <option>High-growth / Startup</option>
-                      <option>Established company</option>
-                      <option>Large institution / Government</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 8 }}>Compensation Priority</label>
-                    <select value={compensationPriority} onChange={e => setCompensationPriority(e.target.value)} style={sel}>
-                      <option>Balanced</option>
-                      <option>Primary consideration</option>
-                      <option>Secondary to mission / fit</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 8 }}>Values &amp; Work Orientation</label>
-                    <input value={values} onChange={e => setValues(e.target.value)} placeholder="e.g. mission-driven, autonomy, impact" style={inp} />
-                  </div>
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 8 }}>Other Assessments <span style={{ fontWeight: 400, color: '#94A3B8' }}>(DiSC, StrengthsFinder, MBTI)</span></label>
-                    <textarea value={otherAssessments} onChange={e => setOtherAssessments(e.target.value)} placeholder="e.g. DiSC: D, StrengthsFinder: Strategic, Futuristic, Learner…" rows={3} style={{ ...inp, resize: 'vertical' }} />
-                  </div>
-                </div>
-              )}
+              {/* Other assessments */}
+              <div style={{ marginTop: 16 }}>
+                <label style={lbl}>Other Assessments or Context <span style={{ fontWeight: 400, color: '#94A3B8' }}>(MBTI, Enneagram, etc.)</span></label>
+                <textarea value={otherAssessments} onChange={e => setOtherAssessments(e.target.value)} placeholder="e.g. MBTI: INTJ, Enneagram: 5w4…" rows={3} style={{ ...inp, resize: 'vertical' }} />
+              </div>
             </div>
 
             <button
