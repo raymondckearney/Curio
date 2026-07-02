@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 PROFILE: ${profile}
 CAREER LEVEL: ${careerLevel}
 ROLE ORIENTATION: ${roleOrientation}
-INDUSTRY: ${industry || 'Not specified'}
+INDUSTRY / FIELD OF STUDY: ${industry || 'Not specified'}
 ENVIRONMENT: ${riskEnvironment || 'Not specified'}
 COMPENSATION PRIORITY: ${compensationPriority || 'Balanced'}
 VALUES: ${values || 'Not specified'}
