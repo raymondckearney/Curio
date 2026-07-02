@@ -6,7 +6,7 @@ import { syncContactToNotion } from '../../../lib/notionSync';
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, email, password, stripe_session_id } = req.body || {};
+  const { name, email, password, stripe_session_id, token: assessmentToken } = req.body || {};
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email, and password are required' });
   }
@@ -71,6 +71,25 @@ export default async function handler(req, res) {
   }
 
   syncContactToNotion({ name: name.trim(), email: normalEmail, source: 'self-signup' });
+
+  // Apply assessment token: set granted tier and consume
+  if (assessmentToken) {
+    try {
+      const tokenRows = await dbGet('tokens', { token: assessmentToken });
+      if (tokenRows.length && !tokenRows[0].used) {
+        const grantedTier = tokenRows[0].granted_tier || 'basic';
+        const usedAt = new Date().toISOString();
+        await Promise.all([
+          dbPatch('client_accounts', { id: account.id }, { tier: grantedTier }),
+          dbPatch('tokens', { token: assessmentToken }, { used: true, used_at: usedAt, account_id: account.id }),
+        ]);
+      } else if (tokenRows[0]?.used) {
+        console.warn('[auth/signup] assessment token already used:', assessmentToken);
+      }
+    } catch (err) {
+      console.error('[auth/signup] token apply failed:', err.message);
+    }
+  }
 
   const sessionToken = createSessionToken(user.id, account.id, 'owner');
   res.setHeader('Set-Cookie', sessionCookie(sessionToken));

@@ -2,10 +2,30 @@ import { dbGet, dbInsert, dbPatch } from '../../../../lib/supabase';
 import { createSessionToken, sessionCookie } from '../../../../lib/portalSession';
 import { syncContactToNotion } from '../../../../lib/notionSync';
 
+async function applyAndConsumeToken(tokenStr, accountId) {
+  if (!tokenStr) return;
+  try {
+    const rows = await dbGet('tokens', { token: tokenStr });
+    if (!rows.length || rows[0].used) {
+      if (rows[0]?.used) console.warn('[portal/auth/google] token already used:', tokenStr);
+      return;
+    }
+    const row = rows[0];
+    const grantedTier = row.granted_tier || 'basic';
+    const usedAt = new Date().toISOString();
+    await Promise.all([
+      dbPatch('client_accounts', { id: accountId }, { tier: grantedTier }),
+      dbPatch('tokens', { token: tokenStr }, { used: true, used_at: usedAt, account_id: accountId }),
+    ]);
+  } catch (err) {
+    console.error('[portal/auth/google] token apply failed:', err.message);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { credential } = req.body || {};
+  const { credential, token: assessmentToken } = req.body || {};
   if (!credential) return res.status(400).json({ error: 'credential is required' });
 
   let googlePayload;
@@ -35,6 +55,7 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: 'This email is registered with a password. Please sign in with your password.' });
       }
       await dbPatch('client_users', { id: user.id }, { last_login_at: new Date().toISOString() }).catch(() => {});
+      await applyAndConsumeToken(assessmentToken, user.account_id);
       const token = createSessionToken(user.id, user.account_id, user.role);
       res.setHeader('Set-Cookie', sessionCookie(token));
       return res.status(200).json({ success: true });
@@ -59,6 +80,7 @@ export default async function handler(req, res) {
     });
 
     syncContactToNotion({ name: name || normalEmail, email: normalEmail, source: 'google-signup' }).catch(() => {});
+    await applyAndConsumeToken(assessmentToken, account.id);
 
     const sessionToken = createSessionToken(user.id, account.id, 'owner');
     res.setHeader('Set-Cookie', sessionCookie(sessionToken));
