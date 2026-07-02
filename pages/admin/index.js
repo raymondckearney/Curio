@@ -144,11 +144,13 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
 // ─── Generate Panel ───────────────────────────────────────────────────────────
 
 function GeneratePanel() {
+  const [mode, setMode] = useState('named'); // 'named' | 'anonymous'
   const [purpose, setPurpose] = useState('assessment');
   const [grantedTier, setGrantedTier] = useState('basic');
   const [engagementId, setEngagementId] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [participantText, setParticipantText] = useState('');
+  const [anonCount, setAnonCount] = useState('');
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -158,13 +160,22 @@ function GeneratePanel() {
 
   async function generate() {
     setError(''); setResults(null); setOpenSendLink(null); setSentLinks(new Set());
-    const lines = participantText.trim().split('\n').filter(Boolean);
-    const participants = lines.map(line => {
-      const [name, email, company, role] = line.split(',').map(s => s.trim());
-      return { name: name || '', email: email || '', company: company || '', role: role || '' };
-    }).filter(p => p.name);
-    if (!participants.length) return setError('Enter at least one participant (Name required, email optional)');
     if (!engagementId.trim()) return setError('Engagement ID is required');
+
+    let participants;
+    if (mode === 'anonymous') {
+      const n = parseInt(anonCount, 10);
+      if (!n || n < 1) return setError('Enter a number of tokens greater than 0');
+      participants = Array.from({ length: n }, (_, i) => ({ name: `Anonymous ${i + 1}` }));
+    } else {
+      const lines = participantText.trim().split('\n').filter(Boolean);
+      participants = lines.map(line => {
+        const [name, email, company, role] = line.split(',').map(s => s.trim());
+        return { name: name || '', email: email || '', company: company || '', role: role || '' };
+      }).filter(p => p.name);
+      if (!participants.length) return setError('Enter at least one participant (Name required, email optional)');
+    }
+
     setLoading(true);
     try {
       const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tier: grantedTier, engagement_id: engagementId.trim(), expires_at: expiresAt || undefined }) });
@@ -176,21 +187,42 @@ function GeneratePanel() {
   }
 
   function copyAll() {
-    navigator.clipboard.writeText(results.map(r => `${r.name}\t${r.email}\t${r.url}`).join('\n'));
+    navigator.clipboard.writeText(results.map(r => `${r.name}\t${r.email || ''}\t${r.url}`).join('\n'));
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   }
 
   return (
     <section style={s.panel}>
-      <h2 style={s.panelTitle}>Generate Tokens</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Generate Tokens</h2>
+        <div style={{ display: 'flex', gap: 0, background: '#F1F5F9', borderRadius: 8, padding: 3 }}>
+          {[{ id: 'named', label: 'Named Participants' }, { id: 'anonymous', label: 'Anonymous Batch' }].map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => { setMode(opt.id); setResults(null); setError(''); }}
+              style={{ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: mode === opt.id ? 600 : 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: mode === opt.id ? '#fff' : 'transparent', color: mode === opt.id ? '#0F172A' : '#64748B', boxShadow: mode === opt.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">JD Analyzer</option><option value="career">Career Guidance</option></select></div>
       <div style={s.fieldGroup}><label style={s.label}>Tier to grant</label><select style={s.select} value={grantedTier} onChange={e => setGrantedTier(e.target.value)}><option value="basic">Basic</option><option value="premium">Premium</option></select></div>
       <div style={s.fieldGroup}><label style={s.label}>Engagement ID</label><input style={s.input} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2026-q1" /></div>
       <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={s.input} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
-      <div style={s.fieldGroup}>
-        <label style={s.label}>Participants — one per line: <code style={s.code}>Name, email, Company, Role</code></label>
-        <textarea style={s.textarea} value={participantText} onChange={e => setParticipantText(e.target.value)} placeholder={"Alex Smith, alex@example.com, Acme Corp, Engineer\nJordan Lee, jordan@example.com\nSam Taylor"} rows={6} />
-      </div>
+      {mode === 'named' ? (
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Participants — one per line: <code style={s.code}>Name, email, Company, Role</code></label>
+          <textarea style={s.textarea} value={participantText} onChange={e => setParticipantText(e.target.value)} placeholder={"Alex Smith, alex@example.com, Acme Corp, Engineer\nJordan Lee, jordan@example.com\nSam Taylor"} rows={6} />
+        </div>
+      ) : (
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Number of tokens</label>
+          <input style={{ ...s.input, maxWidth: 160 }} type="number" min="1" max="500" value={anonCount} onChange={e => setAnonCount(e.target.value)} placeholder="e.g. 50" />
+          <p style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: 6 }}>Tokens will be labeled Anonymous 1, Anonymous 2, … in the status panel.</p>
+        </div>
+      )}
       {error && <p style={s.error}>{error}</p>}
       <button style={s.btn} onClick={generate} disabled={loading}>{loading ? 'Generating…' : 'Generate Tokens'}</button>
 
