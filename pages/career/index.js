@@ -633,7 +633,7 @@ export default function CareerPage() {
         <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(2.2rem,4vw,3.2rem)', fontWeight: 700, color: '#1C1917', lineHeight: 1.12, marginBottom: 16 }}>
           Find a role that ENERGIZES you!
         </h1>
-        <p style={{ fontSize: '1rem', color: '#78716C', maxWidth: 760, lineHeight: 1.75, marginBottom: 52 }}>
+        <p style={{ fontSize: '1rem', color: '#78716C', maxWidth: 900, lineHeight: 1.75, marginBottom: 52 }}>
           The more detail you provide below, the more customized the output. We'll generate a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think. You can even add your results from any other assessments you've taken to provide a more comprehensive output.
         </p>
         <div style={{ height: 1, background: '#E7E5E4', marginBottom: 48 }} />
