@@ -18,15 +18,6 @@ export default function SignupPage() {
   const displayName = name || qName;
   const displayEmail = email || qEmail;
 
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-    return () => { document.head.removeChild(script); };
-  }, []);
-
   async function handleGoogle(response) {
     setGLoading(true);
     setError('');
@@ -48,16 +39,30 @@ export default function SignupPage() {
   }
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.google) return;
-    window.google.accounts.id.initialize({
-      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-      callback: handleGoogle,
-    });
-    window.google.accounts.id.renderButton(
-      document.getElementById('g-signup-btn'),
-      { theme: 'outline', size: 'large', width: 380 }
-    );
-  });
+    function initGoogle() {
+      if (!window.google) return;
+      window.google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        callback: handleGoogle,
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById('g-signup-btn'),
+        { theme: 'outline', size: 'large', width: 380 }
+      );
+    }
+
+    if (window.google) {
+      initGoogle();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = initGoogle;
+      document.head.appendChild(script);
+      return () => { document.head.removeChild(script); };
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e) {
     e.preventDefault();
