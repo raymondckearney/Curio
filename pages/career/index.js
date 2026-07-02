@@ -217,7 +217,7 @@ function SummarySidebar({ profile, profileDef, inputs, energizers, watchFors, co
   const inputRows = [
     { label: 'Level', value: inputs.careerLevel },
     { label: 'Track', value: inputs.roleOrientation },
-    inputs.industry && { label: 'Industry', value: inputs.industry },
+    inputs.industry && { label: inputs.careerLevel === 'Student / Pre-Career' ? 'Major' : 'Industry', value: inputs.industry },
     inputs.riskEnvironment && { label: 'Org Type', value: inputs.riskEnvironment },
     inputs.values && { label: 'Values', value: inputs.values },
     inputs.compensationPriority && inputs.compensationPriority !== 'Balanced' && { label: 'Comp.', value: inputs.compensationPriority },
@@ -674,7 +674,7 @@ export default function CareerPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={lbl}>Career Level</label>
-                  <select value={careerLevel} onChange={e => setCareerLevel(e.target.value)} style={sel}>
+                  <select value={careerLevel} onChange={e => { setCareerLevel(e.target.value); setIndustry(''); }} style={sel}>
                     <option>Student / Pre-Career</option>
                     <option>Early Career (0–4 years)</option>
                     <option>Mid Career (5–12 years)</option>
@@ -689,10 +689,18 @@ export default function CareerPage() {
                     <option>Management</option>
                   </select>
                 </div>
-                <div>
-                  <label style={lbl}>Industry</label>
-                  <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g. technology, healthcare, finance" style={inp} />
-                </div>
+                {careerLevel === 'Student / Pre-Career' && (
+                  <div>
+                    <label style={lbl}>Major / Field of Study <span style={{ fontWeight: 400, color: '#94A3B8' }}>(optional)</span></label>
+                    <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g. Computer Science, Business, Psychology" style={inp} />
+                  </div>
+                )}
+                {careerLevel !== 'Student / Pre-Career' && (
+                  <div>
+                    <label style={lbl}>Industry</label>
+                    <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="e.g. technology, healthcare, finance" style={inp} />
+                  </div>
+                )}
                 <div>
                   <label style={lbl}>Organization Type</label>
                   <select value={riskEnvironment} onChange={e => setRiskEnvironment(e.target.value)} style={sel}>
