@@ -178,6 +178,85 @@ function ReportView({ row, onBack }) {
   );
 }
 
+// ─── Send Report Panel ────────────────────────────────────────────────────────
+
+function SendCareerReportPanel({ row, onClose, onSent }) {
+  const color = profileColor(row.profile);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState(`Your Career Guidance Report — ${row.profile}`);
+  const [body, setBody] = useState(
+    `Hi there,\n\nYour MindPrint™ Career Guidance Report is ready. Based on your ${row.profile} profile and your background as ${row.career_level} — ${row.role_orientation}, we've identified the roles most likely to energize you and where you'll naturally excel.\n\nPlease find your personalized report below.\n\nCurio`
+  );
+  const [sending, setSending] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function send() {
+    if (!email) { setErr('Recipient email is required'); return; }
+    setSending(true); setErr('');
+    try {
+      const res = await fetch('/api/email/send-career-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participant_name: name || undefined, participant_email: email, report_row: row, email_subject: subject, email_body: body }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      onSent(row.id);
+    } catch (e) {
+      setErr(e.message);
+      setSending(false);
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#fff', borderRadius: 14, padding: '36px 40px', maxWidth: 540, width: '100%', boxShadow: '0 16px 48px rgba(0,0,0,0.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color, marginBottom: 4 }}>Send Career Report</div>
+            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#0F172A' }}>{row.profile} · {row.career_level}</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.3rem', color: '#94A3B8', padding: 4 }}>×</button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={sField}>Recipient Name</label>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="First name" style={sInput} />
+            </div>
+            <div>
+              <label style={sField}>Recipient Email <span style={{ color: '#EF4444' }}>*</span></label>
+              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" type="email" style={sInput} />
+            </div>
+          </div>
+          <div>
+            <label style={sField}>Subject</label>
+            <input value={subject} onChange={e => setSubject(e.target.value)} style={sInput} />
+          </div>
+          <div>
+            <label style={sField}>Message Body</label>
+            <textarea value={body} onChange={e => setBody(e.target.value)} rows={6} style={{ ...sInput, resize: 'vertical', lineHeight: 1.7 }} />
+          </div>
+        </div>
+
+        {err && <div style={{ marginTop: 12, fontSize: '0.82rem', color: '#EF4444' }}>{err}</div>}
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '9px 18px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', color: '#64748B', fontSize: '0.875rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+          <button onClick={send} disabled={sending} style={{ padding: '9px 20px', background: color, border: 'none', borderRadius: 8, color: '#fff', fontSize: '0.875rem', fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif" }}>
+            {sending ? 'Sending…' : 'Send Report'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const sField = { fontSize: '0.72rem', fontWeight: 600, color: '#64748B', letterSpacing: '0.06em', textTransform: 'uppercase', display: 'block', marginBottom: 6 };
+const sInput = { width: '100%', padding: '9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', color: '#0F172A', fontFamily: "'DM Sans', sans-serif", boxSizing: 'border-box', outline: 'none' };
+
 // ─── Reports list ─────────────────────────────────────────────────────────────
 
 function ReportsList({ onView }) {
@@ -186,6 +265,8 @@ function ReportsList({ onView }) {
   const [error, setError] = useState('');
   const [filterProfile, setFilterProfile] = useState('');
   const [filterLevel, setFilterLevel] = useState('');
+  const [sendPanel, setSendPanel] = useState(null);
+  const [sentIds, setSentIds] = useState(new Set());
 
   useEffect(() => {
     fetch('/api/admin/career-reports')
@@ -252,16 +333,30 @@ function ReportsList({ onView }) {
                   </div>
                   <div style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: 4 }}>{row.role_orientation} · {date}</div>
                 </div>
-                <button
-                  onClick={() => onView(row)}
-                  style={s.viewBtn}
-                >
-                  View →
-                </button>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  {sentIds.has(row.id) ? (
+                    <span style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 600, padding: '8px 4px' }}>✓ Sent</span>
+                  ) : (
+                    <button onClick={() => setSendPanel(row)} style={{ ...s.viewBtn, background: '#F1F5F9', color: '#374151' }}>
+                      Send ✉
+                    </button>
+                  )}
+                  <button onClick={() => onView(row)} style={s.viewBtn}>
+                    View →
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {sendPanel && (
+        <SendCareerReportPanel
+          row={sendPanel}
+          onClose={() => setSendPanel(null)}
+          onSent={id => { setSentIds(prev => new Set([...prev, id])); setSendPanel(null); }}
+        />
       )}
     </div>
   );

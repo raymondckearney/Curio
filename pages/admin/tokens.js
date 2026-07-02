@@ -59,7 +59,19 @@ export default function AdminTokens() {
 
 // ─── Shared: Send Link inline panel ──────────────────────────────────────────
 
-function buildDefaultMessage(name, tokenUrl) {
+function buildDefaultMessage(name, tokenUrl, purpose) {
+  if (purpose === 'career') {
+    return `Hi ${name},
+
+I'd like to invite you to use the Curio Career Guidance Tool — an AI-powered tool that generates a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.
+
+Your personal link: ${tokenUrl}
+
+Looking forward to sharing the results with you.
+
+Ray Kearney
+Curio`;
+  }
   return `Hi ${name},
 
 I'd like to invite you to take the MindPrint™ Assessment — a short exercise that identifies how you're naturally wired to think through and solve problems.
@@ -74,10 +86,11 @@ Ray Kearney
 Curio`;
 }
 
-function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, onClose, onSent }) {
+function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, purpose, onClose, onSent }) {
+  const isCareer = purpose === 'career';
   const [to, setTo] = useState(participantEmail || '');
-  const [subject, setSubject] = useState("You're invited to take the MindPrint™ Assessment");
-  const [message, setMessage] = useState(buildDefaultMessage(participantName || 'there', tokenUrl));
+  const [subject, setSubject] = useState(isCareer ? "Your Career Guidance Tool Invitation" : "You're invited to take the MindPrint™ Assessment");
+  const [message, setMessage] = useState(buildDefaultMessage(participantName || 'there', tokenUrl, purpose));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
@@ -194,6 +207,7 @@ function GeneratePanel() {
           <option value="assessment">Assessment</option>
           <option value="fit">Role Analyzer</option>
           <option value="jd">JD Analyzer</option>
+          <option value="career">Career Guidance</option>
         </select>
       </div>
       <div style={s.fieldGroup}>
@@ -271,6 +285,7 @@ function GeneratePanel() {
                             participantName={r.name}
                             participantEmail={r.email}
                             tokenUrl={r.url}
+                            purpose={purpose}
                             onClose={() => setOpenSendLink(null)}
                             onSent={() => {
                               setSentLinks(prev => new Set([...prev, r.token]));
