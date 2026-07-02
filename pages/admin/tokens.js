@@ -145,6 +145,7 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
 
 function GeneratePanel() {
   const [purpose, setPurpose] = useState('assessment');
+  const [grantedTier, setGrantedTier] = useState('basic');
   const [engagementId, setEngagementId] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [participantText, setParticipantText] = useState('');
@@ -177,6 +178,7 @@ function GeneratePanel() {
         body: JSON.stringify({
           participants,
           purpose,
+          granted_tier: grantedTier,
           engagement_id: engagementId.trim(),
           expires_at: expiresAt || undefined,
         }),
@@ -208,6 +210,13 @@ function GeneratePanel() {
           <option value="fit">Role Analyzer</option>
           <option value="jd">JD Analyzer</option>
           <option value="career">Career Guidance</option>
+        </select>
+      </div>
+      <div style={s.fieldGroup}>
+        <label style={s.label}>Tier to grant</label>
+        <select style={s.select} value={grantedTier} onChange={e => setGrantedTier(e.target.value)}>
+          <option value="basic">Basic</option>
+          <option value="premium">Premium</option>
         </select>
       </div>
       <div style={s.fieldGroup}>

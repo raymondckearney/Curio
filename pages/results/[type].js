@@ -10,12 +10,18 @@ export default function ResultsPage() {
 
   useEffect(() => {
     if (!router.isReady || !token || !type) return;
-    fetch('/api/tokens/consume', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, result_payload: { type } }),
-    }).catch(() => {});
-  }, [router.isReady, token, type]);
+    // Look up token to get tier + participant info, then redirect to signup
+    fetch(`/api/tokens/info?token=${encodeURIComponent(token)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(info => {
+        if (!info || info.used) return; // already consumed or not found — do nothing
+        const params = new URLSearchParams({ token, tier: info.granted_tier || 'basic' });
+        if (info.name) params.set('name', info.name);
+        if (info.email) params.set('email', info.email);
+        router.replace(`/signup?${params.toString()}`);
+      })
+      .catch(() => {});
+  }, [router.isReady, token, type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const profile = type ? profiles[type] : null;
 

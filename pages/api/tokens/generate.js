@@ -11,10 +11,12 @@ export default async function handler(req, res) {
   if (!hasBearer && !hasCookie) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const { participants, purpose, engagement_id, expires_at } = req.body;
+    const { participants, purpose, granted_tier, engagement_id, expires_at } = req.body;
     if (!participants?.length || !purpose || !engagement_id) {
       return res.status(400).json({ error: 'participants, purpose, and engagement_id are required' });
     }
+
+    const tier = (granted_tier === 'premium') ? 'premium' : 'basic';
 
     const rows = participants.map(({ name, email, company, role }) => ({
       token: crypto.randomUUID(),
@@ -23,6 +25,7 @@ export default async function handler(req, res) {
       company: company || null,
       role: role || null,
       purpose,
+      granted_tier: tier,
       engagement_id,
       expires_at: expires_at || null,
       used: false,

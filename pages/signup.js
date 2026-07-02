@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { name: qName = '', email: qEmail = '', session_id = '' } = router.query;
+  const { name: qName = '', email: qEmail = '', session_id = '', token: qToken = '' } = router.query;
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,7 +25,7 @@ export default function SignupPage() {
       const res = await fetch('/api/portal/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential }),
+        body: JSON.stringify({ credential: response.credential, token: qToken || undefined }),
       });
       const data = await res.json();
       if (res.status === 409) { setError('This email already has an account. Please sign in instead.'); return; }
@@ -78,7 +78,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: finalName, email: finalEmail, password, stripe_session_id: session_id || undefined }),
+        body: JSON.stringify({ name: finalName, email: finalEmail, password, stripe_session_id: session_id || undefined, token: qToken || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Something went wrong.'); return; }
