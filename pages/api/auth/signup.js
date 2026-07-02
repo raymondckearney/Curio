@@ -1,6 +1,7 @@
 import { dbGet, dbInsert, dbPatch, dbQuery } from '../../../lib/supabase';
 import { hashPassword } from '../../../lib/password';
 import { createSessionToken, sessionCookie } from '../../../lib/portalSession';
+import { syncContactToNotion } from '../../../lib/notionSync';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -68,6 +69,8 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error('[auth/signup] token linking failed:', err.message);
   }
+
+  syncContactToNotion({ name: name.trim(), email: normalEmail, source: 'self-signup' });
 
   const sessionToken = createSessionToken(user.id, account.id, 'owner');
   res.setHeader('Set-Cookie', sessionCookie(sessionToken));

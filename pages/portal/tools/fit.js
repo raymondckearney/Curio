@@ -106,6 +106,12 @@ function FitAnalyzer({ me }) {
   async function analyze() {
     if (!selectedType || !role.trim()) return;
     setLoading(true); setLoadingStep("Analyzing role demands..."); setError(""); setResult(null);
+    let sessionId = null;
+    fetch('/api/portal/sessions/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tool: 'role_analyzer', completed: false, metadata: { role: role.trim(), profileType: selectedType } }),
+    }).then(r => r.ok ? r.json() : null).then(d => { if (d?.session_id) sessionId = d.session_id; }).catch(() => {});
     const normalizedRole = normalizeRole(role);
     const fullCacheKey = getCacheKey(normalizedRole, selectedType);
     const splitCacheKey = getSplitCacheKey(normalizedRole);
@@ -170,9 +176,14 @@ function FitAnalyzer({ me }) {
       }
 
       const qual = candidates.length === 1 ? candidates[0] : candidates.map((c,i)=>({c,s:consensusScore(c,candidates.filter((_,j)=>j!==i))})).sort((a,b)=>b.s-a.s)[0].c;
-      const fullResult = { ...qual, demandSplit, score };
+      const fullResult = { ...qual, demandSplit, score, role: role.trim(), fitScore: score, summary: qual.scoreRationale || '' };
       setResult(fullResult);
       setSaved(false);
+      fetch('/api/portal/sessions/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tool: 'role_analyzer', completed: true, session_id: sessionId, result: { role: role.trim(), fitScore: score, summary: qual.scoreRationale || '' } }),
+      }).catch(() => {});
       try { localStorage.setItem(fullCacheKey, JSON.stringify(fullResult)); } catch {}
       // Save to server
       fetch('/api/portal/fit-results', {

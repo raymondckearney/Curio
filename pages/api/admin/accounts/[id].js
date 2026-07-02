@@ -1,5 +1,5 @@
 import { getAdminSession } from '../../../../lib/adminSession';
-import { dbGet, dbPatch, dbDelete, dbQuery } from '../../../../lib/supabase';
+import { dbGet, dbPatch, dbDelete, dbQuery, dbInsert } from '../../../../lib/supabase';
 
 export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
@@ -21,16 +21,32 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PATCH') {
-    const { name, notes, restrict_results } = req.body || {};
+    const { name, notes, restrict_results, tier, status, licenses } = req.body || {};
     const update = {};
     if (name !== undefined) update.name = name;
     if (notes !== undefined) update.notes = notes;
     if (restrict_results !== undefined) update.restrict_results = restrict_results;
+    if (tier !== undefined) update.tier = tier;
+    if (status !== undefined) update.status = status;
     try {
       await dbPatch('client_accounts', { id }, update);
+      if (licenses !== undefined) {
+        // Replace licenses: delete existing, re-insert
+        const existing = await dbQuery('account_licenses', { account_id: `eq.${id}`, select: 'id' });
+        await Promise.all(existing.map(l => dbDelete('account_licenses', { id: l.id })));
+        if (licenses.length) {
+          await Promise.all(licenses.map(l => dbInsert('account_licenses', {
+            account_id: id,
+            type: l.type,
+            quantity: l.quantity ?? 1,
+            expires_at: l.expires_at || null,
+          })));
+        }
+      }
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      console.error('[admin/accounts/[id]] PATCH error:', err.message);
+      return res.status(500).json({ error: 'Update failed' });
     }
   }
 

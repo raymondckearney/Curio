@@ -395,6 +395,7 @@ export default function AdminCareerReports() {
           {[
             { label: 'Tokens', href: '/admin/tokens' },
             { label: 'Career Reports', href: '/admin/career-reports' },
+            { label: 'Accounts', href: '/admin/accounts' },
           ].map(tab => (
             <button
               key={tab.label}
