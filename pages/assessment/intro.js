@@ -6,7 +6,8 @@ export default function AssessmentIntro() {
   const router = useRouter();
   const { token, name, email, role } = router.query;
 
-  const displayName = name ? String(name) : null;
+  const rawName = name ? String(name) : null;
+  const displayName = (rawName && rawName.trim() && !/^anonymous\b/i.test(rawName.trim())) ? rawName : null;
 
   const assessmentUrl = token
     ? `/assessment?token=${encodeURIComponent(token)}${name ? `&name=${encodeURIComponent(name)}` : ''}${email ? `&email=${encodeURIComponent(email)}` : ''}${role ? `&role=${encodeURIComponent(role)}` : ''}`
