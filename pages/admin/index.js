@@ -976,6 +976,45 @@ function RevokeButton({ account, onDone }) {
   return <button style={{ ...s.actionBtn, color: isRevoked ? '#059669' : '#EF4444', borderColor: isRevoked ? '#BBF7D0' : '#FCA5A5' }} onClick={toggle} disabled={loading}>{loading ? '…' : isRevoked ? 'Restore' : 'Revoke'}</button>;
 }
 
+function DeleteButton({ account, onDone }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function confirm() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}`, { method: 'DELETE' });
+      if (res.ok) { setOpen(false); onDone(); }
+    } catch {} finally { setLoading(false); }
+  }
+
+  return (
+    <>
+      <button
+        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', fontSize: '0.78rem', fontWeight: 500, padding: '4px 6px', fontFamily: "'DM Sans', sans-serif", textDecoration: 'underline', textDecorationStyle: 'dotted' }}
+        onClick={() => setOpen(true)}
+        title="Delete account"
+      >
+        Delete
+      </button>
+      {open && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '32px 28px', maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Delete account?</h3>
+            <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6, marginBottom: 24 }}>
+              This will permanently delete <strong>{account.name || 'this account'}</strong>'s account and all associated data. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button style={{ padding: '9px 18px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", color: '#374151' }} onClick={() => setOpen(false)} disabled={loading}>Cancel</button>
+              <button style={{ padding: '9px 18px', background: '#EF4444', border: 'none', borderRadius: 8, fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", color: '#fff', opacity: loading ? 0.7 : 1 }} onClick={confirm} disabled={loading}>{loading ? 'Deleting…' : 'Yes, delete permanently'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function InvitePanel({ onClose, onSuccess }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -1171,6 +1210,7 @@ function AccountsSection() {
                           <button style={s.actionBtn} onClick={() => setEditId(editId === acc.id ? null : acc.id)}>{editId === acc.id ? 'Close' : 'Edit'}</button>
                           {provider === 'email' ? <ResendInviteButton accountId={acc.id} /> : <span style={{ color: '#94A3B8', fontSize: '0.875rem' }}>—</span>}
                           <RevokeButton account={acc} onDone={() => { load(); setEditId(null); }} />
+                          <DeleteButton account={acc} onDone={() => { setAccounts(prev => prev.filter(a => a.id !== acc.id)); setEditId(null); setActionMsg('Account deleted.'); }} />
                         </div>
                       </td>
                     </tr>

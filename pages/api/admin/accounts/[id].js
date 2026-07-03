@@ -52,9 +52,24 @@ export default async function handler(req, res) {
 
   if (req.method === 'DELETE') {
     try {
+      // Collect user emails before deletion for token privacy cleanup
+      const users = await dbQuery('client_users', { account_id: `eq.${id}`, select: 'id,email' });
+      const emails = users.map(u => u.email).filter(Boolean);
+
+      // Null out created_for_email on tokens linked to this account's users
+      await Promise.all(emails.map(email =>
+        dbPatch('tokens', { created_for_email: email }, { created_for_email: null }).catch(() => {})
+      ));
+
+      // Delete related rows, then the account itself
+      await dbDelete('tool_sessions', { account_id: id }).catch(() => {});
+      await Promise.all(users.map(u => dbDelete('client_users', { id: u.id })));
+      await dbDelete('account_licenses', { account_id: id }).catch(() => {});
       await dbDelete('client_accounts', { id });
+
       return res.status(200).json({ success: true });
     } catch (err) {
+      console.error('[admin/accounts/[id]] DELETE error:', err.message);
       return res.status(500).json({ error: err.message });
     }
   }
