@@ -1,37 +1,22 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { dbGet } from '../lib/supabase';
 
-export async function getServerSideProps({ query }) {
-  const { token } = query;
-  if (!token) return { props: {} };
-  try {
-    const rows = await dbGet('tokens', { token });
-    if (!rows.length) return { props: {} };
-    const row = rows[0];
-    return {
-      props: {
-        prefillName:  row.created_for_name  || '',
-        prefillEmail: row.created_for_email || '',
-      },
-    };
-  } catch {
-    return { props: {} };
-  }
-}
-
-export default function SignupPage({ prefillName = '', prefillEmail = '' }) {
+export default function SignupPage() {
   const router = useRouter();
-  const { session_id = '', token: qToken = '' } = router.query;
+  const { name: qName = '', email: qEmail = '', session_id = '', token: qToken = '' } = router.query;
 
-  const [name, setName] = useState(prefillName);
-  const [email, setEmail] = useState(prefillEmail);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [gLoading, setGLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Pre-fill from query params once router is ready
+  const displayName = name || qName;
+  const displayEmail = email || qEmail;
 
   async function handleGoogle(response) {
     setGLoading(true);
@@ -82,7 +67,9 @@ export default function SignupPage({ prefillName = '', prefillEmail = '' }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!name || !email || !password) { setError('All fields are required.'); return; }
+    const finalName = displayName;
+    const finalEmail = displayEmail;
+    if (!finalName || !finalEmail || !password) { setError('All fields are required.'); return; }
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
 
@@ -91,7 +78,7 @@ export default function SignupPage({ prefillName = '', prefillEmail = '' }) {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, stripe_session_id: session_id || undefined, token: qToken || undefined }),
+        body: JSON.stringify({ name: finalName, email: finalEmail, password, stripe_session_id: session_id || undefined, token: qToken || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Something went wrong.'); return; }
@@ -127,7 +114,7 @@ export default function SignupPage({ prefillName = '', prefillEmail = '' }) {
                 <label style={s.label}>Full Name</label>
                 <input
                   style={s.input}
-                  value={name}
+                  value={displayName}
                   onChange={e => setName(e.target.value)}
                   placeholder="Alex Smith"
                   required
@@ -138,7 +125,7 @@ export default function SignupPage({ prefillName = '', prefillEmail = '' }) {
                 <input
                   style={s.input}
                   type="email"
-                  value={email}
+                  value={displayEmail}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="alex@example.com"
                   required

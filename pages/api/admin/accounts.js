@@ -6,15 +6,26 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const accounts = await dbQuery('client_accounts', { order: 'created_at.desc', select: '*' });
+      const [accounts, allPurchases] = await Promise.all([
+        dbQuery('client_accounts', { order: 'created_at.desc', select: '*' }),
+        dbQuery('purchases', { select: 'buyer_email,product,amount,created_at', order: 'created_at.desc' }).catch(() => []),
+      ]);
 
-      // Enrich with user count and license summary per account
+      // Index purchases by buyer_email for O(1) join
+      const purchasesByEmail = {};
+      for (const p of allPurchases) {
+        if (!p.buyer_email) continue;
+        (purchasesByEmail[p.buyer_email] = purchasesByEmail[p.buyer_email] || []).push(p);
+      }
+
       const enriched = await Promise.all(accounts.map(async acc => {
         const [users, licenses] = await Promise.all([
-          dbQuery('client_users', { account_id: `eq.${acc.id}`, select: 'id,email,name,role' }),
+          dbQuery('client_users', { account_id: `eq.${acc.id}`, select: 'id,email,name,role,last_login_at,provider', order: 'created_at.asc' }),
           dbQuery('account_licenses', { account_id: `eq.${acc.id}`, select: '*' }),
         ]);
-        return { ...acc, users, licenses };
+        const primaryEmail = (users[0] || {}).email;
+        const purchases = primaryEmail ? (purchasesByEmail[primaryEmail] || []) : [];
+        return { ...acc, users, licenses, purchases };
       }));
 
       return res.status(200).json({ accounts: enriched });

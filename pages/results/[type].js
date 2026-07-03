@@ -1,47 +1,27 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 import profiles from '../../lib/profiles';
-import { dbGet, dbQuery, dbPatch } from '../../lib/supabase';
-
-export async function getServerSideProps({ query }) {
-  const { token } = query;
-  if (!token) return { props: {} };
-
-  try {
-    const rows = await dbGet('tokens', { token });
-    if (!rows.length || rows[0].used) return { props: {} };
-
-    // Fetch latest assessment to capture what the participant submitted
-    const assessments = await dbQuery('assessments', {
-      token: `eq.${token}`,
-      order: 'submitted_at.desc',
-      limit: '1',
-    });
-    const assessment = assessments[0] || null;
-
-    const patch = {};
-    if (assessment?.name)  patch.created_for_name  = assessment.name;
-    if (assessment?.email) patch.created_for_email = assessment.email;
-    if (Object.keys(patch).length) {
-      await dbPatch('tokens', { token }, patch);
-    }
-
-    return {
-      redirect: {
-        destination: `/signup?token=${encodeURIComponent(token)}`,
-        permanent: false,
-      },
-    };
-  } catch (err) {
-    console.error('[results getServerSideProps]', err);
-    return { props: {} };
-  }
-}
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { type, name } = router.query;
+  const { type, name, token } = router.query;
+
+  useEffect(() => {
+    if (!router.isReady || !token || !type) return;
+    // Look up token to get tier + participant info, then redirect to signup
+    fetch(`/api/tokens/info?token=${encodeURIComponent(token)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(info => {
+        if (!info || info.used) return; // already consumed or not found — do nothing
+        const params = new URLSearchParams({ token, tier: info.granted_tier || 'basic' });
+        if (info.name) params.set('name', info.name);
+        if (info.email) params.set('email', info.email);
+        router.replace(`/signup?${params.toString()}`);
+      })
+      .catch(() => {});
+  }, [router.isReady, token, type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const profile = type ? profiles[type] : null;
 

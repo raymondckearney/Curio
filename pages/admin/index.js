@@ -143,14 +143,14 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
 
 // ─── Generate Panel ───────────────────────────────────────────────────────────
 
-function GeneratePanel() {
-  const [mode, setMode] = useState('named'); // 'named' | 'anonymous'
+function GeneratePanel({ prefillEngId }) {
+  const [batchMode, setBatchMode] = useState('enterprise'); // 'individual' | 'enterprise'
+  const [mode, setMode] = useState('named'); // 'named' | 'anonymous' (enterprise only)
   const [purpose, setPurpose] = useState('assessment');
   const [grantedTier, setGrantedTier] = useState('basic');
-  const [engagementId, setEngagementId] = useState('');
+  const [engagementId, setEngagementId] = useState(prefillEngId || '');
   const [expiresAt, setExpiresAt] = useState('');
   const [participantText, setParticipantText] = useState('');
-  const [anonCount, setAnonCount] = useState('');
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -158,24 +158,39 @@ function GeneratePanel() {
   const [openSendLink, setOpenSendLink] = useState(null);
   const [sentLinks, setSentLinks] = useState(new Set());
 
+  // Individual mode state
+  const [indivName, setIndivName] = useState('');
+  const [indivEmail, setIndivEmail] = useState('');
+  const [indivResult, setIndivResult] = useState(null);
+  const [indivSentLink, setIndivSentLink] = useState(false);
+
+  useEffect(() => {
+    if (prefillEngId) { setEngagementId(prefillEngId); setBatchMode('enterprise'); }
+  }, [prefillEngId]);
+
+  async function generateIndividual() {
+    setError(''); setIndivResult(null); setIndivSentLink(false);
+    setLoading(true);
+    try {
+      const autoEngId = `individual-${Date.now()}`;
+      const participants = [{ name: indivName.trim() || 'Individual', email: indivEmail.trim() || '' }];
+      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tier: grantedTier, engagement_id: autoEngId, expires_at: expiresAt || undefined }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setIndivResult(data.tokens[0]);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
   async function generate() {
     setError(''); setResults(null); setOpenSendLink(null); setSentLinks(new Set());
+    const lines = participantText.trim().split('\n').filter(Boolean);
+    const participants = lines.map(line => {
+      const [name, email, company, role] = line.split(',').map(s => s.trim());
+      return { name: name || '', email: email || '', company: company || '', role: role || '' };
+    }).filter(p => p.name);
+    if (!participants.length) return setError('Enter at least one participant (Name required, email optional)');
     if (!engagementId.trim()) return setError('Engagement ID is required');
-
-    let participants;
-    if (mode === 'anonymous') {
-      const n = parseInt(anonCount, 10);
-      if (!n || n < 1) return setError('Enter a number of tokens greater than 0');
-      participants = Array.from({ length: n }, (_, i) => ({ name: `Anonymous ${i + 1}` }));
-    } else {
-      const lines = participantText.trim().split('\n').filter(Boolean);
-      participants = lines.map(line => {
-        const [name, email, company, role] = line.split(',').map(s => s.trim());
-        return { name: name || '', email: email || '', company: company || '', role: role || '' };
-      }).filter(p => p.name);
-      if (!participants.length) return setError('Enter at least one participant (Name required, email optional)');
-    }
-
     setLoading(true);
     try {
       const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tier: grantedTier, engagement_id: engagementId.trim(), expires_at: expiresAt || undefined }) });
@@ -187,84 +202,118 @@ function GeneratePanel() {
   }
 
   function copyAll() {
-    navigator.clipboard.writeText(results.map(r => `${r.name}\t${r.email || ''}\t${r.url}`).join('\n'));
+    navigator.clipboard.writeText(results.map(r => `${r.name}\t${r.email}\t${r.url}`).join('\n'));
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   }
+
+  const toggleStyle = (active) => ({ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: active ? 600 : 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: active ? '#fff' : 'transparent', color: active ? '#0F172A' : '#64748B', boxShadow: active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' });
 
   return (
     <section style={s.panel}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Generate Tokens</h2>
         <div style={{ display: 'flex', gap: 0, background: '#F1F5F9', borderRadius: 8, padding: 3 }}>
-          {[{ id: 'named', label: 'Named Participants' }, { id: 'anonymous', label: 'Anonymous Batch' }].map(opt => (
-            <button
-              key={opt.id}
-              onClick={() => { setMode(opt.id); setResults(null); setError(''); }}
-              style={{ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: mode === opt.id ? 600 : 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: mode === opt.id ? '#fff' : 'transparent', color: mode === opt.id ? '#0F172A' : '#64748B', boxShadow: mode === opt.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}
-            >
-              {opt.label}
-            </button>
+          {[{ id: 'individual', label: 'Individual Access' }, { id: 'enterprise', label: 'Enterprise Batch' }].map(opt => (
+            <button key={opt.id} onClick={() => { setBatchMode(opt.id); setResults(null); setIndivResult(null); setError(''); }} style={toggleStyle(batchMode === opt.id)}>{opt.label}</button>
           ))}
         </div>
       </div>
-      <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">JD Analyzer</option><option value="career">Career Guidance</option></select></div>
-      <div style={s.fieldGroup}><label style={s.label}>Tier to grant</label><select style={s.select} value={grantedTier} onChange={e => setGrantedTier(e.target.value)}><option value="basic">Basic</option><option value="premium">Premium</option></select></div>
-      <div style={s.fieldGroup}><label style={s.label}>Engagement ID</label><input style={s.input} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2026-q1" /></div>
-      <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={s.input} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
-      {mode === 'named' ? (
-        <div style={s.fieldGroup}>
-          <label style={s.label}>Participants — one per line: <code style={s.code}>Name, email, Company, Role</code></label>
-          <textarea style={s.textarea} value={participantText} onChange={e => setParticipantText(e.target.value)} placeholder={"Alex Smith, alex@example.com, Acme Corp, Engineer\nJordan Lee, jordan@example.com\nSam Taylor"} rows={6} />
-        </div>
-      ) : (
-        <div style={s.fieldGroup}>
-          <label style={s.label}>Number of tokens</label>
-          <input style={{ ...s.input, maxWidth: 160 }} type="number" min="1" max="500" value={anonCount} onChange={e => setAnonCount(e.target.value)} placeholder="e.g. 50" />
-          <p style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: 6 }}>Tokens will be labeled Anonymous 1, Anonymous 2, … in the status panel.</p>
-        </div>
-      )}
-      {error && <p style={s.error}>{error}</p>}
-      <button style={s.btn} onClick={generate} disabled={loading}>{loading ? 'Generating…' : 'Generate Tokens'}</button>
 
-      {results && (
-        <div style={{ marginTop: 24 }}>
-          <div style={s.resultsHeader}>
-            <span style={s.resultsCount}>{results.length} token{results.length !== 1 ? 's' : ''} created</span>
-            <button style={s.btnSecondary} onClick={copyAll}>{copied ? 'Copied!' : 'Copy all URLs'}</button>
+      {batchMode === 'individual' ? (
+        <>
+          <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">JD Analyzer</option><option value="career">Career Guidance</option></select></div>
+          <div style={s.fieldGroup}><label style={s.label}>Tier to grant</label><select style={s.select} value={grantedTier} onChange={e => setGrantedTier(e.target.value)}><option value="basic">Basic</option><option value="premium">Premium</option></select></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+            <div style={s.fieldGroup}><label style={s.label}>Name (optional)</label><input style={s.input} value={indivName} onChange={e => setIndivName(e.target.value)} placeholder="Alex Smith" /></div>
+            <div style={s.fieldGroup}><label style={s.label}>Email (optional)</label><input style={s.input} type="email" value={indivEmail} onChange={e => setIndivEmail(e.target.value)} placeholder="alex@example.com" /></div>
           </div>
-          <div style={s.tableWrap}>
-            <table style={s.table}>
-              <thead><tr>{['Name','Email','Company','Role','URL','Copy','Send Link'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
-              <tbody>
-                {results.flatMap((r, i) => {
-                  const rows = [
-                    <tr key={r.token} style={i % 2 === 0 ? s.trEven : {}}>
-                      <td style={s.td}>{r.name}</td>
-                      <td style={s.td}>{r.email || '—'}</td>
-                      <td style={s.td}>{r.company || '—'}</td>
-                      <td style={s.td}>{r.role || '—'}</td>
-                      <td style={{ ...s.td, ...s.urlCell }}>{r.url}</td>
-                      <td style={s.td}><button style={s.copyBtn} onClick={() => navigator.clipboard.writeText(r.url)}>Copy</button></td>
-                      <td style={s.td}>
-                        {sentLinks.has(r.token) ? <span style={s.sentBadge}>Sent ✓</span> : (
-                          <button style={openSendLink === r.token ? s.sendLinkBtnActive : s.sendLinkBtn} onClick={() => setOpenSendLink(openSendLink === r.token ? null : r.token)}>Send Link</button>
-                        )}
-                      </td>
-                    </tr>,
-                  ];
-                  if (openSendLink === r.token) {
-                    rows.push(
-                      <tr key={`${r.token}-panel`}><td colSpan={7} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}>
-                        <SendLinkPanel token={r.token} participantName={r.name} participantEmail={r.email} tokenUrl={r.url} purpose={purpose} onClose={() => setOpenSendLink(null)} onSent={() => { setSentLinks(prev => new Set([...prev, r.token])); setOpenSendLink(null); }} />
-                      </td></tr>
-                    );
-                  }
-                  return rows;
-                })}
-              </tbody>
-            </table>
+          <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={{ ...s.input, maxWidth: 200 }} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
+          {error && <p style={s.error}>{error}</p>}
+          <button style={s.btn} onClick={generateIndividual} disabled={loading}>{loading ? 'Generating…' : 'Generate Link'}</button>
+          {indivResult && (
+            <div style={{ marginTop: 20, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '18px 20px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Link Ready</div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <code style={{ ...s.code, flex: 1, fontSize: '0.82rem', wordBreak: 'break-all' }}>{indivResult.url}</code>
+                <button style={s.copyBtn} onClick={() => navigator.clipboard.writeText(indivResult.url)}>Copy</button>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                {indivSentLink ? <span style={s.sentBadge}>Link Sent ✓</span> : (
+                  <SendLinkPanel token={indivResult.token} participantName={indivResult.name} participantEmail={indivResult.email} tokenUrl={indivResult.url} purpose={purpose} onClose={() => {}} onSent={() => setIndivSentLink(true)} />
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 0, background: '#F1F5F9', borderRadius: 8, padding: 3 }}>
+              {[{ id: 'named', label: 'Named Participants' }, { id: 'anonymous', label: 'Anonymous Batch' }].map(opt => (
+                <button key={opt.id} onClick={() => { setMode(opt.id); setResults(null); setError(''); }} style={toggleStyle(mode === opt.id)}>{opt.label}</button>
+              ))}
+            </div>
           </div>
-        </div>
+          <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">JD Analyzer</option><option value="career">Career Guidance</option></select></div>
+          <div style={s.fieldGroup}><label style={s.label}>Tier to grant</label><select style={s.select} value={grantedTier} onChange={e => setGrantedTier(e.target.value)}><option value="basic">Basic</option><option value="premium">Premium</option></select></div>
+          <div style={s.fieldGroup}><label style={s.label}>Engagement ID</label><input style={s.input} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2026-q1" /></div>
+          <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={s.input} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
+          {mode === 'named' ? (
+            <div style={s.fieldGroup}>
+              <label style={s.label}>Participants — one per line: <code style={s.code}>Name, email, Company, Role</code></label>
+              <textarea style={s.textarea} value={participantText} onChange={e => setParticipantText(e.target.value)} placeholder={"Alex Smith, alex@example.com, Acme Corp, Engineer\nJordan Lee, jordan@example.com\nSam Taylor"} rows={6} />
+            </div>
+          ) : (
+            <div style={s.fieldGroup}>
+              <label style={s.label}>Number of tokens</label>
+              <input style={{ ...s.input, maxWidth: 160 }} type="number" min="1" max="500" value={anonCount} onChange={e => setAnonCount(e.target.value)} placeholder="e.g. 50" />
+              <p style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: 6 }}>Tokens will be labeled Anonymous 1, Anonymous 2, … in the status panel.</p>
+            </div>
+          )}
+          {error && <p style={s.error}>{error}</p>}
+          <button style={s.btn} onClick={generate} disabled={loading}>{loading ? 'Generating…' : 'Generate Tokens'}</button>
+
+          {results && (
+            <div style={{ marginTop: 24 }}>
+              <div style={s.resultsHeader}>
+                <span style={s.resultsCount}>{results.length} token{results.length !== 1 ? 's' : ''} created</span>
+                <button style={s.btnSecondary} onClick={copyAll}>{copied ? 'Copied!' : 'Copy all URLs'}</button>
+              </div>
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead><tr>{['Name','Email','Company','Role','URL','Copy','Send Link'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {results.flatMap((r, i) => {
+                      const rows = [
+                        <tr key={r.token} style={i % 2 === 0 ? s.trEven : {}}>
+                          <td style={s.td}>{r.name}</td>
+                          <td style={s.td}>{r.email || '—'}</td>
+                          <td style={s.td}>{r.company || '—'}</td>
+                          <td style={s.td}>{r.role || '—'}</td>
+                          <td style={{ ...s.td, ...s.urlCell }}>{r.url}</td>
+                          <td style={s.td}><button style={s.copyBtn} onClick={() => navigator.clipboard.writeText(r.url)}>Copy</button></td>
+                          <td style={s.td}>
+                            {sentLinks.has(r.token) ? <span style={s.sentBadge}>Sent ✓</span> : (
+                              <button style={openSendLink === r.token ? s.sendLinkBtnActive : s.sendLinkBtn} onClick={() => setOpenSendLink(openSendLink === r.token ? null : r.token)}>Send Link</button>
+                            )}
+                          </td>
+                        </tr>,
+                      ];
+                      if (openSendLink === r.token) {
+                        rows.push(
+                          <tr key={`${r.token}-panel`}><td colSpan={7} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}>
+                            <SendLinkPanel token={r.token} participantName={r.name} participantEmail={r.email} tokenUrl={r.url} purpose={purpose} onClose={() => setOpenSendLink(null)} onSent={() => { setSentLinks(prev => new Set([...prev, r.token])); setOpenSendLink(null); }} />
+                          </td></tr>
+                        );
+                      }
+                      return rows;
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
@@ -571,11 +620,24 @@ function FitAnalysisPanel({ assessment, onClose }) {
 
 // ─── Assessments Panel ────────────────────────────────────────────────────────
 
+function profileBadgeStyle(type) {
+  const t = (type || '').toUpperCase();
+  const base = { padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.05em', whiteSpace: 'nowrap' };
+  if (t.startsWith('WHY'))  return { ...base, background: '#6EE7B7', color: '#0F172A' };
+  if (t.startsWith('WHAT')) return { ...base, background: '#93C5FD', color: '#0F172A' };
+  if (t.startsWith('HOW'))  return { ...base, background: '#FCD34D', color: '#0F172A' };
+  return { ...base, background: '#EFF6FF', color: '#1D4ED8' };
+}
+
 function AssessmentsPanel() {
   const [assessments, setAssessments] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [openFitPanel, setOpenFitPanel] = useState(null);
+  const [search, setSearch] = useState('');
+  const [profileFilter, setProfileFilter] = useState('');
+  const [sentProfiles, setSentProfiles] = useState(new Set());
+  const [sendingProfile, setSendingProfile] = useState(null);
 
   async function load() {
     setError(''); setLoading(true);
@@ -588,42 +650,121 @@ function AssessmentsPanel() {
     finally { setLoading(false); }
   }
 
+  async function sendProfile(a) {
+    const key = a.id;
+    const name = a.name || a.reg_name || '';
+    const email = a.email || a.reg_email || '';
+    const profile = (a.type || '').toUpperCase().replace(/_/g, '-');
+    if (!email || !profile) return;
+    setSendingProfile(key);
+    try {
+      const res = await fetch('/api/email/send-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participant_name: name, participant_email: email, profile }) });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
+      setSentProfiles(prev => new Set([...prev, key]));
+    } catch (e) { alert(`Failed to send profile: ${e.message}`); }
+    finally { setSendingProfile(null); }
+  }
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+  const filtered = (assessments || []).filter(a => {
+    const q = search.toLowerCase();
+    if (q) {
+      const name = (a.name || a.reg_name || '').toLowerCase();
+      const email = (a.email || a.reg_email || '').toLowerCase();
+      if (!name.includes(q) && !email.includes(q)) return false;
+    }
+    if (profileFilter) {
+      const type = (a.type || '').toUpperCase().replace(/_/g, '-');
+      if (type !== profileFilter) return false;
+    }
+    return true;
+  });
+
+  const stats = assessments ? {
+    total: assessments.length,
+    thisMonth: assessments.filter(a => a.submitted_at && new Date(a.submitted_at) > thirtyDaysAgo).length,
+    profilesSent: sentProfiles.size,
+    mostCommon: (() => {
+      const counts = {};
+      assessments.forEach(a => { if (a.type) counts[a.type.toUpperCase().replace(/_/g,'-')] = (counts[a.type.toUpperCase().replace(/_/g,'-')] || 0) + 1; });
+      return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+    })(),
+  } : null;
+
   return (
     <section style={s.panel}>
-      <h2 style={s.panelTitle}>Assessment Submissions</h2>
-      <button style={s.btn} onClick={load} disabled={loading}>{loading ? 'Loading…' : 'Load'}</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Assessment Submissions</h2>
+        <button style={s.btn} onClick={load} disabled={loading}>{loading ? 'Loading…' : assessments ? 'Refresh' : 'Load'}</button>
+      </div>
       {error && <p style={s.error}>{error}</p>}
+      {stats && (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <StatCard label="Total Assessments" value={stats.total} color="#059669" />
+          <StatCard label="This Month" value={stats.thisMonth} color="#2563EB" />
+          <StatCard label="Most Common Profile" value={<span style={profileBadgeStyle(stats.mostCommon)}>{stats.mostCommon}</span>} color="#D97706" />
+          <StatCard label="Profiles Sent" value={stats.profilesSent} color="#7C3AED" />
+        </div>
+      )}
       {assessments && (
-        <div style={{ marginTop: 24 }}>
-          <p style={s.summary}><strong>{assessments.length}</strong> assessment{assessments.length !== 1 ? 's' : ''}</p>
+        <div>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input style={{ ...s.input, maxWidth: 240 }} placeholder="Search name or email…" value={search} onChange={e => setSearch(e.target.value)} />
+            <select style={{ ...s.select, maxWidth: 180 }} value={profileFilter} onChange={e => setProfileFilter(e.target.value)}>
+              <option value="">All Profiles</option>
+              {PROFILES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            {(search || profileFilter) && <button style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.875rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", padding: '4px 8px' }} onClick={() => { setSearch(''); setProfileFilter(''); }}>Clear</button>}
+            <span style={{ fontSize: '0.82rem', color: '#94A3B8', marginLeft: 'auto' }}>{filtered.length} of {assessments.length}</span>
+          </div>
           <div style={s.tableWrap}>
             <table style={s.table}>
-              <thead><tr>{['Reg. Name','Reg. Email','Quiz Name','Quiz Email','Company','Role','Type','H Score','W Score','Y Score','Submitted At','Actions'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+              <thead><tr>{['Name','Email','Company','Role','Profile','H Score','W Score','Y Score','Submitted At','Actions'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
               <tbody>
-                {assessments.flatMap((a, i) => {
+                {filtered.flatMap((a, i) => {
                   const key = a.id || i;
+                  const displayName = a.name || a.reg_name || '—';
+                  const displayEmail = a.email || a.reg_email || '—';
+                  const hasEmail = !!(a.email || a.reg_email);
+                  const profileType = a.type ? (a.type.toUpperCase().replace(/_/g, '-')) : null;
+                  const alreadySent = sentProfiles.has(key);
                   const mainRow = (
                     <tr key={key} style={i % 2 === 0 ? s.trEven : {}}>
-                      <td style={s.td}>{a.reg_name || '—'}</td>
-                      <td style={s.td}>{a.reg_email || '—'}</td>
-                      <td style={s.td}>{a.name || '—'}</td>
-                      <td style={s.td}>{a.email || '—'}</td>
+                      <td style={s.td}>{displayName}</td>
+                      <td style={s.td}>{displayEmail}</td>
                       <td style={s.td}>{a.company || '—'}</td>
                       <td style={s.td}>{a.role || '—'}</td>
-                      <td style={s.td}>{a.type ? <span style={s.badgeType}>{a.type.toUpperCase()}</span> : '—'}</td>
+                      <td style={s.td}>{profileType ? <span style={profileBadgeStyle(profileType)}>{profileType}</span> : '—'}</td>
                       <td style={s.td}>{a.h_score ?? '—'}</td>
                       <td style={s.td}>{a.w_score ?? '—'}</td>
                       <td style={s.td}>{a.y_score ?? '—'}</td>
                       <td style={s.td}>{a.submitted_at ? new Date(a.submitted_at).toLocaleString() : '—'}</td>
-                      <td style={s.td}>
-                        {a.type ? <button style={openFitPanel === key ? s.sendLinkBtnActive : s.sendLinkBtn} onClick={() => setOpenFitPanel(openFitPanel === key ? null : key)}>Run Role Fit</button> : '—'}
+                      <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {profileType && (
+                            alreadySent ? <span style={s.sentBadge}>Profile Sent ✓</span> : (
+                              <button
+                                style={{ ...s.btn, padding: '4px 10px', fontSize: '0.78rem', opacity: hasEmail ? 1 : 0.4 }}
+                                onClick={() => hasEmail && sendProfile(a)}
+                                disabled={sendingProfile === key || !hasEmail}
+                                title={!hasEmail ? 'No email on record' : ''}
+                              >
+                                {sendingProfile === key ? 'Sending…' : 'Send Profile'}
+                              </button>
+                            )
+                          )}
+                          {profileType && <button style={openFitPanel === key ? s.sendLinkBtnActive : s.sendLinkBtn} onClick={() => setOpenFitPanel(openFitPanel === key ? null : key)}>Run Role Fit</button>}
+                          {!profileType && '—'}
+                        </div>
                       </td>
                     </tr>
                   );
                   if (openFitPanel !== key) return [mainRow];
-                  return [mainRow, <tr key={`${key}-fit`}><td colSpan={12} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}><FitAnalysisPanel assessment={a} onClose={() => setOpenFitPanel(null)} /></td></tr>];
+                  return [mainRow, <tr key={`${key}-fit`}><td colSpan={10} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}><FitAnalysisPanel assessment={a} onClose={() => setOpenFitPanel(null)} /></td></tr>];
                 })}
-                {assessments.length === 0 && <tr><td colSpan={12} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>No assessments yet.</td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={10} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>{assessments.length === 0 ? 'No assessments yet.' : 'No results match your filter.'}</td></tr>}
               </tbody>
             </table>
           </div>
@@ -635,11 +776,79 @@ function AssessmentsPanel() {
 
 // ─── Engagements Panel ────────────────────────────────────────────────────────
 
-function EngagementsPanel() {
+function CohortPanel({ engagementId, onGenerateMore }) {
+  const [tokens, setTokens] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [sentProfiles, setSentProfiles] = useState(new Set());
+  const [sendingProfile, setSendingProfile] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/tokens/status?engagement_id=${encodeURIComponent(engagementId)}`)
+      .then(r => r.json())
+      .then(d => { setTokens(d.tokens || []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [engagementId]);
+
+  async function sendProfile(t) {
+    const profileRaw = typeof t.result_payload === 'object' ? t.result_payload?.type : t.result_payload;
+    const profile = profileRaw ? String(profileRaw).toUpperCase().replace(/_/g, '-') : null;
+    if (!profile || !t.email) return;
+    setSendingProfile(t.token);
+    try {
+      const res = await fetch('/api/email/send-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participant_name: t.name, participant_email: t.email, profile }) });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
+      await fetch(`/api/admin/tokens/${t.token}/profile-sent`, { method: 'POST' }).catch(() => {});
+      setSentProfiles(prev => new Set([...prev, t.token]));
+    } catch (e) { alert(`Failed: ${e.message}`); }
+    finally { setSendingProfile(null); }
+  }
+
+  return (
+    <div style={{ padding: '16px 24px', background: '#F8FAFC', borderTop: '2px solid #059669' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cohort — {engagementId}</span>
+        <button style={s.btnSmall} onClick={() => onGenerateMore(engagementId)}>+ Generate More</button>
+      </div>
+      {loading && <p style={{ fontSize: '0.85rem', color: '#94A3B8' }}>Loading…</p>}
+      {tokens && (
+        <table style={{ ...s.table, fontSize: '0.82rem' }}>
+          <thead><tr>{['Name','Email','Status','Profile','Completed At',''].map(h => <th key={h} style={{ ...s.th, fontSize: '0.75rem' }}>{h}</th>)}</tr></thead>
+          <tbody>
+            {tokens.map((t, i) => {
+              const profileRaw = typeof t.result_payload === 'object' ? t.result_payload?.type : t.result_payload;
+              const profile = profileRaw ? String(profileRaw).toUpperCase().replace(/_/g, '-') : null;
+              const canSend = t.used && profile && t.email;
+              const alreadySent = sentProfiles.has(t.token) || !!t.profile_sent_at;
+              return (
+                <tr key={t.token} style={i % 2 === 0 ? s.trEven : {}}>
+                  <td style={s.td}>{t.name}</td>
+                  <td style={s.td}>{t.email || '—'}</td>
+                  <td style={s.td}><span style={t.used ? s.badgeUsed : s.badgePending}>{t.used ? 'Completed' : 'Pending'}</span></td>
+                  <td style={s.td}>{profile ? <span style={profileBadgeStyle(profile)}>{profile}</span> : '—'}</td>
+                  <td style={{ ...s.td, color: '#64748B', fontSize: '0.78rem' }}>{t.used_at ? new Date(t.used_at).toLocaleString() : '—'}</td>
+                  <td style={s.td}>
+                    {canSend && (alreadySent ? <span style={s.sentBadge}>Sent ✓</span> : (
+                      <button style={{ ...s.btn, padding: '3px 10px', fontSize: '0.75rem' }} onClick={() => sendProfile(t)} disabled={sendingProfile === t.token}>
+                        {sendingProfile === t.token ? '…' : 'Send Profile'}
+                      </button>
+                    ))}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function EngagementsPanel({ onGenerateMore }) {
   const [engagements, setEngagements] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [drillEngId, setDrillEngId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+  const [engFilter, setEngFilter] = useState('client');
 
   useEffect(() => {
     fetch('/api/admin/engagements')
@@ -648,36 +857,63 @@ function EngagementsPanel() {
       .catch(e => { setError(e.message); setLoading(false); });
   }, []);
 
-  if (drillEngId) {
-    return (
-      <div>
-        <button style={{ ...s.btnSecondary, marginBottom: 20 }} onClick={() => setDrillEngId(null)}>← Back to Engagements</button>
-        <StatusPanel preloadEngId={drillEngId} />
-      </div>
-    );
-  }
+  const filtered = (engagements || []).filter(eng => {
+    const isSelfServe = eng.engagement_id?.startsWith('self-serve-');
+    if (engFilter === 'client') return !isSelfServe;
+    if (engFilter === 'self-serve') return isSelfServe;
+    return true;
+  });
 
   return (
     <section style={s.panel}>
-      <h2 style={s.panelTitle}>Engagements</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Engagements</h2>
+        <div style={{ display: 'flex', gap: 0, background: '#F1F5F9', borderRadius: 8, padding: 3 }}>
+          {[{ id: 'client', label: 'Client' }, { id: 'self-serve', label: 'Self-Serve' }, { id: 'all', label: 'All' }].map(opt => (
+            <button key={opt.id} onClick={() => setEngFilter(opt.id)} style={{ padding: '5px 12px', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: engFilter === opt.id ? 600 : 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: engFilter === opt.id ? '#fff' : 'transparent', color: engFilter === opt.id ? '#0F172A' : '#64748B', boxShadow: engFilter === opt.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
       {loading && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>}
       {error && <p style={s.error}>{error}</p>}
-      {engagements && engagements.length === 0 && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No engagements found.</p>}
-      {engagements && engagements.length > 0 && (
+      {engagements && filtered.length === 0 && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No engagements found.</p>}
+      {engagements && filtered.length > 0 && (
         <div style={s.tableWrap}>
           <table style={s.table}>
-            <thead><tr>{['Engagement ID','Total','Completed','Profiles Sent','First Created',''].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+            <thead><tr>{['Engagement ID','Total','Completed','Progress','Profiles Sent','First Created',''].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
             <tbody>
-              {engagements.map((eng, i) => (
-                <tr key={eng.engagement_id} style={i % 2 === 0 ? s.trEven : {}}>
-                  <td style={s.td}><code style={s.code}>{eng.engagement_id}</code></td>
-                  <td style={s.td}>{eng.total_count}</td>
-                  <td style={s.td}>{eng.completed_count}</td>
-                  <td style={s.td}>{eng.profile_sent_count}</td>
-                  <td style={{ ...s.td, color: '#64748B', fontSize: '0.82rem' }}>{new Date(eng.first_created_at).toLocaleDateString()}</td>
-                  <td style={s.td}><button style={s.sendLinkBtn} onClick={() => setDrillEngId(eng.engagement_id)}>View →</button></td>
-                </tr>
-              ))}
+              {filtered.flatMap((eng, i) => {
+                const pct = eng.total_count > 0 ? Math.round((eng.completed_count / eng.total_count) * 100) : 0;
+                const isExpanded = expandedId === eng.engagement_id;
+                const rows = [
+                  <tr key={eng.engagement_id} style={i % 2 === 0 ? s.trEven : {}}>
+                    <td style={s.td}><code style={s.code}>{eng.engagement_id}</code></td>
+                    <td style={s.td}>{eng.total_count}</td>
+                    <td style={s.td}>{eng.completed_count}</td>
+                    <td style={{ ...s.td, minWidth: 100 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ flex: 1, background: '#E2E8F0', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: '#059669', borderRadius: 99 }} />
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: '#64748B', flexShrink: 0 }}>{pct}%</span>
+                      </div>
+                    </td>
+                    <td style={s.td}>{eng.profile_sent_count}</td>
+                    <td style={{ ...s.td, color: '#64748B', fontSize: '0.82rem' }}>{new Date(eng.first_created_at).toLocaleDateString()}</td>
+                    <td style={s.td}><button style={isExpanded ? s.sendLinkBtnActive : s.sendLinkBtn} onClick={() => setExpandedId(isExpanded ? null : eng.engagement_id)}>{isExpanded ? 'Close' : 'View →'}</button></td>
+                  </tr>,
+                ];
+                if (isExpanded) {
+                  rows.push(
+                    <tr key={`${eng.engagement_id}-cohort`}><td colSpan={7} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}>
+                      <CohortPanel engagementId={eng.engagement_id} onGenerateMore={onGenerateMore} />
+                    </td></tr>
+                  );
+                }
+                return rows;
+              })}
             </tbody>
           </table>
         </div>
@@ -976,45 +1212,6 @@ function RevokeButton({ account, onDone }) {
   return <button style={{ ...s.actionBtn, color: isRevoked ? '#059669' : '#EF4444', borderColor: isRevoked ? '#BBF7D0' : '#FCA5A5' }} onClick={toggle} disabled={loading}>{loading ? '…' : isRevoked ? 'Restore' : 'Revoke'}</button>;
 }
 
-function DeleteButton({ account, onDone }) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  async function confirm() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/accounts/${account.id}`, { method: 'DELETE' });
-      if (res.ok) { setOpen(false); onDone(); }
-    } catch {} finally { setLoading(false); }
-  }
-
-  return (
-    <>
-      <button
-        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', fontSize: '0.78rem', fontWeight: 500, padding: '4px 6px', fontFamily: "'DM Sans', sans-serif", textDecoration: 'underline', textDecorationStyle: 'dotted' }}
-        onClick={() => setOpen(true)}
-        title="Delete account"
-      >
-        Delete
-      </button>
-      {open && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '32px 28px', maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Delete account?</h3>
-            <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6, marginBottom: 24 }}>
-              This will permanently delete <strong>{account.name || 'this account'}</strong>'s account and all associated data. This cannot be undone.
-            </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button style={{ padding: '9px 18px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", color: '#374151' }} onClick={() => setOpen(false)} disabled={loading}>Cancel</button>
-              <button style={{ padding: '9px 18px', background: '#EF4444', border: 'none', borderRadius: 8, fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", color: '#fff', opacity: loading ? 0.7 : 1 }} onClick={confirm} disabled={loading}>{loading ? 'Deleting…' : 'Yes, delete permanently'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
 function InvitePanel({ onClose, onSuccess }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -1099,6 +1296,8 @@ function EditPanel({ account, onClose, onSave }) {
     finally { setLoading(false); }
   }
 
+  const purchases = account.purchases || [];
+
   return (
     <div style={s.editPanel}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -1126,6 +1325,18 @@ function EditPanel({ account, onClose, onSave }) {
           <button style={s.btnSmall} onClick={addLicense}>+ Add</button>
         </div>
       </div>
+      {purchases.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Purchase History</p>
+          {purchases.map((p, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.82rem', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, padding: '6px 10px', marginBottom: 6 }}>
+              <span style={{ flex: 1, fontWeight: 500 }}>{p.product || '—'}</span>
+              {p.amount != null && <span style={{ color: '#059669', fontWeight: 600 }}>${(p.amount / 100).toFixed(2)}</span>}
+              <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>{p.created_at ? new Date(p.created_at).toLocaleDateString() : ''}</span>
+            </div>
+          ))}
+        </div>
+      )}
       {error && <p style={s.error}>{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button style={s.btn} onClick={save} disabled={loading}>{loading ? 'Saving…' : 'Save Changes'}</button>
@@ -1135,6 +1346,18 @@ function EditPanel({ account, onClose, onSave }) {
   );
 }
 
+function accountType(acc) {
+  if ((acc.users || []).length > 1) return 'enterprise';
+  if ((acc.purchases || []).length > 0) return 'paid';
+  return 'free';
+}
+
+const accTypeBadge = {
+  free: { background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', fontWeight: 600 },
+  paid: { background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', fontWeight: 600 },
+  enterprise: { background: '#1E3A5F', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', fontWeight: 600 },
+};
+
 function AccountsSection() {
   const [accounts, setAccounts] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1142,6 +1365,9 @@ function AccountsSection() {
   const [showInvite, setShowInvite] = useState(false);
   const [editId, setEditId] = useState(null);
   const [actionMsg, setActionMsg] = useState('');
+  const [accSearch, setAccSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [tierFilter, setTierFilter] = useState('');
 
   async function load() {
     setLoading(true); setError('');
@@ -1156,23 +1382,33 @@ function AccountsSection() {
 
   useEffect(() => { load(); }, []);
 
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
   const stats = accounts ? {
     total: accounts.length,
-    basic: accounts.filter(a => !a.tier || a.tier === 'basic').length,
-    premium: accounts.filter(a => a.tier === 'premium').length,
-    activeThisMonth: accounts.filter(a => (a.users || []).some(u => u.last_login_at && new Date(u.last_login_at) > thirtyDaysAgo)).length,
+    free: accounts.filter(a => accountType(a) === 'free').length,
+    paid: accounts.filter(a => accountType(a) === 'paid').length,
+    enterprise: accounts.filter(a => accountType(a) === 'enterprise').length,
   } : null;
+
+  const filtered = (accounts || []).filter(acc => {
+    const q = accSearch.toLowerCase();
+    if (q) {
+      const name = (acc.name || '').toLowerCase();
+      const email = ((acc.users || [])[0]?.email || '').toLowerCase();
+      if (!name.includes(q) && !email.includes(q)) return false;
+    }
+    if (typeFilter && accountType(acc) !== typeFilter) return false;
+    if (tierFilter && (acc.tier || 'basic') !== tierFilter) return false;
+    return true;
+  });
 
   return (
     <div>
       {stats && (
         <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
           <StatCard label="Total Accounts" value={stats.total} color="#059669" />
-          <StatCard label="Basic" value={stats.basic} color="#64748B" />
-          <StatCard label="Premium" value={stats.premium} color="#D97706" />
-          <StatCard label="Active (30d)" value={stats.activeThisMonth} color="#2563EB" />
+          <StatCard label="Free" value={stats.free} color="#64748B" />
+          <StatCard label="Paid" value={stats.paid} color="#059669" />
+          <StatCard label="Enterprise" value={stats.enterprise} color="#1E3A5F" />
         </div>
       )}
       <div style={s.panel}>
@@ -1184,22 +1420,42 @@ function AccountsSection() {
         {showInvite && <InvitePanel onClose={() => setShowInvite(false)} onSuccess={msg => { setActionMsg(msg); setShowInvite(false); load(); }} />}
         {loading && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>}
         {error && <p style={s.error}>{error}</p>}
+        {accounts && (
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input style={{ ...s.input, maxWidth: 220 }} placeholder="Search name or email…" value={accSearch} onChange={e => setAccSearch(e.target.value)} />
+            <select style={{ ...s.select, maxWidth: 160 }} value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+              <option value="">All Types</option>
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+            <select style={{ ...s.select, maxWidth: 140 }} value={tierFilter} onChange={e => setTierFilter(e.target.value)}>
+              <option value="">All Tiers</option>
+              <option value="basic">Basic</option>
+              <option value="premium">Premium</option>
+            </select>
+            {(accSearch || typeFilter || tierFilter) && <button style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.875rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", padding: '4px 8px' }} onClick={() => { setAccSearch(''); setTypeFilter(''); setTierFilter(''); }}>Clear</button>}
+            <span style={{ fontSize: '0.82rem', color: '#94A3B8', marginLeft: 'auto' }}>{filtered.length} of {accounts.length}</span>
+          </div>
+        )}
         {accounts && accounts.length === 0 && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No accounts yet.</p>}
         {accounts && accounts.length > 0 && (
           <div style={s.tableWrap}>
             <table style={s.table}>
-              <thead><tr>{['Name','Email','Tier','Provider','Status','Last Login','Created','Actions'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+              <thead><tr>{['Name','Email','Type','Tier','Provider','Status','Last Login','Created','Actions'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
               <tbody>
-                {accounts.flatMap((acc, i) => {
+                {filtered.flatMap((acc, i) => {
                   const primaryUser = (acc.users || [])[0];
                   const provider = primaryUser?.provider || 'email';
                   const lastLogin = primaryUser?.last_login_at ? new Date(primaryUser.last_login_at).toLocaleDateString() : 'Never';
                   const created = new Date(acc.created_at).toLocaleDateString();
                   const status = acc.status || 'active';
+                  const type = accountType(acc);
                   const mainRow = (
                     <tr key={acc.id} style={i % 2 === 0 ? s.trEven : {}}>
                       <td style={{ ...s.td, fontWeight: 600 }}>{acc.name}</td>
                       <td style={{ ...s.td, fontSize: '0.82rem' }}>{primaryUser?.email || '—'}</td>
+                      <td style={s.td}><span style={accTypeBadge[type]}>{type}</span></td>
                       <td style={s.td}><span style={acc.tier === 'premium' ? s.badgePremium : s.badgeBasic}>{acc.tier || 'basic'}</span></td>
                       <td style={s.td}><span style={provider === 'google' ? s.badgeGoogle : s.badgeEmail}>{provider}</span></td>
                       <td style={s.td}><span style={status === 'active' ? s.badgeActive : s.badgeRevoked}>{status}</span></td>
@@ -1210,14 +1466,14 @@ function AccountsSection() {
                           <button style={s.actionBtn} onClick={() => setEditId(editId === acc.id ? null : acc.id)}>{editId === acc.id ? 'Close' : 'Edit'}</button>
                           {provider === 'email' ? <ResendInviteButton accountId={acc.id} /> : <span style={{ color: '#94A3B8', fontSize: '0.875rem' }}>—</span>}
                           <RevokeButton account={acc} onDone={() => { load(); setEditId(null); }} />
-                          <DeleteButton account={acc} onDone={() => { setAccounts(prev => prev.filter(a => a.id !== acc.id)); setEditId(null); setActionMsg('Account deleted.'); }} />
                         </div>
                       </td>
                     </tr>
                   );
                   if (editId !== acc.id) return [mainRow];
-                  return [mainRow, <tr key={`${acc.id}-edit`}><td colSpan={8} style={{ padding: 0 }}><EditPanel account={acc} onClose={() => setEditId(null)} onSave={() => { load(); setEditId(null); }} /></td></tr>];
+                  return [mainRow, <tr key={`${acc.id}-edit`}><td colSpan={9} style={{ padding: 0 }}><EditPanel account={acc} onClose={() => setEditId(null)} onSave={() => { load(); setEditId(null); }} /></td></tr>];
                 })}
+                {filtered.length === 0 && <tr><td colSpan={9} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>No accounts match your filter.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -1233,6 +1489,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [authed, setAuthed] = useState(false);
   const [active, setActive] = useState('tokens');
+  const [engPrefill, setEngPrefill] = useState('');
 
   useEffect(() => {
     fetch('/api/admin/me')
@@ -1242,6 +1499,11 @@ export default function AdminDashboard() {
 
   function signOut() {
     fetch('/api/admin/logout', { method: 'POST' }).then(() => router.push('/admin/login'));
+  }
+
+  function handleGenerateMore(engId) {
+    setEngPrefill(engId);
+    setActive('tokens');
   }
 
   if (!authed) return null;
@@ -1258,12 +1520,12 @@ export default function AdminDashboard() {
         <main style={{ marginLeft: 220, flex: 1, background: '#F8FAFC', minHeight: '100vh', padding: '36px 32px' }}>
           {active === 'tokens' && (
             <>
-              <GeneratePanel />
+              <GeneratePanel prefillEngId={engPrefill} />
               <div style={{ marginTop: 32 }}><StatusPanel /></div>
             </>
           )}
           {active === 'assessments' && <AssessmentsPanel />}
-          {active === 'engagements' && <EngagementsPanel />}
+          {active === 'engagements' && <EngagementsPanel onGenerateMore={handleGenerateMore} />}
           {active === 'career' && <CareerReportsSection />}
           {active === 'accounts' && <AccountsSection />}
           {active === 'settings' && (
