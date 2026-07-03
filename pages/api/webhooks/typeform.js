@@ -8,7 +8,7 @@
  */
 
 import crypto from 'crypto';
-import { dbInsert } from '../../../lib/supabase';
+import { dbInsert, dbGet, dbPatch } from '../../../lib/supabase';
 import { determineType } from '../../../lib/profiles';
 
 export const config = { api: { bodyParser: false } };
@@ -117,6 +117,21 @@ export default async function handler(req, res) {
       y_score: isNaN(y_score) ? null : y_score,
       submitted_at: new Date().toISOString(),
     });
+
+    if (token) {
+      try {
+        const tokenRows = await dbGet('tokens', { token });
+        if (tokenRows.length) {
+          const tr = tokenRows[0];
+          const patch = {};
+          if (tr.name == null && name) patch.name = name;
+          if (tr.email == null && email) patch.email = email;
+          if (Object.keys(patch).length) await dbPatch('tokens', { token }, patch);
+        }
+      } catch (patchErr) {
+        console.error('[typeform webhook] token backfill failed:', patchErr);
+      }
+    }
 
     return res.status(200).json({ ok: true, type });
   } catch (err) {
