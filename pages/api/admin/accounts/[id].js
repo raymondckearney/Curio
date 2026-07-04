@@ -84,6 +84,9 @@ export default async function handler(req, res) {
         dbPatch('tokens', { created_for_email: email }, { created_for_email: null }).catch(e => console.error('[DELETE] token patch failed:', e.message))
       ));
 
+      // Null out account_id on tokens (FK constraint: tokens_account_id_fkey)
+      await dbPatch('tokens', { account_id: id }, { account_id: null }).catch(e => console.error('[DELETE] tokens account_id null:', e.message));
+
       // Delete child rows first (order matters for FK constraints)
       await dbDelete('tool_sessions', { account_id: id }).catch(e => console.error('[DELETE] tool_sessions:', e.message));
       await dbDelete('account_licenses', { account_id: id }).catch(e => console.error('[DELETE] account_licenses:', e.message));
