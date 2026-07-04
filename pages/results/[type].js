@@ -6,7 +6,7 @@ import profiles from '../../lib/profiles';
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { type, name, token } = router.query;
+  const { type, name: urlName, email: urlEmail, token } = router.query;
 
   useEffect(() => {
     if (!router.isReady || !token || !type) return;
@@ -15,9 +15,12 @@ export default function ResultsPage() {
       .then(r => r.ok ? r.json() : null)
       .then(info => {
         if (!info || info.used) return; // already consumed or not found — do nothing
+        // Prefer DB-stored quiz data; fall back to URL params piped from Typeform
+        const sigName = info.name || urlName || '';
+        const sigEmail = info.email || urlEmail || '';
         const params = new URLSearchParams({ token, tier: info.granted_tier || 'basic' });
-        if (info.name) params.set('name', info.name);
-        if (info.email) params.set('email', info.email);
+        if (sigName) params.set('name', sigName);
+        if (sigEmail) params.set('email', sigEmail);
         router.replace(`/signup?${params.toString()}`);
       })
       .catch(() => {});
@@ -48,7 +51,7 @@ export default function ResultsPage() {
     );
   }
 
-  const displayName = name ? String(name) : null;
+  const displayName = urlName ? String(urlName) : null;
   const pageTitle = displayName
     ? `${displayName}'s MindPrint Profile — ${profile.label}`
     : `MindPrint Profile — ${profile.label}`;
@@ -243,7 +246,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
-  const displayName_ = name ? String(name) : null;
+  const displayName_ = urlName ? String(urlName) : null;
 
   return (
     <>

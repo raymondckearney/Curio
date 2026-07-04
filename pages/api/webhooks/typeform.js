@@ -86,8 +86,17 @@ export default async function handler(req, res) {
     const y_score = hidden.y_score != null ? parseInt(hidden.y_score, 10)
                   : getVariable('y_score') ?? getAnswerNumber('y_score');
 
-    const name  = hidden.participant_name  || hidden.name  || null;
-    const email = hidden.participant_email || hidden.email || null;
+    // Extract name/email from hidden fields first, then fall back to form answers
+    function getAnswerText(ref) {
+      const answer = answers.find(a => a.field?.ref === ref);
+      return answer?.text || null;
+    }
+    const emailAnswer = answers.find(a => a.type === 'email');
+    const nameFromAnswers = getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name') || getAnswerText('participant_name') || null;
+    const emailFromAnswers = emailAnswer?.email || getAnswerText('email') || getAnswerText('participant_email') || null;
+
+    const name  = hidden.participant_name  || hidden.name  || nameFromAnswers  || null;
+    const email = hidden.participant_email || hidden.email || emailFromAnswers || null;
     const token = hidden.participant_token || hidden.token || null;
 
     // Abort with a clear error if scores are missing — don't silently route to wrong profile
@@ -124,6 +133,10 @@ export default async function handler(req, res) {
         if (tokenRows.length) {
           const tr = tokenRows[0];
           const patch = {};
+          // Always write quiz-submitted name/email to created_for_* columns for signup prefill
+          if (name) patch.created_for_name = name;
+          if (email) patch.created_for_email = email;
+          // Backfill base name/email only if not already set
           if (tr.name == null && name) patch.name = name;
           if (tr.email == null && email) patch.email = email;
           if (Object.keys(patch).length) await dbPatch('tokens', { token }, patch);
