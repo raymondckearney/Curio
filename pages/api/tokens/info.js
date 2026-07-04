@@ -12,8 +12,8 @@ export default async function handler(req, res) {
   const row = rows[0];
   return res.status(200).json({
     granted_tier: row.granted_tier || 'basic',
-    name: row.name || '',
-    email: row.email || '',
+    name: row.created_for_name || row.name || '',
+    email: row.created_for_email || row.email || '',
     used: row.used || false,
   });
 }
