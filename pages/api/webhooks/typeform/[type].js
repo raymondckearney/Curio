@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     const hidden = formResponse.hidden || {};
     const answers = formResponse.answers || [];
 
-    console.log('[typeform webhook] received', { type, hidden, answerCount: answers.length });
+    console.log('[typeform webhook] received', { type, hidden, answers: answers.map(a => ({ ref: a.field?.ref, type: a.type, text: a.text, email: a.email })) });
 
     function getAnswerNumber(ref) {
       const answer = answers.find(a => a.field && a.field.ref === ref);
@@ -83,7 +83,8 @@ export default async function handler(req, res) {
       return answer?.text || null;
     }
     const emailAnswer = answers.find(a => a.type === 'email');
-    const nameFromAnswers = getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name') || getAnswerText('participant_name') || null;
+    const firstTextAnswer = answers.find(a => a.type === 'text')?.text || null;
+    const nameFromAnswers = getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name') || getAnswerText('participant_name') || firstTextAnswer || null;
     const emailFromAnswers = emailAnswer?.email || getAnswerText('email') || null;
 
     const name  = hidden.participant_name  || hidden.name  || nameFromAnswers  || null;

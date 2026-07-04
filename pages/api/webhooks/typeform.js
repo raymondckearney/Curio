@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     console.log('[typeform webhook] received', {
       hidden,
       variables: variables.map(v => ({ key: v.key, type: v.type, value: v.number ?? v.text })),
-      answerCount: answers.length,
+      answers: answers.map(a => ({ ref: a.field?.ref, type: a.type, text: a.text, email: a.email })),
     });
 
     // Extract scores — check variables first, then hidden fields, then answer refs
@@ -92,7 +92,9 @@ export default async function handler(req, res) {
       return answer?.text || null;
     }
     const emailAnswer = answers.find(a => a.type === 'email');
-    const nameFromAnswers = getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name') || getAnswerText('participant_name') || null;
+    // Try common refs; last resort: first text-type answer (usually the name field)
+    const firstTextAnswer = answers.find(a => a.type === 'text')?.text || null;
+    const nameFromAnswers = getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name') || getAnswerText('participant_name') || firstTextAnswer || null;
     const emailFromAnswers = emailAnswer?.email || getAnswerText('email') || getAnswerText('participant_email') || null;
 
     const name  = hidden.participant_name  || hidden.name  || nameFromAnswers  || null;
