@@ -1224,20 +1224,28 @@ function RevokeButton({ account, onDone }) {
 function DeleteButton({ account, onDone }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
 
   async function confirm() {
-    setLoading(true);
+    setLoading(true); setErr('');
     try {
       const res = await fetch(`/api/admin/accounts/${account.id}`, { method: 'DELETE' });
-      if (res.ok) { setOpen(false); onDone(); }
-    } catch {} finally { setLoading(false); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setErr(data.error || `Error ${res.status}`); return; }
+      setOpen(false);
+      onDone();
+    } catch (e) {
+      setErr(e.message || 'Network error');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <>
       <button
         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', fontSize: '0.78rem', fontWeight: 500, padding: '4px 6px', fontFamily: "'DM Sans', sans-serif", textDecoration: 'underline', textDecorationStyle: 'dotted' }}
-        onClick={() => setOpen(true)}
+        onClick={() => { setOpen(true); setErr(''); }}
         title="Delete account"
       >
         Delete
@@ -1249,6 +1257,7 @@ function DeleteButton({ account, onDone }) {
             <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6, marginBottom: 24 }}>
               This will permanently delete <strong>{account.name || 'this account'}</strong>&apos;s account and all associated data. This cannot be undone.
             </p>
+            {err && <p style={{ fontSize: '0.82rem', color: '#DC2626', marginBottom: 12, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 6, padding: '8px 12px' }}>{err}</p>}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button style={{ padding: '9px 18px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", color: '#374151' }} onClick={() => setOpen(false)} disabled={loading}>Cancel</button>
               <button style={{ padding: '9px 18px', background: '#EF4444', border: 'none', borderRadius: 8, fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", color: '#fff', opacity: loading ? 0.7 : 1 }} onClick={confirm} disabled={loading}>{loading ? 'Deleting…' : 'Yes, delete permanently'}</button>

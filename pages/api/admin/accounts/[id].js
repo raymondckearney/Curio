@@ -79,15 +79,19 @@ export default async function handler(req, res) {
       const users = await dbQuery('client_users', { account_id: `eq.${id}`, select: 'id,email' });
       const emails = users.map(u => u.email).filter(Boolean);
 
-      // Null out created_for_email on tokens linked to this account's users
+      // Null out created_for_email on tokens linked to this account's users (best-effort)
       await Promise.all(emails.map(email =>
-        dbPatch('tokens', { created_for_email: email }, { created_for_email: null }).catch(() => {})
+        dbPatch('tokens', { created_for_email: email }, { created_for_email: null }).catch(e => console.error('[DELETE] token patch failed:', e.message))
       ));
 
-      // Delete related rows, then the account itself
-      await dbDelete('tool_sessions', { account_id: id }).catch(() => {});
-      await Promise.all(users.map(u => dbDelete('client_users', { id: u.id })));
-      await dbDelete('account_licenses', { account_id: id }).catch(() => {});
+      // Delete child rows first (order matters for FK constraints)
+      await dbDelete('tool_sessions', { account_id: id }).catch(e => console.error('[DELETE] tool_sessions:', e.message));
+      await dbDelete('account_licenses', { account_id: id }).catch(e => console.error('[DELETE] account_licenses:', e.message));
+      if (users.length) {
+        await Promise.all(users.map(u => dbDelete('client_users', { id: u.id }).catch(e => console.error('[DELETE] client_users:', e.message))));
+      }
+
+      // Delete the account itself
       await dbDelete('client_accounts', { id });
 
       return res.status(200).json({ success: true });
