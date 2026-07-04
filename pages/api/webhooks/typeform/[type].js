@@ -77,15 +77,31 @@ export default async function handler(req, res) {
       return null;
     }
 
-    // Extract name/email from hidden fields first, then fall back to form answers
+    // Extract name/email: hidden fields → match by field title in definition → common refs → first text answer
+    const definition = formResponse.definition || {};
+    const defFields = definition.fields || [];
+
     function getAnswerText(ref) {
       const answer = answers.find(a => a.field?.ref === ref);
       return answer?.text || null;
     }
+
+    function getAnswerByTitle(keyword) {
+      const field = defFields.find(f => f.title?.toLowerCase().includes(keyword));
+      if (!field) return null;
+      const answer = answers.find(a => a.field?.ref === field.ref || a.field?.id === field.id);
+      return answer?.text || answer?.email || null;
+    }
+
     const emailAnswer = answers.find(a => a.type === 'email');
     const firstTextAnswer = answers.find(a => a.type === 'text')?.text || null;
-    const nameFromAnswers = getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name') || getAnswerText('participant_name') || firstTextAnswer || null;
-    const emailFromAnswers = emailAnswer?.email || getAnswerText('email') || null;
+
+    const nameFromAnswers = getAnswerByTitle('name')
+      || getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name') || getAnswerText('participant_name')
+      || firstTextAnswer || null;
+    const emailFromAnswers = emailAnswer?.email
+      || getAnswerByTitle('email')
+      || getAnswerText('email') || null;
 
     const name  = hidden.participant_name  || hidden.name  || nameFromAnswers  || null;
     const email = hidden.participant_email || hidden.email || emailFromAnswers || null;
