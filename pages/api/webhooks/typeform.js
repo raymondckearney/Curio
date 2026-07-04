@@ -105,15 +105,17 @@ export default async function handler(req, res) {
     const emailAnswer = answers.find(a => a.type === 'email');
     const firstTextAnswer = answers.find(a => a.type === 'text')?.text || null;
 
-    const nameFromAnswers = getAnswerByTitle('name')
-      || getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name') || getAnswerText('participant_name')
+    // Name: always prefer what the user typed in the form over hidden field placeholders like "Individual"
+    const nameFromAnswers = getAnswerText('bd818c0c-5c80-47bb-95a2-b4bdc530f7a8')
+      || getAnswerByTitle('name')
+      || getAnswerText('name') || getAnswerText('full_name') || getAnswerText('first_name')
       || firstTextAnswer || null;
     const emailFromAnswers = emailAnswer?.email
       || getAnswerByTitle('email')
       || getAnswerText('email') || getAnswerText('participant_email') || null;
 
-    const name  = hidden.participant_name  || hidden.name  || nameFromAnswers  || null;
-    const email = hidden.participant_email || hidden.email || emailFromAnswers || null;
+    const name  = nameFromAnswers || hidden.participant_name || hidden.name || null;
+    const email = emailFromAnswers || hidden.participant_email || hidden.email || null;
     const token = hidden.participant_token || hidden.token || null;
 
     // Abort with a clear error if scores are missing — don't silently route to wrong profile
