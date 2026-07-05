@@ -2,6 +2,8 @@ import { dbInsert } from '../../../lib/supabase';
 import { getAdminSession } from '../../../lib/adminSession';
 import { createSendLinksTask } from '../../../lib/notion';
 
+const ALL_TOOLS = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -11,12 +13,23 @@ export default async function handler(req, res) {
   if (!hasBearer && !hasCookie) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const { participants, purpose, granted_tier, engagement_id, expires_at } = req.body;
+    const { participants, purpose, granted_tier, granted_tools, engagement_id, expires_at } = req.body;
     if (!participants?.length || !purpose || !engagement_id) {
       return res.status(400).json({ error: 'participants, purpose, and engagement_id are required' });
     }
 
-    const tier = (granted_tier === 'premium') ? 'premium' : 'basic';
+    // Resolve tools: explicit list wins; otherwise derive from tier
+    let tools;
+    if (Array.isArray(granted_tools) && granted_tools.length) {
+      tools = granted_tools.filter(t => ALL_TOOLS.includes(t));
+    } else if (granted_tier === 'premium') {
+      tools = [...ALL_TOOLS];
+    } else {
+      tools = ['assessment_tokens'];
+    }
+
+    // Derive tier from tools for backwards compat
+    const tier = tools.length === ALL_TOOLS.length ? 'premium' : 'basic';
 
     const rows = participants.map(({ name, email, company, role }) => ({
       token: crypto.randomUUID(),
@@ -26,6 +39,7 @@ export default async function handler(req, res) {
       role: role || null,
       purpose,
       granted_tier: tier,
+      granted_tools: tools,
       engagement_id,
       expires_at: expires_at || null,
       used: false,

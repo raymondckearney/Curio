@@ -8,8 +8,7 @@ export default function PortalHistory() {
   const [me, setMe] = useState(null);
   const [sessions, setSessions] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isSelfServe, setIsSelfServe] = useState(false);
-  const [hasFitToken, setHasFitToken] = useState(false);
+  const [licenses, setLicenses] = useState([]);
 
   useEffect(() => {
     Promise.all([
@@ -19,8 +18,7 @@ export default function PortalHistory() {
     ])
       .then(([meData, dash, hist]) => {
         setMe(meData);
-        setIsSelfServe(!dash?.licenses?.length);
-        setHasFitToken(!!dash?.hasFitToken);
+        setLicenses(dash?.licenses || []);
         setSessions(hist.sessions || []);
       })
       .catch(() => router.replace('/portal/login'))
@@ -42,7 +40,7 @@ export default function PortalHistory() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.page}>
-        <PortalNav me={me} onLogout={logout} active="analyzer-history" isSelfServe={isSelfServe} hasFitToken={hasFitToken} />
+        <PortalNav me={me} onLogout={logout} active="analyzer-history" licenses={licenses} />
 
         <main style={s.main}>
           <div style={{ marginBottom: 28 }}>
