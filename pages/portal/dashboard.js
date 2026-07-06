@@ -71,6 +71,14 @@ export default function PortalDashboard() {
                     {profile.signal.replace(/^"|"$/g, '')}
                     <span style={{ color, fontSize: '1.2rem', lineHeight: 1, marginLeft: 4 }}>"</span>
                   </blockquote>
+                  <div style={{ marginTop: 24 }}>
+                    <Link
+                      href={`/results/${typeKey}`}
+                      style={{ ...s.pdfLink, borderColor: `${color}40`, color }}
+                    >
+                      ↓ Download Full Profile PDF
+                    </Link>
+                  </div>
                 </div>
               </div>
 
@@ -277,7 +285,7 @@ const s = {
   heroType: { fontFamily: "'Caveat', cursive", fontSize: '3.4rem', fontWeight: 700, lineHeight: 1, marginBottom: 8 },
   heroTagline: { fontSize: '1.05rem', color: '#475569', fontWeight: 500, marginBottom: 24, letterSpacing: '0.01em' },
   signal: { margin: 0, padding: '14px 20px', borderLeft: '3px solid', background: 'rgba(255,255,255,0.6)', borderRadius: '0 8px 8px 0', fontStyle: 'italic', fontSize: '0.975rem', color: '#374151', lineHeight: 1.7, maxWidth: 600 },
-  pdfLink: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', padding: '8px 16px', border: '1px solid', borderRadius: 8, background: 'rgba(255,255,255,0.7)' },
+  pdfLink: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', padding: '8px 16px', border: '1px solid', borderRadius: 8, background: 'rgba(255,255,255,0.7)', transition: 'opacity 0.15s' },
 
   contentWrap: { maxWidth: 760, padding: '36px 40px 64px' },
   contentCard: { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '28px 32px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' },
