@@ -51,7 +51,8 @@ export default function ResultsPage() {
     );
   }
 
-  const displayName = urlName ? String(urlName) : null;
+  const rawName = urlName ? String(urlName) : null;
+  const displayName = rawName && rawName.toLowerCase() !== 'individual' ? rawName : null;
   const pageTitle = displayName
     ? `${displayName}'s MindPrint Profile — ${profile.label}`
     : `MindPrint Profile — ${profile.label}`;
@@ -246,7 +247,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
-  const displayName_ = urlName ? String(urlName) : null;
+  const displayName_ = rawName && rawName.toLowerCase() !== 'individual' ? rawName : null;
 
   return (
     <>
