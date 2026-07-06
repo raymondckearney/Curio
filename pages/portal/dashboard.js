@@ -278,7 +278,7 @@ const s = {
   main: { marginLeft: 220, flex: 1, minHeight: '100vh' },
 
   heroBand: { padding: '52px 40px 44px' },
-  heroInner: { maxWidth: 760 },
+  heroInner: {},
   heroMeta: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 },
   profilePill: { fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', padding: '4px 12px', borderRadius: 99, textTransform: 'uppercase' },
   heroDate: { fontSize: '0.8rem', color: '#94A3B8', fontWeight: 500 },
@@ -287,7 +287,7 @@ const s = {
   signal: { margin: 0, padding: '14px 20px', borderLeft: '3px solid', background: 'rgba(255,255,255,0.6)', borderRadius: '0 8px 8px 0', fontStyle: 'italic', fontSize: '0.975rem', color: '#374151', lineHeight: 1.7, maxWidth: 600 },
   pdfLink: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', padding: '8px 16px', border: '1px solid', borderRadius: 8, background: 'rgba(255,255,255,0.7)', transition: 'opacity 0.15s' },
 
-  contentWrap: { maxWidth: 760, padding: '36px 40px 64px' },
+  contentWrap: { padding: '36px 40px 64px' },
   contentCard: { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '28px 32px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' },
   cardLabel: { fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 },
   prose: { fontSize: '0.95rem', color: '#374151', lineHeight: 1.8, margin: 0 },
