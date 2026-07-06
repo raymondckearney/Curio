@@ -2,20 +2,21 @@ import Link from 'next/link';
 
 const NAV_ITEMS = [
   { key: 'dashboard',        href: '/portal/dashboard',        label: 'My Profile',          alwaysShow: true },
-  { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',   license: 'assessment_tokens' },
-  { key: 'results',          href: '/portal/results',          label: 'Assessment Results',  license: 'assessment_tokens' },
+  { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',   license: 'assessment_tokens', enterpriseOnly: true },
+  { key: 'results',          href: '/portal/results',          label: 'Assessment Results',  license: 'assessment_tokens', enterpriseOnly: true },
   { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',       license: 'role_analyzer' },
   { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance',     license: 'career_guidance' },
   { key: 'jd',               href: '/portal/tools/jd',        label: 'JD Analyzer',         license: 'jd_analyzer' },
   { key: 'analyzer-history', href: '/portal/analyzer-history', label: 'Analyzer History',    alwaysShow: true },
 ];
 
-export default function PortalSidebar({ me, onLogout, active, licenses = [] }) {
+export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false }) {
   const licenseTypes = new Set(licenses.map(l => l.type));
 
-  const visibleItems = NAV_ITEMS.filter(item =>
-    item.alwaysShow || licenseTypes.has(item.license)
-  );
+  const visibleItems = NAV_ITEMS.filter(item => {
+    if (item.enterpriseOnly && isIndividual) return false;
+    return item.alwaysShow || licenseTypes.has(item.license);
+  });
 
   return (
     <div style={sb.sidebar}>

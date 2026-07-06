@@ -40,7 +40,7 @@ export default function PortalHistory() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.page}>
-        <PortalNav me={me} onLogout={logout} active="analyzer-history" licenses={licenses} />
+        <PortalNav me={me} onLogout={logout} active="analyzer-history" licenses={licenses} isIndividual={false} />
 
         <main style={s.main}>
           <div style={{ marginBottom: 28 }}>

@@ -31,6 +31,7 @@ export default function PortalDashboard() {
 
   const licenses = data?.licenses || [];
   const assessment = data?.myAssessment;
+  const isIndividual = !!assessment;
   const hasRoleAnalyzer = data?.hasRoleAnalyzer;
   const hasAssessment = data?.hasAssessment;
   const { total = 0, used = 0, available = 0 } = data?.tokenStats || {};
@@ -49,7 +50,7 @@ export default function PortalDashboard() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.layout}>
-        <PortalSidebar me={me} onLogout={logout} active="dashboard" licenses={licenses} />
+        <PortalSidebar me={me} onLogout={logout} active="dashboard" licenses={licenses} isIndividual={isIndividual} />
         <main style={s.main}>
 
           {/* My Profile section */}
@@ -70,15 +71,6 @@ export default function PortalDashboard() {
                     {profile.signal.replace(/^"|"$/g, '')}
                     <span style={{ color, fontSize: '1.2rem', lineHeight: 1, marginLeft: 4 }}>"</span>
                   </blockquote>
-                  <div style={{ marginTop: 24 }}>
-                    <a
-                      href={`/profiles/MindPrint_Profile_${typeKey.toUpperCase().replace(/-/g, '_')}.pdf`}
-                      download
-                      style={{ ...s.pdfLink, borderColor: `${color}40`, color }}
-                    >
-                      ↓ Download Full Profile PDF
-                    </a>
-                  </div>
                 </div>
               </div>
 
@@ -97,16 +89,85 @@ export default function PortalDashboard() {
                     <p style={s.prose}>{profile.energizes}</p>
                   </div>
                 </div>
+                {profile.drains?.length > 0 && (
+                  <div style={s.contentCard}>
+                    <div style={{ ...s.cardLabel, color: '#64748B' }}>What Drains You</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {profile.drains.map((d, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#CBD5E1', flexShrink: 0, marginTop: 7 }} />
+                          <span style={{ fontSize: '0.925rem', color: '#475569', lineHeight: 1.65 }}>{d}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {profile.blindSpot && (
+                  <div style={s.contentCard}>
+                    <div style={{ ...s.cardLabel, color: '#64748B' }}>Your Blind Spot</div>
+                    <p style={s.prose}>{profile.blindSpot}</p>
+                  </div>
+                )}
+                {profile.friction && (
+                  <div style={s.contentCard}>
+                    <div style={{ ...s.cardLabel, color: '#64748B' }}>Common Sources of Friction</div>
+                    <p style={s.prose}>{profile.friction}</p>
+                  </div>
+                )}
+                {profile.howToWorkWithYou && (
+                  <div style={s.contentCard}>
+                    <div style={{ ...s.cardLabel, color }}>How to Work With You</div>
+                    <p style={s.prose}>{profile.howToWorkWithYou}</p>
+                  </div>
+                )}
+                {profile.valueAreas?.length > 0 && (
+                  <div style={s.contentCard}>
+                    <div style={{ ...s.cardLabel, color }}>Where You Add the Most Value</div>
+                    <div style={s.roleGrid}>
+                      {profile.valueAreas.map((v, i) => (
+                        <div key={i} style={{ ...s.roleChip, borderColor: `${color}30`, background: `${color}08` }}>
+                          <span style={{ ...s.roleDot, background: color }} />{v}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div style={s.contentCard}>
                   <div style={{ ...s.cardLabel, color }}>Roles Where You Thrive</div>
                   <div style={s.roleGrid}>
-                    {profile.roles.slice(0, 6).map((r, i) => (
+                    {profile.roles.map((r, i) => (
                       <div key={i} style={{ ...s.roleChip, borderColor: `${color}30`, background: `${color}08` }}>
                         <span style={{ ...s.roleDot, background: color }} />{r}
                       </div>
                     ))}
                   </div>
                 </div>
+                {profile.areasToWatch?.length > 0 && (
+                  <div style={s.contentCard}>
+                    <div style={{ ...s.cardLabel, color: '#64748B' }}>Watch For</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {profile.areasToWatch.map((a, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                          <span style={{ fontSize: '0.85rem', color: '#94A3B8', flexShrink: 0, marginTop: 2 }}>◆</span>
+                          <span style={{ fontSize: '0.925rem', color: '#475569', lineHeight: 1.65 }}>{a}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {profile.partners?.length > 0 && (
+                  <div style={s.contentCard}>
+                    <div style={{ ...s.cardLabel, color }}>Best Collaborators</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {profile.partners.map((p, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: `${color}15`, color, border: `1px solid ${color}30`, whiteSpace: 'nowrap', flexShrink: 0 }}>{p.type}</span>
+                          <span style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>{p.reason}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {hasRoleAnalyzer && (
                   <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
@@ -183,8 +244,8 @@ export default function PortalDashboard() {
 }
 
 // Keep PortalNav export for backward-compat during transition — sidebar pages import it
-export function PortalNav({ me, onLogout, active, licenses = [] }) {
-  return <PortalSidebar me={me} onLogout={onLogout} active={active} licenses={licenses} />;
+export function PortalNav({ me, onLogout, active, licenses = [], isIndividual = false }) {
+  return <PortalSidebar me={me} onLogout={onLogout} active={active} licenses={licenses} isIndividual={isIndividual} />;
 }
 
 function StatCard({ label, value, sub, color }) {
