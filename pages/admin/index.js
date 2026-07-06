@@ -111,7 +111,8 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
   const isCareer = purpose === 'career';
   const [to, setTo] = useState(participantEmail || '');
   const [subject, setSubject] = useState(isCareer ? "Your Career Guidance Tool Invitation" : "You're invited to take the MindPrint™ Assessment");
-  const [message, setMessage] = useState(buildDefaultMessage(participantName || 'there', tokenUrl, purpose));
+  const safeName = (participantName && participantName.toLowerCase() !== 'individual') ? participantName : 'there';
+  const [message, setMessage] = useState(buildDefaultMessage(safeName, tokenUrl, purpose));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
