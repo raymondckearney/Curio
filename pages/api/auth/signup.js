@@ -94,6 +94,39 @@ export default async function handler(req, res) {
             expires_at: tr.expires_at || null,
           })),
         ]);
+
+        // Send assessment completion notification
+        try {
+          if (process.env.RESEND_API_KEY) {
+            const assessmentRows = await dbGet('assessments', { token: assessmentToken }).catch(() => []);
+            const assessment = assessmentRows[0];
+            const profileType = assessment?.type || '—';
+            const completedAt = new Date(usedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/New_York' });
+            const resend = new Resend(process.env.RESEND_API_KEY);
+            await resend.emails.send({
+              from: 'Curio <notifications@choosecurio.com>',
+              to: 'raymondckearney@gmail.com',
+              subject: `MindPrint™ Assessment Completed — ${name.trim()}`,
+              html: `
+                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#0F172A">
+                  <h2 style="margin-bottom:4px">MindPrint™ Assessment Completed</h2>
+                  <p style="color:#64748B;margin-top:0">A participant has finished their assessment and created an account.</p>
+                  <table style="width:100%;border-collapse:collapse;margin:24px 0;font-size:0.95rem">
+                    <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B;width:40%">Participant</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;font-weight:600">${name.trim()}</td></tr>
+                    <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B">Email</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0">${normalEmail}</td></tr>
+                    <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B">MindPrint™ Profile</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;font-weight:600;text-transform:uppercase;color:#059669">${profileType}</td></tr>
+                    <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B">Engagement</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0">${tr.engagement_id || '—'}</td></tr>
+                    <tr><td style="padding:10px 0;color:#64748B">Completed</td><td style="padding:10px 0">${completedAt} ET</td></tr>
+                  </table>
+                  <a href="https://www.choosecurio.com/admin" style="display:inline-block;padding:12px 20px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:0.9rem">View in Admin →</a>
+                </div>
+              `,
+            });
+          }
+        } catch (emailErr) {
+          console.error('[auth/signup] assessment notification failed:', emailErr);
+        }
+
       } else if (tokenRows[0]?.used) {
         console.warn('[auth/signup] assessment token already used:', assessmentToken);
       }
