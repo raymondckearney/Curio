@@ -7,7 +7,9 @@ import { useRouter } from 'next/router';
 const PROFILES = ['WHY-WHAT','WHY-HOW','WHAT-WHY','WHAT-HOW','HOW-WHY','HOW-WHAT'];
 const CAREER_LEVELS = ['Student','Early Career','Mid Career','Senior or Executive'];
 const PRIMARY_COLOR = { WHY: '#059669', WHAT: '#2563EB', HOW: '#D97706' };
-const LICENSE_TYPES = ['assessment_tokens', 'role_analyzer', 'jd_analyzer'];
+const LICENSE_TYPES = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
+const TOOL_LABELS = { assessment_tokens: 'MindPrint™ Assessment', role_analyzer: 'Role Analyzer', career_guidance: 'Career Guidance', jd_analyzer: 'JD Analyzer' };
+const ALL_TOOLS = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
 
 function profileColor(id) { return PRIMARY_COLOR[id?.split('-')[0]] || '#64748B'; }
 
@@ -141,13 +143,44 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
   );
 }
 
+// ─── Tool Access Field ────────────────────────────────────────────────────────
+
+function ToolAccessField({ grantedTools, setGrantedTools }) {
+  function applyPreset(preset) {
+    if (preset === 'basic') setGrantedTools(['assessment_tokens']);
+    else if (preset === 'premium') setGrantedTools([...ALL_TOOLS]);
+    else setGrantedTools([]);
+  }
+  function toggle(tool) {
+    setGrantedTools(prev => prev.includes(tool) ? prev.filter(t => t !== tool) : [...prev, tool]);
+  }
+  return (
+    <div style={s.fieldGroup}>
+      <label style={s.label}>Tool Access</label>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+        {[{ id: 'basic', label: 'Basic' }, { id: 'premium', label: 'Premium' }, { id: 'custom', label: 'Custom' }].map(p => (
+          <button key={p.id} onClick={() => applyPreset(p.id)} style={{ padding: '4px 12px', border: '1px solid #CBD5E0', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: '#F8FAFC', color: '#374151' }}>{p.label}</button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {ALL_TOOLS.map(tool => (
+          <label key={tool} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: '#374151', cursor: 'pointer' }}>
+            <input type="checkbox" checked={grantedTools.includes(tool)} onChange={() => toggle(tool)} style={{ accentColor: '#059669', width: 16, height: 16 }} />
+            {TOOL_LABELS[tool]}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Generate Panel ───────────────────────────────────────────────────────────
 
 function GeneratePanel({ prefillEngId }) {
   const [batchMode, setBatchMode] = useState('enterprise'); // 'individual' | 'enterprise'
   const [mode, setMode] = useState('named'); // 'named' | 'anonymous' (enterprise only)
   const [purpose, setPurpose] = useState('assessment');
-  const [grantedTier, setGrantedTier] = useState('basic');
+  const [grantedTools, setGrantedTools] = useState(['assessment_tokens']);
   const [engagementId, setEngagementId] = useState(prefillEngId || '');
   const [expiresAt, setExpiresAt] = useState('');
   const [participantText, setParticipantText] = useState('');
@@ -175,7 +208,7 @@ function GeneratePanel({ prefillEngId }) {
     try {
       const autoEngId = `individual-${Date.now()}`;
       const participants = [{ name: indivName.trim() || 'Individual', email: indivEmail.trim() || '' }];
-      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tier: grantedTier, engagement_id: autoEngId, expires_at: expiresAt || undefined }) });
+      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: autoEngId, expires_at: expiresAt || undefined }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setIndivResult(data.tokens[0]);
@@ -202,7 +235,7 @@ function GeneratePanel({ prefillEngId }) {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tier: grantedTier, engagement_id: engagementId.trim(), expires_at: expiresAt || undefined }) });
+      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: engagementId.trim(), expires_at: expiresAt || undefined }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setResults(data.tokens);
@@ -231,7 +264,7 @@ function GeneratePanel({ prefillEngId }) {
       {batchMode === 'individual' ? (
         <>
           <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">JD Analyzer</option><option value="career">Career Guidance</option></select></div>
-          <div style={s.fieldGroup}><label style={s.label}>Tier to grant</label><select style={s.select} value={grantedTier} onChange={e => setGrantedTier(e.target.value)}><option value="basic">Basic</option><option value="premium">Premium</option></select></div>
+          <ToolAccessField grantedTools={grantedTools} setGrantedTools={setGrantedTools} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
             <div style={s.fieldGroup}><label style={s.label}>Name (optional)</label><input style={s.input} value={indivName} onChange={e => setIndivName(e.target.value)} placeholder="Alex Smith" /></div>
             <div style={s.fieldGroup}><label style={s.label}>Email (optional)</label><input style={s.input} type="email" value={indivEmail} onChange={e => setIndivEmail(e.target.value)} placeholder="alex@example.com" /></div>
@@ -264,7 +297,7 @@ function GeneratePanel({ prefillEngId }) {
             </div>
           </div>
           <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">JD Analyzer</option><option value="career">Career Guidance</option></select></div>
-          <div style={s.fieldGroup}><label style={s.label}>Tier to grant</label><select style={s.select} value={grantedTier} onChange={e => setGrantedTier(e.target.value)}><option value="basic">Basic</option><option value="premium">Premium</option></select></div>
+          <ToolAccessField grantedTools={grantedTools} setGrantedTools={setGrantedTools} />
           <div style={s.fieldGroup}><label style={s.label}>Engagement ID</label><input style={s.input} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2026-q1" /></div>
           <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={s.input} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
           {mode === 'named' ? (

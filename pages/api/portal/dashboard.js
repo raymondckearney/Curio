@@ -18,8 +18,15 @@ export default async function handler(req, res) {
     ]);
 
     const user = userRows[0];
-    const isSelfServe = !licenses.length;
-    const hasFitToken = tokens.some(t => t.purpose === 'fit');
+    const now = new Date();
+    const activeLicenses = licenses.filter(l => !l.expires_at || new Date(l.expires_at) > now);
+    const licenseTypes = new Set(activeLicenses.map(l => l.type));
+
+    const hasAssessment = licenseTypes.has('assessment_tokens');
+    const hasRoleAnalyzer = licenseTypes.has('role_analyzer');
+    const hasCareerGuidance = licenseTypes.has('career_guidance');
+    const hasJdAnalyzer = licenseTypes.has('jd_analyzer');
+
     const tokenCount = tokens.length;
     const usedTokens = tokens.filter(t => t.used).length;
 
@@ -36,19 +43,20 @@ export default async function handler(req, res) {
       });
       recentAssessments = aRes;
 
-      // For self-serve: find assessment that matches the user's own email
-      if (isSelfServe && user?.email) {
+      if (user?.email) {
         myAssessment = aRes.find(a => a.email === user.email) || aRes[0] || null;
       }
     }
 
     return res.status(200).json({
-      licenses,
+      licenses: activeLicenses,
       tokenStats: { total: tokenCount, used: usedTokens, available: tokenCount - usedTokens },
       recentAssessments,
       accountName: account[0]?.name || '',
-      isSelfServe,
-      hasFitToken,
+      hasAssessment,
+      hasRoleAnalyzer,
+      hasCareerGuidance,
+      hasJdAnalyzer,
       myAssessment,
     });
   } catch (err) {

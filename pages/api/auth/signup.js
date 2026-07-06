@@ -72,16 +72,26 @@ export default async function handler(req, res) {
 
   syncContactToNotion({ name: name.trim(), email: normalEmail, source: 'self-signup' });
 
-  // Apply assessment token: set granted tier and consume
+  // Apply assessment token: set granted tier, write licenses, and consume
   if (assessmentToken) {
     try {
       const tokenRows = await dbGet('tokens', { token: assessmentToken });
       if (tokenRows.length && !tokenRows[0].used) {
-        const grantedTier = tokenRows[0].granted_tier || 'basic';
+        const tr = tokenRows[0];
+        const grantedTier = tr.granted_tier || 'basic';
+        const grantedTools = tr.granted_tools || (grantedTier === 'premium'
+          ? ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer']
+          : ['assessment_tokens']);
         const usedAt = new Date().toISOString();
         await Promise.all([
           dbPatch('client_accounts', { id: account.id }, { tier: grantedTier }),
           dbPatch('tokens', { token: assessmentToken }, { used: true, used_at: usedAt, account_id: account.id }),
+          ...grantedTools.map(type => dbInsert('account_licenses', {
+            account_id: account.id,
+            type,
+            quantity: 1,
+            expires_at: tr.expires_at || null,
+          })),
         ]);
       } else if (tokenRows[0]?.used) {
         console.warn('[auth/signup] assessment token already used:', assessmentToken);
