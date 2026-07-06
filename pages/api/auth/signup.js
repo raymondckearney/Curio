@@ -2,6 +2,7 @@ import { dbGet, dbInsert, dbPatch, dbQuery } from '../../../lib/supabase';
 import { hashPassword } from '../../../lib/password';
 import { createSessionToken, sessionCookie } from '../../../lib/portalSession';
 import { syncContactToNotion } from '../../../lib/notionSync';
+import { Resend } from 'resend';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -99,6 +100,34 @@ export default async function handler(req, res) {
     } catch (err) {
       console.error('[auth/signup] token apply failed:', err.message);
     }
+  }
+
+  // Notify admin of new account signup
+  try {
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const signedUpAt = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/New_York' });
+      await resend.emails.send({
+        from: 'Curio <notifications@choosecurio.com>',
+        to: 'raymondckearney@gmail.com',
+        subject: `New Portal Account — ${name.trim()}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#0F172A">
+            <h2 style="margin-bottom:4px">New Portal Account Created</h2>
+            <p style="color:#64748B;margin-top:0">A new user has signed up for the Curio portal.</p>
+            <table style="width:100%;border-collapse:collapse;margin:24px 0;font-size:0.95rem">
+              <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B;width:40%">Name</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;font-weight:600">${name.trim()}</td></tr>
+              <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B">Email</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0">${normalEmail}</td></tr>
+              <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B">Signed Up</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0">${signedUpAt} ET</td></tr>
+              ${assessmentToken ? `<tr><td style="padding:10px 0;color:#64748B">Token Used</td><td style="padding:10px 0;font-family:monospace;font-size:0.85rem">${assessmentToken}</td></tr>` : ''}
+            </table>
+            <a href="https://www.choosecurio.com/admin" style="display:inline-block;padding:12px 20px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:0.9rem">View in Admin →</a>
+          </div>
+        `,
+      });
+    }
+  } catch (err) {
+    console.error('[auth/signup] notification email failed:', err);
   }
 
   const sessionToken = createSessionToken(user.id, account.id, 'owner');

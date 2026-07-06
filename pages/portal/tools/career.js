@@ -535,9 +535,10 @@ export default function CareerGuidance() {
         <main style={{ marginLeft: 220, flex: 1, padding: '48px 48px 0', maxWidth: 'calc(100vw - 220px)' }}>
 
           <div style={{ marginBottom: 36 }}>
-            <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2.2rem', fontWeight: 700, color: '#0F172A', marginBottom: 8, lineHeight: 1.1 }}>Career Guidance</h1>
+            <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2.2rem', fontWeight: 700, color: '#0F172A', marginBottom: 4, lineHeight: 1.1 }}>Career Guidance Tool</h1>
+            <p style={{ fontFamily: "'Caveat', cursive", fontSize: '1.3rem', fontWeight: 700, color: '#059669', marginBottom: 12, lineHeight: 1.2 }}>Find a role that ENERGIZES you!</p>
             <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.7, maxWidth: 680 }}>
-              Generate a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think. Add results from other assessments for a more comprehensive output.
+              The more detail you provide below, the more customized the output. We'll generate a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think. You can even add your results from any other assessments you've taken to provide a more comprehensive output.
             </p>
           </div>
 
