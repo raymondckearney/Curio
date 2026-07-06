@@ -207,7 +207,7 @@ function GeneratePanel({ prefillEngId }) {
     setLoading(true);
     try {
       const autoEngId = `individual-${Date.now()}`;
-      const participants = [{ name: indivName.trim() || 'Individual', email: indivEmail.trim() || '' }];
+      const participants = [{ name: indivName.trim() || '', email: indivEmail.trim() || '' }];
       const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: autoEngId, expires_at: expiresAt || undefined }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
