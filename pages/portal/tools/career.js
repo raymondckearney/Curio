@@ -307,7 +307,8 @@ p{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:5px}
 .next-step{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:4px;display:flex;gap:6px}
 .footer{margin-top:12px;padding-top:8px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;font-size:6.5pt;color:#94A3B8}
 .print-btn{display:block;width:100%;padding:12px;margin-bottom:14px;background:${esc(c)};color:#fff;border:none;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:9pt;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer}
-@media print{@page{margin:12mm 10mm;size:A4 portrait}body{font-size:8pt}.wrap{padding:0;max-width:100%}.print-btn{display:none!important}}
+@media print{@page{margin:12mm 10mm;size:A4 portrait}body{font-size:8pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}.wrap{padding:0;max-width:100%}.print-btn{display:none!important}}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 </style></head><body><div class="wrap">
 <button class="print-btn" onclick="this.style.display='none';window.print()">Save as PDF</button>
 <div class="hdr"><div class="logo">Curio<em>.</em></div><div class="hdr-right"><strong>Career Guidance Report</strong><br>${esc(today)}</div></div>
@@ -542,41 +543,36 @@ export default function CareerGuidance() {
 
           {!loading && !displayReport && (
             <>
-              {/* Profile selection */}
-              <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '28px 32px', marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#059669', marginBottom: 8 }}>Step One</div>
-                <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.3rem', fontWeight: 700, color: '#0F172A', marginBottom: 20 }}>
-                  {isIndividual ? 'Your MindPrint™ Profile' : 'Select a MindPrint™ Profile'}
-                </div>
-                {isIndividual ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', background: `${color}08`, border: `1px solid ${color}30`, borderRadius: 10 }}>
-                    <div style={{ width: 4, height: 36, background: color, borderRadius: 2, flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.4rem', fontWeight: 700, color, lineHeight: 1 }}>{profile}</div>
-                      {profileDef && <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: 3 }}>{profileDef.tagline}</div>}
-                    </div>
+              {/* Profile header */}
+              {isIndividual ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', background: `${color}08`, border: `1px solid ${color}30`, borderRadius: 10, marginBottom: 20 }}>
+                  <div style={{ width: 4, height: 36, background: color, borderRadius: 2, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: color + 'cc', marginBottom: 2 }}>MindPrint™ Profile</div>
+                    <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.4rem', fontWeight: 700, color, lineHeight: 1 }}>{profile}</div>
+                    {profileDef && <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: 3 }}>{profileDef.tagline}</div>}
                   </div>
-                ) : (
+                </div>
+              ) : (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#374151', marginBottom: 10 }}>Select a MindPrint™ Profile <span style={{ color: '#EF4444' }}>*</span></div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                     {PROFILES.map(p => {
                       const c = PRIMARY_COLOR[p.primary];
                       const isSelected = profile === p.id;
                       return (
-                        <button key={p.id} onClick={() => setProfile(p.id)} style={{ background: isSelected ? `${c}0f` : '#FAFAF9', border: `1px solid ${isSelected ? c : '#E7E5E4'}`, borderRadius: 8, padding: '14px 12px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', fontFamily: "'DM Sans', sans-serif", outline: 'none' }}>
+                        <button key={p.id} onClick={() => setProfile(p.id)} style={{ background: isSelected ? `${c}0f` : '#fff', border: `1px solid ${isSelected ? c : '#E2E8F0'}`, borderRadius: 8, padding: '14px 12px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', fontFamily: "'DM Sans', sans-serif", outline: 'none' }}>
                           <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', color: isSelected ? c : '#94A3B8', marginBottom: 4 }}>{p.label}</div>
                           <div style={{ fontSize: '0.78rem', fontStyle: 'italic', color: isSelected ? '#374151' : '#A8A29E', lineHeight: 1.3 }}>{p.tagline}</div>
                         </button>
                       );
                     })}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Career details */}
               <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '28px 32px', marginBottom: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#059669', marginBottom: 8 }}>Step Two</div>
-                <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.3rem', fontWeight: 700, color: '#0F172A', marginBottom: 20 }}>Tell us about yourself and your career preferences</div>
-
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                   <div>
                     <label style={lbl}>Career Level</label>

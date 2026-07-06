@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',       license: 'role_analyzer' },
   { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance',     license: 'career_guidance' },
   { key: 'jd',               href: '/portal/tools/jd',        label: 'JD Analyzer',         license: 'jd_analyzer' },
-  { key: 'analyzer-history', href: '/portal/analyzer-history', label: 'Analyzer History',    alwaysShow: true },
+  { key: 'analyzer-history', href: '/portal/analyzer-history', label: 'Analyzer History',    license: 'role_analyzer' },
 ];
 
 export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false }) {

@@ -355,7 +355,8 @@ p{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:5px}
 .next-step{font-size:7.5pt;color:#374151;line-height:1.6;margin-bottom:4px;display:flex;gap:6px}
 .footer{margin-top:12px;padding-top:8px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;font-size:6.5pt;color:#94A3B8}
 .print-btn{display:block;width:100%;padding:12px;margin-bottom:14px;background:${esc(c)};color:#fff;border:none;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:9pt;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer}
-@media print{@page{margin:12mm 10mm;size:A4 portrait}body{font-size:8pt}.wrap{padding:0;max-width:100%}.print-btn{display:none!important}}
+@media print{@page{margin:12mm 10mm;size:A4 portrait}body{font-size:8pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}.wrap{padding:0;max-width:100%}.print-btn{display:none!important}}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 </style></head><body><div class="wrap">
 <button class="print-btn" onclick="this.style.display='none';window.print()">Save as PDF</button>
 <div class="hdr"><div class="logo">Curio<em>.</em></div><div class="hdr-right"><strong>Career Guidance Report</strong><br>${esc(today)}</div></div>
@@ -618,9 +619,9 @@ export default function CareerPage() {
         <Link href="/" style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1C1917', textDecoration: 'none' }}>
           Curio<span style={{ color: '#059669' }}>.</span>
         </Link>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#78716C', textDecoration: 'none' }}>
+        <Link href="/portal/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#78716C', textDecoration: 'none' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          Back to site
+          Back to dashboard
         </Link>
       </nav>
 

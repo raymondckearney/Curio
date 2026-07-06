@@ -59,11 +59,14 @@ export default function PortalDashboard() {
               <div style={{ ...s.heroBand, background: `linear-gradient(135deg, ${color}0d 0%, ${color}05 100%)`, borderBottom: `1px solid ${color}22` }}>
                 <div style={s.heroInner}>
                   <div style={s.heroMeta}>
-                    <span style={{ ...s.profilePill, background: `${color}15`, color, border: `1px solid ${color}30` }}>
+                    <span style={{ ...s.profilePill, color, borderBottom: `2px solid ${color}` }}>
                       MindPrint™ Profile
                     </span>
                     {completedDate && <span style={s.heroDate}>Completed {completedDate}</span>}
                   </div>
+                  {me?.user?.name && (
+                    <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#475569', marginBottom: 6, letterSpacing: '-0.01em' }}>{me.user.name}</div>
+                  )}
                   <h1 style={{ ...s.heroType, color }}>{profile.label}</h1>
                   <p style={s.heroTagline}>{profile.tagline}</p>
                   <blockquote style={{ ...s.signal, borderLeftColor: color }}>
@@ -280,7 +283,7 @@ const s = {
   heroBand: { padding: '52px 40px 44px' },
   heroInner: {},
   heroMeta: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 },
-  profilePill: { fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', padding: '4px 12px', borderRadius: 99, textTransform: 'uppercase' },
+  profilePill: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', paddingBottom: 2, textTransform: 'uppercase' },
   heroDate: { fontSize: '0.8rem', color: '#94A3B8', fontWeight: 500 },
   heroType: { fontFamily: "'Caveat', cursive", fontSize: '3.4rem', fontWeight: 700, lineHeight: 1, marginBottom: 8 },
   heroTagline: { fontSize: '1.05rem', color: '#475569', fontWeight: 500, marginBottom: 24, letterSpacing: '0.01em' },
