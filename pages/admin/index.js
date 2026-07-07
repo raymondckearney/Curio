@@ -1377,15 +1377,55 @@ function EditPanel({ account, onClose, onSave }) {
   const [tokenData, setTokenData] = useState(null);
   const [tokenExpanded, setTokenExpanded] = useState(false);
   const [tokenLoading, setTokenLoading] = useState(false);
+  const [addQty, setAddQty] = useState('');
+  const [addEngId, setAddEngId] = useState('');
+  const [addingTokens, setAddingTokens] = useState(false);
+  const [addTokenMsg, setAddTokenMsg] = useState(null);
+  const [users, setUsers] = useState(account.users || []);
+  const [roleChanging, setRoleChanging] = useState(null);
 
   async function loadTokens() {
-    if (tokenData) { setTokenExpanded(e => !e); return; }
     setTokenLoading(true); setTokenExpanded(true);
     try {
       const res = await fetch(`/api/admin/accounts/${account.id}/tokens`);
       const d = await res.json();
       if (res.ok) setTokenData(d);
     } catch {} finally { setTokenLoading(false); }
+  }
+
+  async function handleAddTokens() {
+    const qty = parseInt(addQty, 10);
+    if (!qty || qty < 1) { setAddTokenMsg({ ok: false, text: 'Enter a valid quantity.' }); return; }
+    setAddingTokens(true); setAddTokenMsg(null);
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/generate-tokens`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: qty, engagement_id: addEngId.trim() || undefined }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed');
+      setAddTokenMsg({ ok: true, text: `✓ Added ${d.created} token${d.created !== 1 ? 's' : ''} (engagement: ${d.engagement_id})` });
+      setAddQty(''); setAddEngId('');
+      // Refresh token list
+      const r2 = await fetch(`/api/admin/accounts/${account.id}/tokens`);
+      if (r2.ok) setTokenData(await r2.json());
+    } catch (e) { setAddTokenMsg({ ok: false, text: e.message }); }
+    finally { setAddingTokens(false); }
+  }
+
+  async function toggleRole(user) {
+    const newRole = user.role === 'owner' ? 'member' : 'owner';
+    setRoleChanging(user.id);
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, role: newRole }),
+      });
+      if (res.ok) setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u));
+    } catch {}
+    finally { setRoleChanging(null); }
   }
 
   function addLicense() { setLicenses(prev => [...prev, { type: licType, quantity: licQty || null, expires_at: licExpiry || null }]); setLicQty(''); setLicExpiry(''); }
@@ -1442,14 +1482,56 @@ function EditPanel({ account, onClose, onSave }) {
           ))}
         </div>
       )}
+      {/* Users / Roles */}
+      {users.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Users & Roles</p>
+          {users.map(u => (
+            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.82rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '6px 10px' }}>
+              <span style={{ flex: 1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.email}</span>
+              <span style={{ color: '#64748B', fontSize: '0.78rem', flexShrink: 0 }}>{u.email}</span>
+              <span style={u.role === 'owner' ? { background: '#1E3A5F', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 } : { background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: 4, fontSize: '0.72rem', fontWeight: 600, flexShrink: 0 }}>
+                {u.role || 'member'}
+              </span>
+              <button
+                style={{ padding: '3px 10px', background: 'none', border: '1px solid #E2E8F0', borderRadius: 5, fontSize: '0.75rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", color: '#374151', flexShrink: 0, opacity: roleChanging === u.id ? 0.5 : 1 }}
+                onClick={() => toggleRole(u)}
+                disabled={roleChanging === u.id}
+              >
+                {roleChanging === u.id ? '…' : u.role === 'owner' ? 'Make Member' : 'Make Owner'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Token Pool */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Token Pool</p>
-          <button style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", padding: '2px 8px' }} onClick={loadTokens}>
+          <button style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", padding: '2px 8px' }} onClick={tokenExpanded ? () => setTokenExpanded(false) : loadTokens}>
             {tokenLoading ? 'Loading…' : tokenExpanded ? 'Hide ▲' : 'Show ▼'}
           </button>
         </div>
+        {tokenExpanded && (
+          <>
+            {/* Add tokens form */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12, padding: '10px 12px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#374151', marginBottom: 3 }}>Quantity *</label>
+                <input style={{ ...s.fieldInput, width: 80 }} type="number" min="1" max="500" value={addQty} onChange={e => setAddQty(e.target.value)} placeholder="e.g. 25" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#374151', marginBottom: 3 }}>Engagement / Label <span style={{ fontWeight: 400, color: '#94A3B8' }}>(optional)</span></label>
+                <input style={s.fieldInput} value={addEngId} onChange={e => setAddEngId(e.target.value)} placeholder="e.g. acme-q3-2025 (auto-generated if blank)" />
+              </div>
+              <button style={{ ...s.btnSmall, background: '#059669', color: '#fff', border: 'none', opacity: addingTokens ? 0.7 : 1 }} onClick={handleAddTokens} disabled={addingTokens}>
+                {addingTokens ? 'Adding…' : '+ Add Tokens'}
+              </button>
+            </div>
+            {addTokenMsg && <p style={{ fontSize: '0.8rem', color: addTokenMsg.ok ? '#059669' : '#DC2626', margin: '0 0 10px' }}>{addTokenMsg.text}</p>}
+          </>
+        )}
         {tokenExpanded && tokenData && (
           <>
             <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
