@@ -23,7 +23,6 @@ export default async function handler(req, res) {
       slug,
       tier,
       notes: 'Admin invite',
-      status: 'active',
     });
 
     const [user] = await dbInsert('client_users', {
