@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { getAdminSession } from '../../../../lib/adminSession';
-import { dbGet, dbInsert } from '../../../../lib/supabase';
+import { dbGet, dbInsert, dbPatch } from '../../../../lib/supabase';
 import { hashPassword } from '../../../../lib/password';
 import { syncContactToNotion } from '../../../../lib/notionSync';
 
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, email, tier = 'basic', licenses = [] } = req.body || {};
+  const { name, email, tier = 'basic', role = 'owner', engagement_id, licenses = [] } = req.body || {};
   if (!email) return res.status(400).json({ error: 'email is required' });
 
   const normalEmail = email.toLowerCase().trim();
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       account_id: account.id,
       email: normalEmail,
       name: name || '',
-      role: 'owner',
+      role: role === 'member' ? 'member' : 'owner',
       provider: 'email',
       password_hash: tempHash,
     });
@@ -64,6 +64,20 @@ export default async function handler(req, res) {
         quantity: l.quantity ? parseInt(l.quantity, 10) : null,
         expires_at: l.expires_at || null,
       })));
+    }
+
+    // Link tokens from engagement to this account if engagement_id provided
+    let tokensLinked = 0;
+    if (engagement_id) {
+      try {
+        const engTokens = await dbGet('tokens', { engagement_id, email: normalEmail });
+        if (engTokens.length) {
+          await Promise.all(engTokens.map(t => dbPatch('tokens', { token: t.token }, { account_id: account.id })));
+          tokensLinked = engTokens.length;
+        }
+      } catch (err) {
+        console.error('[admin/accounts/invite] engagement link failed:', err);
+      }
     }
 
     // Generate password reset token for initial password set
@@ -104,7 +118,7 @@ export default async function handler(req, res) {
 
     syncContactToNotion({ name: name || normalEmail, email: normalEmail, source: 'admin-invite' }).catch(() => {});
 
-    return res.status(200).json({ success: true, account_id: account.id });
+    return res.status(200).json({ success: true, account_id: account.id, tokens_linked: tokensLinked });
   } catch (err) {
     console.error('[admin/accounts/invite]', err.message);
     return res.status(500).json({ error: err.message });

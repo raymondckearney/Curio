@@ -1311,6 +1311,8 @@ function InvitePanel({ onClose, onSuccess }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [tier, setTier] = useState('basic');
+  const [role, setRole] = useState('owner');
+  const [engagementId, setEngagementId] = useState('');
   const [licenses, setLicenses] = useState([]);
   const [licType, setLicType] = useState('role_analyzer');
   const [licQty, setLicQty] = useState('');
@@ -1324,10 +1326,11 @@ function InvitePanel({ onClose, onSuccess }) {
     if (!email.trim()) { setError('Email is required'); return; }
     setLoading(true); setError('');
     try {
-      const res = await fetch('/api/admin/accounts/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() || undefined, email: email.trim(), tier, licenses }) });
+      const res = await fetch('/api/admin/accounts/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() || undefined, email: email.trim(), tier, role, engagement_id: engagementId.trim() || undefined, licenses }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-      onSuccess(data.resent ? `Invite resent to ${email.trim()} (account already existed, not yet logged in).` : `Account created and invite sent to ${email.trim()}`);
+      const linked = data.tokens_linked > 0 ? ` ${data.tokens_linked} token(s) linked from engagement.` : '';
+      onSuccess(data.resent ? `Invite resent to ${email.trim()} (account already existed, not yet logged in).` : `Account created and invite sent to ${email.trim()}.${linked}`);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   }
@@ -1342,6 +1345,8 @@ function InvitePanel({ onClose, onSuccess }) {
         <div><label style={s.fieldLabel}>Name</label><input style={s.fieldInput} value={name} onChange={e => setName(e.target.value)} placeholder="Alex Smith" /></div>
         <div><label style={s.fieldLabel}>Email *</label><input style={s.fieldInput} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="alex@company.com" /></div>
         <div><label style={s.fieldLabel}>Tier</label><select style={s.fieldInput} value={tier} onChange={e => setTier(e.target.value)}><option value="basic">Basic</option><option value="premium">Premium</option></select></div>
+        <div><label style={s.fieldLabel}>Role</label><select style={s.fieldInput} value={role} onChange={e => setRole(e.target.value)}><option value="owner">Owner</option><option value="member">Member</option></select></div>
+        <div style={{ gridColumn: '1 / -1' }}><label style={s.fieldLabel}>Link to Engagement (optional)</label><input style={s.fieldInput} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2024-q1" /></div>
       </div>
       <div style={{ marginBottom: 16 }}>
         <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Licenses</p>
