@@ -91,50 +91,100 @@ export default async function handler(req, res) {
   // ── Step 4: Buyer confirmation email ─────────────────────────────────────
   if (resend && email) {
     const isCombo = product === 'assessment_analyzer';
-    const tokenSection = isCombo
-      ? `
-        <p style="font-weight:600;margin:0 0 8px">MindPrint™ Assessment</p>
-        <a href="${assessmentUrl}" style="display:inline-block;padding:12px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;margin-bottom:24px">Start Assessment →</a>
-        <p style="font-weight:600;margin:0 0 8px">Role Analyzer Access</p>
-        <a href="${analyzerUrl}" style="display:inline-block;padding:12px 24px;background:#0F172A;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;margin-bottom:24px">Open Role Analyzer →</a>
-      `
-      : `
-        <p style="font-weight:600;margin:0 0 8px">MindPrint™ Assessment</p>
-        <a href="${assessmentUrl}" style="display:inline-block;padding:12px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;margin-bottom:24px">Start Assessment →</a>
-      `;
+    const aiToolsNote = isCombo
+      ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px">
+          <p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">AI-Powered Career Tools included</p>
+          <p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment, you'll have access to a suite of AI-powered career tools in your dashboard — including tools to explore how your MindPrint™ profile applies to the work you do.</p>
+        </div>`
+      : '';
+
+    const emailHtml = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:Helvetica,Arial,sans-serif">
+<div style="max-width:560px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+  <div style="background:#0F172A;padding:24px 32px">
+    <span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.5px">Curio<span style="color:#059669">.</span></span>
+  </div>
+  <div style="background:#fff;padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
+    <p style="margin:0 0 16px;line-height:1.7;color:#0F172A;font-size:15px">Hi ${name || 'there'},</p>
+    <p style="margin:0 0 24px;line-height:1.7;color:#0F172A;font-size:15px">Thank you for your purchase. Your MindPrint™ Assessment link is ready below.</p>
+    <p style="font-weight:700;margin:0 0 12px;color:#0F172A;font-size:14px;text-transform:uppercase;letter-spacing:0.05em">MindPrint™ Assessment</p>
+    <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px">
+      <tr>
+        <td style="border-radius:8px;background:#059669">
+          <a href="${assessmentUrl}" style="display:inline-block;padding:13px 28px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;font-family:Helvetica,Arial,sans-serif">Start Assessment →</a>
+        </td>
+      </tr>
+    </table>
+    ${aiToolsNote}
+    <p style="margin:0 0 14px;line-height:1.7;color:#64748B;font-size:14px">Your assessment link is unique to you and can only be used once. It takes approximately 10 minutes to complete.</p>
+    <p style="margin:0 0 28px;line-height:1.7;color:#64748B;font-size:14px">Once you've completed the assessment, your full MindPrint™ profile report will be delivered to this email address.</p>
+    <p style="margin:0;line-height:1.7;color:#0F172A;font-size:15px">Ray Kearney<br>Curio<br><a href="mailto:hello@choosecurio.com" style="color:#059669;text-decoration:none">hello@choosecurio.com</a></p>
+  </div>
+</div>
+</body></html>`;
 
     resend.emails.send({
       from: 'Curio <hello@choosecurio.com>',
       to: email,
       subject: 'Your MindPrint™ access is ready',
-      html: `<!DOCTYPE html><html>
-<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-<div style="max-width:560px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-  <div style="background:#0F172A;padding:24px 32px">
-    <span style="font-family:Georgia,serif;font-size:1.8rem;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span>
-  </div>
-  <div style="background:#fff;padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
-    <p style="margin:0 0 16px;line-height:1.7;color:#0F172A">Hi ${name || 'there'},</p>
-    <p style="margin:0 0 24px;line-height:1.7;color:#0F172A">Thank you for your purchase. Your personal assessment link is ready below.</p>
-    ${tokenSection}
-    <p style="margin:0 0 16px;line-height:1.7;color:#64748B;font-size:0.9rem">Each link is unique to you and can only be used once. The assessment takes approximately 10 minutes to complete.</p>
-    <p style="margin:0 0 16px;line-height:1.7;color:#64748B;font-size:0.9rem">Once you've completed the assessment, your full MindPrint™ profile report will be delivered to this email address.</p>
-    <p style="margin:0;line-height:1.7;color:#0F172A">Ray Kearney<br>Curio<br><a href="mailto:hello@choosecurio.com" style="color:#059669">hello@choosecurio.com</a></p>
-  </div>
-</div>
-</body></html>`,
+      html: emailHtml,
     }).catch(err => console.error('[stripe/webhook] buyer email failed:', err));
   }
 
   // ── Step 5: Internal notification email ───────────────────────────────────
   if (resend) {
-    const productLabel = product === 'assessment_analyzer' ? 'Assessment + Analyzer' : 'Assessment';
+    const productLabel = product === 'assessment_analyzer' ? 'Assessment + AI Tools' : 'Assessment';
     const urlList = tokenUrls.map(t => `${t.purpose}: ${t.url}`).join('\n');
+    const notifHtml = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:Helvetica,Arial,sans-serif">
+<div style="max-width:560px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+  <div style="background:#0F172A;padding:24px 32px">
+    <span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span>
+  </div>
+  <div style="background:#fff;padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
+    <p style="margin:0 0 20px;font-size:18px;font-weight:700;color:#0F172A">New Purchase</p>
+    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-bottom:24px">
+      <tr><td style="padding:6px 0;color:#64748B;font-size:14px;width:120px">Buyer</td><td style="padding:6px 0;color:#0F172A;font-size:14px;font-weight:600">${name}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Email</td><td style="padding:6px 0;color:#0F172A;font-size:14px">${email}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Product</td><td style="padding:6px 0;color:#0F172A;font-size:14px">${productLabel}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Amount</td><td style="padding:6px 0;color:#0F172A;font-size:14px;font-weight:700">$${amountPaid.toFixed(2)}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Engagement ID</td><td style="padding:6px 0;color:#0F172A;font-size:14px">${engagementId}</td></tr>
+      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Time</td><td style="padding:6px 0;color:#0F172A;font-size:14px">${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET</td></tr>
+    </table>
+    <p style="margin:0 0 12px;font-weight:700;color:#0F172A;font-size:14px">Tokens Generated</p>
+    ${tokenUrls.map(t => `
+    <div style="margin-bottom:12px">
+      <p style="margin:0 0 8px;color:#64748B;font-size:13px;text-transform:uppercase;letter-spacing:0.05em">${t.purpose}</p>
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="border-radius:6px;background:#0F172A">
+            <a href="${t.url}" style="display:inline-block;padding:10px 20px;background:#0F172A;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;font-family:Helvetica,Arial,sans-serif">${t.purpose === 'assessment' ? 'Assessment Link' : 'AI Tools Link'} →</a>
+          </td>
+        </tr>
+      </table>
+    </div>`).join('')}
+    <div style="margin-top:24px;border-top:1px solid #E2E8F0;padding-top:20px">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="border-radius:6px;background:#059669">
+            <a href="https://choosecurio.com/admin/tokens" style="display:inline-block;padding:10px 20px;background:#059669;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;font-family:Helvetica,Arial,sans-serif">View in Admin →</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+</body></html>`;
+
     resend.emails.send({
       from: 'Curio <hello@choosecurio.com>',
       to: 'hello@choosecurio.com',
       subject: `New Purchase — ${productLabel} — ${name}`,
-      text: `A new purchase has been completed.\n\nBuyer: ${name}\nEmail: ${email}\nProduct: ${productLabel}\nAmount: $${amountPaid.toFixed(2)}\nEngagement ID: ${engagementId}\nTokens generated:\n${urlList}\nTime: ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET\n\nView in admin: https://choosecurio.com/admin/tokens`,
+      html: notifHtml,
     }).catch(err => console.error('[stripe/webhook] notification email failed:', err));
   }
 
