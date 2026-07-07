@@ -54,6 +54,7 @@ const NAV = [
   ]},
   { section: 'SETTINGS', items: [
     { id: 'settings',     label: 'Settings' },
+    { id: 'cleanup',      label: 'Cleanup' },
   ]},
 ];
 
@@ -1575,6 +1576,73 @@ function AccountsSection() {
   );
 }
 
+// ─── Cleanup Panel ────────────────────────────────────────────────────────────
+
+function CleanupPanel() {
+  const [token, setToken] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+
+  async function handleCleanup() {
+    const trimmed = token.trim();
+    if (!trimmed) return setError('Token is required');
+    // Extract token from full URL if pasted
+    const match = trimmed.match(/\/go\/([a-f0-9-]{36})/);
+    const resolvedToken = match ? match[1] : trimmed;
+    if (!confirm(`This will permanently delete the token, assessment, and any portal account linked to it. Continue?`)) return;
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/admin/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resolvedToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Cleanup failed');
+      setResult(data.log);
+      setToken('');
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <section style={s.panel}>
+      <h2 style={s.panelTitle}>Test Data Cleanup</h2>
+      <p style={{ color: '#64748B', fontSize: '0.875rem', marginBottom: 24, marginTop: 0 }}>
+        Permanently deletes a token and all associated data — assessment responses, portal account, and licenses. Use this to remove test records.
+      </p>
+      <div style={{ maxWidth: 520 }}>
+        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+          Token or full URL
+        </label>
+        <input
+          style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', boxSizing: 'border-box', marginBottom: 12 }}
+          value={token}
+          onChange={e => { setToken(e.target.value); setError(''); setResult(null); }}
+          placeholder="Paste token UUID or https://www.choosecurio.com/go/…"
+        />
+        {error && <p style={{ color: '#DC2626', fontSize: '0.875rem', margin: '0 0 12px' }}>{error}</p>}
+        {result && (
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '12px 16px', marginBottom: 12 }}>
+            <p style={{ fontWeight: 600, color: '#059669', margin: '0 0 6px', fontSize: '0.875rem' }}>✓ Cleanup complete</p>
+            <ul style={{ margin: 0, padding: '0 0 0 16px', fontSize: '0.825rem', color: '#374151' }}>
+              {result.map((line, i) => <li key={i}>{line}</li>)}
+            </ul>
+          </div>
+        )}
+        <button
+          style={{ padding: '10px 20px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", opacity: loading ? 0.7 : 1 }}
+          onClick={handleCleanup}
+          disabled={loading}
+        >
+          {loading ? 'Deleting…' : 'Delete Test Data'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
@@ -1626,6 +1694,7 @@ export default function AdminDashboard() {
               <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No settings configured yet.</p>
             </section>
           )}
+          {active === 'cleanup' && <CleanupPanel />}
         </main>
       </div>
     </>
