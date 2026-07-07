@@ -694,6 +694,8 @@ function AssessmentsPanel() {
     finally { setLoading(false); }
   }
 
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function sendProfile(a) {
     const key = a.id;
     const name = a.name || a.reg_name || '';
@@ -741,7 +743,7 @@ function AssessmentsPanel() {
     <section style={s.panel}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Assessment Submissions</h2>
-        <button style={s.btn} onClick={load} disabled={loading}>{loading ? 'Loading…' : assessments ? 'Refresh' : 'Load'}</button>
+        <button style={s.btn} onClick={load} disabled={loading}>{loading ? 'Loading…' : 'Refresh'}</button>
       </div>
       {error && <p style={s.error}>{error}</p>}
       {stats && (
