@@ -1326,7 +1326,7 @@ function InvitePanel({ onClose, onSuccess }) {
       const res = await fetch('/api/admin/accounts/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() || undefined, email: email.trim(), tier, licenses }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-      onSuccess(`Account created and invite sent to ${email.trim()}`);
+      onSuccess(data.resent ? `Invite resent to ${email.trim()} (account already existed, not yet logged in).` : `Account created and invite sent to ${email.trim()}`);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   }
@@ -1728,9 +1728,10 @@ function AccountsSection() {
 // ─── Cleanup Panel ────────────────────────────────────────────────────────────
 
 function CleanupPanel() {
-  const [mode, setMode] = useState('tokens'); // 'tokens' | 'engagement'
+  const [mode, setMode] = useState('tokens'); // 'tokens' | 'engagement' | 'email'
   const [tokenInput, setTokenInput] = useState('');
   const [engagementId, setEngagementId] = useState('');
+  const [emailInput, setEmailInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -1747,6 +1748,10 @@ function CleanupPanel() {
       if (!engagementId.trim()) return setError('Engagement ID is required');
       if (!confirm(`This will permanently delete ALL tokens and associated data for engagement "${engagementId.trim()}". Continue?`)) return;
       body = { engagement_id: engagementId.trim() };
+    } else if (mode === 'email') {
+      if (!emailInput.trim()) return setError('Email is required');
+      if (!confirm(`This will permanently delete the portal account and user for "${emailInput.trim()}". Continue?`)) return;
+      body = { email: emailInput.trim() };
     } else {
       const lines = tokenInput.split('\n').map(l => extractToken(l)).filter(Boolean);
       if (!lines.length) return setError('At least one token or URL is required');
@@ -1784,6 +1789,7 @@ function CleanupPanel() {
       <div style={{ display: 'flex', gap: 0, background: '#F1F5F9', borderRadius: 8, padding: 3, marginBottom: 24, width: 'fit-content' }}>
         <button style={toggleStyle(mode === 'tokens')} onClick={() => { setMode('tokens'); setError(''); setResult(null); }}>By Token</button>
         <button style={toggleStyle(mode === 'engagement')} onClick={() => { setMode('engagement'); setError(''); setResult(null); }}>By Engagement ID</button>
+        <button style={toggleStyle(mode === 'email')} onClick={() => { setMode('email'); setError(''); setResult(null); }}>By Email</button>
       </div>
 
       <div style={{ maxWidth: 520 }}>
@@ -1812,6 +1818,20 @@ function CleanupPanel() {
               placeholder="e.g. acme-q3-2024"
             />
             <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '6px 0 0' }}>Deletes every token under this engagement and all linked data.</p>
+          </>
+        ) : mode === 'email' ? (
+          <>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+              Email address
+            </label>
+            <input
+              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', boxSizing: 'border-box' }}
+              type="email"
+              value={emailInput}
+              onChange={e => { setEmailInput(e.target.value); setError(''); setResult(null); }}
+              placeholder="user@example.com"
+            />
+            <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '6px 0 0' }}>Deletes the portal user and account (if no other users remain) for this email. Useful for cleaning up failed or duplicate invites.</p>
           </>
         )}
 

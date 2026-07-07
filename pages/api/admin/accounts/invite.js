@@ -16,7 +16,28 @@ export default async function handler(req, res) {
 
   try {
     const existing = await dbGet('client_users', { email: normalEmail });
-    if (existing.length) return res.status(400).json({ error: 'An account with that email already exists.' });
+    if (existing.length) {
+      const existingUser = existing[0];
+      // If they've never logged in, treat as a pending invite — just resend the setup link
+      if (!existingUser.last_login_at) {
+        const resetToken = crypto.randomUUID();
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        await dbInsert('password_reset_tokens', { token: resetToken, user_id: existingUser.id, expires_at: expiresAt, used: false });
+
+        if (process.env.RESEND_API_KEY) {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          const setupUrl = `https://choosecurio.com/portal/reset-password?token=${resetToken}`;
+          await resend.emails.send({
+            from: 'Curio <hello@choosecurio.com>',
+            to: normalEmail,
+            subject: "You've been invited to Curio (resent)",
+            html: `<!DOCTYPE html><html><body style="font-family:'DM Sans',Helvetica,Arial,sans-serif;background:#F8FAFC;margin:0;padding:0"><div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)"><div style="background:#0F172A;padding:20px 32px"><span style="font-family:'Caveat',cursive;font-size:1.6rem;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span></div><div style="padding:36px 32px"><p style="font-size:1rem;color:#0F172A;font-weight:600;margin:0 0 12px">You're invited to Curio</p><p style="font-size:0.9rem;color:#374151;line-height:1.7;margin:0 0 20px">Ray Kearney has set up a Curio account for you. Click below to set your password and access your profile.</p><a href="${setupUrl}" style="display:inline-block;padding:12px 28px;background:#059669;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.95rem">Set Your Password →</a><p style="font-size:0.8rem;color:#94A3B8;margin:24px 0 0;line-height:1.6">This link expires in 7 days.</p></div></div></body></html>`,
+          });
+        }
+        return res.status(200).json({ success: true, resent: true });
+      }
+      return res.status(400).json({ error: 'An account with that email already exists and has already logged in.' });
+    }
 
     const slug = normalEmail.split('@')[0].replace(/[^a-z0-9]/g, '-') + '-' + Date.now().toString(36);
     const [account] = await dbInsert('client_accounts', {

@@ -1,6 +1,29 @@
 import { dbGet, dbDelete, dbQuery } from '../../../lib/supabase';
 import { getAdminSession } from '../../../lib/adminSession';
 
+async function deleteByEmail(email, log) {
+  const normalEmail = email.toLowerCase().trim();
+  const users = await dbGet('client_users', { email: normalEmail });
+  if (!users.length) { log.push(`No user found for email: ${normalEmail}`); return; }
+
+  for (const user of users) {
+    const accountId = user.account_id;
+    await dbDelete('password_reset_tokens', { user_id: user.id }).catch(() => []);
+    await dbDelete('client_users', { id: user.id }).catch(() => []);
+    log.push(`  Deleted user ${normalEmail}`);
+
+    if (accountId) {
+      const remaining = await dbGet('client_users', { account_id: accountId });
+      if (!remaining.length) {
+        await dbDelete('account_licenses', { account_id: accountId }).catch(() => []);
+        await dbDelete('tokens', { account_id: accountId }).catch(() => []);
+        await dbDelete('client_accounts', { id: accountId }).catch(() => []);
+        log.push(`  Deleted orphaned account (no remaining users)`);
+      }
+    }
+  }
+}
+
 async function deleteToken(token, log) {
   const tokenRows = await dbGet('tokens', { token });
   if (!tokenRows.length) { log.push(`Token not found: ${token}`); return; }
@@ -28,11 +51,14 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { tokens, engagement_id } = req.body;
+  const { tokens, engagement_id, email } = req.body;
   const log = [];
 
   try {
-    if (engagement_id) {
+    if (email) {
+      log.push(`Cleaning up by email: ${email}`);
+      await deleteByEmail(email, log);
+    } else if (engagement_id) {
       // Delete all tokens for an engagement
       const engTokens = await dbQuery('tokens', { engagement_id: `eq.${engagement_id}` });
       if (!engTokens.length) return res.status(404).json({ error: `No tokens found for engagement "${engagement_id}"` });
@@ -47,7 +73,7 @@ export default async function handler(req, res) {
         await deleteToken(token, log);
       }
     } else {
-      return res.status(400).json({ error: 'tokens array or engagement_id is required' });
+      return res.status(400).json({ error: 'tokens array, engagement_id, or email is required' });
     }
 
     return res.status(200).json({ ok: true, log });
