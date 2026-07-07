@@ -1807,7 +1807,7 @@ function CleanupPanel() {
               placeholder={'Paste token UUIDs or full URLs, one per line:\nhttps://www.choosecurio.com/go/abc-123…\na3f7c2d1-88be-4e91-b012-7f3d9a1c05e4'}
             />
           </>
-        ) : (
+        ) : mode === 'engagement' ? (
           <>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
               Engagement ID
@@ -1834,7 +1834,7 @@ function CleanupPanel() {
             />
             <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '6px 0 0' }}>Deletes the portal user and account (if no other users remain) for this email. Useful for cleaning up failed or duplicate invites.</p>
           </>
-        )}
+        ) : null}
 
         {error && <p style={{ color: '#DC2626', fontSize: '0.875rem', margin: '12px 0 0' }}>{error}</p>}
 
