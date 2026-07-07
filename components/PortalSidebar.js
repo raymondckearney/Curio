@@ -1,20 +1,23 @@
 import Link from 'next/link';
 
 const NAV_ITEMS = [
-  { key: 'dashboard',        href: '/portal/dashboard',        label: 'My Profile',          alwaysShow: true },
-  { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',   license: 'assessment_tokens', enterpriseOnly: true },
-  { key: 'results',          href: '/portal/results',          label: 'Assessment Results',  license: 'assessment_tokens', enterpriseOnly: true },
-  { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',       license: 'role_analyzer' },
+  { key: 'dashboard',        href: '/portal/dashboard',        label: 'My Profile',           alwaysShow: true },
+  { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
+  { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',    license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
+  { key: 'results',          href: '/portal/results',          label: 'Assessment Results',   license: 'assessment_tokens', enterpriseOnly: true },
+  { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',        license: 'role_analyzer' },
   { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance Tool', license: 'career_guidance' },
-  { key: 'jd',               href: '/portal/tools/jd',        label: 'JD Analyzer',         license: 'jd_analyzer' },
-  { key: 'analyzer-history', href: '/portal/analyzer-history', label: 'Analyzer History',    license: 'role_analyzer' },
+  { key: 'jd',               href: '/portal/tools/jd',        label: 'JD Analyzer',          license: 'jd_analyzer' },
+  { key: 'analyzer-history', href: '/portal/analyzer-history', label: 'Analyzer History',     license: 'role_analyzer' },
 ];
 
 export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false }) {
   const licenseTypes = new Set(licenses.map(l => l.type));
+  const isOwner = me?.user?.role === 'owner';
 
   const visibleItems = NAV_ITEMS.filter(item => {
     if (item.enterpriseOnly && isIndividual) return false;
+    if (item.ownerOnly && !isOwner) return false;
     return item.alwaysShow || licenseTypes.has(item.license);
   });
 

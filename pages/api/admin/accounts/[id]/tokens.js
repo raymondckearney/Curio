@@ -11,9 +11,17 @@ export default async function handler(req, res) {
     const tokens = await dbQuery('tokens', {
       account_id: `eq.${accountId}`,
       order: 'created_at.desc',
-      select: 'token,name,email,role,engagement_id,used,used_at,created_at',
+      select: 'token,name,email,role,engagement_id,used,used_at,link_sent_at,created_at,purpose',
     });
-    return res.status(200).json({ tokens });
+
+    const summary = {
+      total: tokens.length,
+      available: tokens.filter(t => !t.email && !t.used).length,
+      sent: tokens.filter(t => t.email && !t.used).length,
+      completed: tokens.filter(t => t.used).length,
+    };
+
+    return res.status(200).json({ tokens, summary });
   } catch (err) {
     console.error('[admin/accounts/tokens]', err);
     return res.status(500).json({ error: err.message });

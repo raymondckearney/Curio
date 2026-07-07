@@ -1374,6 +1374,19 @@ function EditPanel({ account, onClose, onSave }) {
   const [licExpiry, setLicExpiry] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [tokenData, setTokenData] = useState(null);
+  const [tokenExpanded, setTokenExpanded] = useState(false);
+  const [tokenLoading, setTokenLoading] = useState(false);
+
+  async function loadTokens() {
+    if (tokenData) { setTokenExpanded(e => !e); return; }
+    setTokenLoading(true); setTokenExpanded(true);
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/tokens`);
+      const d = await res.json();
+      if (res.ok) setTokenData(d);
+    } catch {} finally { setTokenLoading(false); }
+  }
 
   function addLicense() { setLicenses(prev => [...prev, { type: licType, quantity: licQty || null, expires_at: licExpiry || null }]); setLicQty(''); setLicExpiry(''); }
 
@@ -1429,6 +1442,58 @@ function EditPanel({ account, onClose, onSave }) {
           ))}
         </div>
       )}
+      {/* Token Pool */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Token Pool</p>
+          <button style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", padding: '2px 8px' }} onClick={loadTokens}>
+            {tokenLoading ? 'Loading…' : tokenExpanded ? 'Hide ▲' : 'Show ▼'}
+          </button>
+        </div>
+        {tokenExpanded && tokenData && (
+          <>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+              {[
+                { label: 'Total', value: tokenData.summary.total, color: '#0F172A' },
+                { label: 'Available', value: tokenData.summary.available, color: '#1D4ED8' },
+                { label: 'Sent', value: tokenData.summary.sent, color: '#D97706' },
+                { label: 'Completed', value: tokenData.summary.completed, color: '#059669' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ flex: 1, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 500, marginTop: 3 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+            {tokenData.tokens.length > 0 && (
+              <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                  <thead style={{ position: 'sticky', top: 0, background: '#F8FAFC' }}>
+                    <tr>{['Name', 'Email', 'Engagement', 'Status', 'Sent', 'Completed'].map(h => <th key={h} style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid #E2E8F0', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {tokenData.tokens.map((t, i) => (
+                      <tr key={t.token} style={i % 2 === 0 ? { background: '#FAFAFA' } : {}}>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9' }}>{t.name || '—'}</td>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.email || '—'}</td>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.engagement_id || '—'}</td>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9' }}>
+                          <span style={t.used ? { color: '#059669', fontWeight: 600 } : t.email ? { color: '#1D4ED8', fontWeight: 600 } : { color: '#94A3B8' }}>
+                            {t.used ? 'Completed' : t.email ? 'Sent' : 'Available'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.link_sent_at ? new Date(t.link_sent_at).toLocaleDateString() : '—'}</td>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.used_at ? new Date(t.used_at).toLocaleDateString() : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {error && <p style={s.error}>{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button style={s.btn} onClick={save} disabled={loading}>{loading ? 'Saving…' : 'Save Changes'}</button>
