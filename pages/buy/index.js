@@ -17,7 +17,7 @@ const PRODUCTS = [
   },
   {
     id: 'assessment_analyzer',
-    name: 'MindPrint™ Assessment + Analyzer',
+    name: 'MindPrint™ Assessment + AI Tools',
     priceEnv: 'STRIPE_PRICE_ASSESSMENT_ANALYZER',
     description: 'Everything in the Assessment, plus access to a suite of AI-powered career tools to explore how your profile applies to the work you do.',
     included: [
