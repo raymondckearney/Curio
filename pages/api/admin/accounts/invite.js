@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Resend } from 'resend';
 import { getAdminSession } from '../../../../lib/adminSession';
 import { dbGet, dbInsert } from '../../../../lib/supabase';
+import { hashPassword } from '../../../../lib/password';
 import { syncContactToNotion } from '../../../../lib/notionSync';
 
 export default async function handler(req, res) {
@@ -25,12 +26,14 @@ export default async function handler(req, res) {
       notes: 'Admin invite',
     });
 
+    const tempHash = await hashPassword(crypto.randomUUID());
     const [user] = await dbInsert('client_users', {
       account_id: account.id,
       email: normalEmail,
       name: name || '',
       role: 'owner',
       provider: 'email',
+      password_hash: tempHash,
     });
 
     if (licenses.length) {
