@@ -55,6 +55,7 @@ const NAV = [
   { section: 'SETTINGS', items: [
     { id: 'settings',     label: 'Settings' },
     { id: 'cleanup',      label: 'Cleanup' },
+    { id: 'link',         label: 'Link Assessment' },
   ]},
 ];
 
@@ -1858,6 +1859,92 @@ function CleanupPanel() {
   );
 }
 
+// ─── Link Assessment Panel ────────────────────────────────────────────────────
+
+function LinkAssessmentPanel() {
+  const [tokenInput, setTokenInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null); // { ok, message }
+
+  function extractToken(raw) {
+    const match = raw.match(/\/go\/([a-f0-9-]{36})/);
+    return match ? match[1] : raw.trim();
+  }
+
+  async function handleLink() {
+    setResult(null);
+    const token = extractToken(tokenInput);
+    const email = emailInput.trim().toLowerCase();
+    if (!token || !email) return setResult({ ok: false, message: 'Both token and email are required.' });
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/link-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, email }),
+      });
+      const data = await res.json();
+      setResult({ ok: res.ok, message: data.message || data.error || 'Unknown error' });
+      if (res.ok) { setTokenInput(''); setEmailInput(''); }
+    } catch { setResult({ ok: false, message: 'Network error.' }); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <section style={s.panel}>
+      <h2 style={s.panelTitle}>Link Assessment to Account</h2>
+      <p style={{ color: '#64748B', fontSize: '0.875rem', marginBottom: 24, marginTop: 0 }}>
+        Manually links a completed assessment token to an existing portal account. Use this when someone took the assessment before their account existed, or signed up without the token URL.
+      </p>
+
+      <div style={{ maxWidth: 520 }}>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+            Assessment Token or URL
+          </label>
+          <input
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', boxSizing: 'border-box' }}
+            value={tokenInput}
+            onChange={e => { setTokenInput(e.target.value); setResult(null); }}
+            placeholder="UUID or https://choosecurio.com/go/…"
+          />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+            Portal Account Email
+          </label>
+          <input
+            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', boxSizing: 'border-box' }}
+            type="email"
+            value={emailInput}
+            onChange={e => { setEmailInput(e.target.value); setResult(null); }}
+            placeholder="user@example.com"
+          />
+          <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '6px 0 0' }}>The email of the existing portal account to link the assessment to.</p>
+        </div>
+
+        {result && (
+          <div style={{ background: result.ok ? '#F0FDF4' : '#FEF2F2', border: `1px solid ${result.ok ? '#BBF7D0' : '#FECACA'}`, borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: result.ok ? '#059669' : '#DC2626', fontWeight: 600 }}>
+              {result.ok ? '✓ ' : '✗ '}{result.message}
+            </p>
+          </div>
+        )}
+
+        <button
+          style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}
+          onClick={handleLink}
+          disabled={loading}
+        >
+          {loading ? 'Linking…' : 'Link Assessment'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
@@ -1910,6 +1997,7 @@ export default function AdminDashboard() {
             </section>
           )}
           {active === 'cleanup' && <CleanupPanel />}
+          {active === 'link' && <LinkAssessmentPanel />}
         </main>
       </div>
     </>
