@@ -76,7 +76,7 @@ export default function PortalDashboard() {
                   </blockquote>
                   <div style={{ marginTop: 24 }}>
                     <Link
-                      href={`/results/${typeKey}`}
+                      href={`/results/${typeKey}?from=portal`}
                       style={{ ...s.pdfLink, borderColor: `${color}40`, color }}
                     >
                       ↓ Download Full Profile PDF

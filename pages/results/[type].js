@@ -6,7 +6,7 @@ import profiles from '../../lib/profiles';
 
 export default function ResultsPage() {
   const router = useRouter();
-  const { type, name: urlName, email: urlEmail, token } = router.query;
+  const { type, name: urlName, email: urlEmail, token, from } = router.query;
 
   useEffect(() => {
     if (!router.isReady || !token || !type) return;
@@ -38,7 +38,7 @@ export default function ResultsPage() {
         </Head>
         <nav className="nav">
           <Link href="/" className="nav-logo">Curio<span className="nav-logo-dot">.</span></Link>
-          <Link href="/" className="nav-back">← Back to site</Link>
+          <Link href={from === 'portal' ? '/portal/dashboard' : '/'} className="nav-back">{from === 'portal' ? '← Back to dashboard' : '← Back to site'}</Link>
         </nav>
         <div className="page">
           <div className="not-found-card">
