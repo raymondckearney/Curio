@@ -1579,60 +1579,106 @@ function AccountsSection() {
 // ─── Cleanup Panel ────────────────────────────────────────────────────────────
 
 function CleanupPanel() {
-  const [token, setToken] = useState('');
+  const [mode, setMode] = useState('tokens'); // 'tokens' | 'engagement'
+  const [tokenInput, setTokenInput] = useState('');
+  const [engagementId, setEngagementId] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
+  function extractToken(raw) {
+    const match = raw.match(/\/go\/([a-f0-9-]{36})/);
+    return match ? match[1] : raw.trim();
+  }
+
   async function handleCleanup() {
-    const trimmed = token.trim();
-    if (!trimmed) return setError('Token is required');
-    // Extract token from full URL if pasted
-    const match = trimmed.match(/\/go\/([a-f0-9-]{36})/);
-    const resolvedToken = match ? match[1] : trimmed;
-    if (!confirm(`This will permanently delete the token, assessment, and any portal account linked to it. Continue?`)) return;
-    setLoading(true); setError(''); setResult(null);
+    setError(''); setResult(null);
+    let body;
+    if (mode === 'engagement') {
+      if (!engagementId.trim()) return setError('Engagement ID is required');
+      if (!confirm(`This will permanently delete ALL tokens and associated data for engagement "${engagementId.trim()}". Continue?`)) return;
+      body = { engagement_id: engagementId.trim() };
+    } else {
+      const lines = tokenInput.split('\n').map(l => extractToken(l)).filter(Boolean);
+      if (!lines.length) return setError('At least one token or URL is required');
+      if (!confirm(`This will permanently delete ${lines.length} token(s) and all associated data. Continue?`)) return;
+      body = { tokens: lines };
+    }
+    setLoading(true);
     try {
       const res = await fetch('/api/admin/cleanup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: resolvedToken }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Cleanup failed');
       setResult(data.log);
-      setToken('');
+      setTokenInput(''); setEngagementId('');
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   }
 
+  const toggleStyle = active => ({
+    padding: '6px 16px', border: 'none', borderRadius: 6, fontSize: '0.825rem', fontWeight: 600,
+    cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+    background: active ? '#0F172A' : 'transparent', color: active ? '#fff' : '#64748B',
+  });
+
   return (
     <section style={s.panel}>
       <h2 style={s.panelTitle}>Test Data Cleanup</h2>
-      <p style={{ color: '#64748B', fontSize: '0.875rem', marginBottom: 24, marginTop: 0 }}>
-        Permanently deletes a token and all associated data — assessment responses, portal account, and licenses. Use this to remove test records.
+      <p style={{ color: '#64748B', fontSize: '0.875rem', marginBottom: 20, marginTop: 0 }}>
+        Permanently deletes tokens and all associated data — assessment responses, portal accounts, and licenses.
       </p>
+
+      <div style={{ display: 'flex', gap: 0, background: '#F1F5F9', borderRadius: 8, padding: 3, marginBottom: 24, width: 'fit-content' }}>
+        <button style={toggleStyle(mode === 'tokens')} onClick={() => { setMode('tokens'); setError(''); setResult(null); }}>By Token</button>
+        <button style={toggleStyle(mode === 'engagement')} onClick={() => { setMode('engagement'); setError(''); setResult(null); }}>By Engagement ID</button>
+      </div>
+
       <div style={{ maxWidth: 520 }}>
-        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-          Token or full URL
-        </label>
-        <input
-          style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', boxSizing: 'border-box', marginBottom: 12 }}
-          value={token}
-          onChange={e => { setToken(e.target.value); setError(''); setResult(null); }}
-          placeholder="Paste token UUID or https://www.choosecurio.com/go/…"
-        />
-        {error && <p style={{ color: '#DC2626', fontSize: '0.875rem', margin: '0 0 12px' }}>{error}</p>}
+        {mode === 'tokens' ? (
+          <>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+              Tokens or URLs <span style={{ fontWeight: 400, color: '#94A3B8' }}>(one per line)</span>
+            </label>
+            <textarea
+              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.6 }}
+              rows={5}
+              value={tokenInput}
+              onChange={e => { setTokenInput(e.target.value); setError(''); setResult(null); }}
+              placeholder={'Paste token UUIDs or full URLs, one per line:\nhttps://www.choosecurio.com/go/abc-123…\na3f7c2d1-88be-4e91-b012-7f3d9a1c05e4'}
+            />
+          </>
+        ) : (
+          <>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+              Engagement ID
+            </label>
+            <input
+              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', boxSizing: 'border-box' }}
+              value={engagementId}
+              onChange={e => { setEngagementId(e.target.value); setError(''); setResult(null); }}
+              placeholder="e.g. acme-q3-2024"
+            />
+            <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '6px 0 0' }}>Deletes every token under this engagement and all linked data.</p>
+          </>
+        )}
+
+        {error && <p style={{ color: '#DC2626', fontSize: '0.875rem', margin: '12px 0 0' }}>{error}</p>}
+
         {result && (
-          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '12px 16px', marginBottom: 12 }}>
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '12px 16px', marginTop: 12 }}>
             <p style={{ fontWeight: 600, color: '#059669', margin: '0 0 6px', fontSize: '0.875rem' }}>✓ Cleanup complete</p>
-            <ul style={{ margin: 0, padding: '0 0 0 16px', fontSize: '0.825rem', color: '#374151' }}>
-              {result.map((line, i) => <li key={i}>{line}</li>)}
+            <ul style={{ margin: 0, padding: '0 0 0 16px', fontSize: '0.8rem', color: '#374151', lineHeight: 1.8 }}>
+              {result.map((line, i) => <li key={i} style={{ fontFamily: line.startsWith('  ') ? 'monospace' : 'inherit' }}>{line}</li>)}
             </ul>
           </div>
         )}
+
         <button
-          style={{ padding: '10px 20px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", opacity: loading ? 0.7 : 1 }}
+          style={{ marginTop: 14, padding: '10px 20px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", opacity: loading ? 0.7 : 1 }}
           onClick={handleCleanup}
           disabled={loading}
         >

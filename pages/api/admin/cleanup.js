@@ -1,40 +1,53 @@
-import { dbGet, dbDelete } from '../../../lib/supabase';
+import { dbGet, dbDelete, dbQuery } from '../../../lib/supabase';
 import { getAdminSession } from '../../../lib/adminSession';
+
+async function deleteToken(token, log) {
+  const tokenRows = await dbGet('tokens', { token });
+  if (!tokenRows.length) { log.push(`Token not found: ${token}`); return; }
+  const accountId = tokenRows[0].account_id;
+
+  const assessments = await dbDelete('assessments', { token }).catch(() => []);
+  if (assessments.length) log.push(`  Deleted ${assessments.length} assessment row(s)`);
+
+  await dbDelete('tokens', { token });
+  log.push(`  Deleted token ${token}`);
+
+  if (accountId) {
+    const licenses = await dbDelete('account_licenses', { account_id: accountId }).catch(() => []);
+    if (licenses.length) log.push(`  Deleted ${licenses.length} license(s)`);
+
+    const users = await dbDelete('client_users', { account_id: accountId }).catch(() => []);
+    if (users.length) log.push(`  Deleted ${users.length} portal user(s)`);
+
+    await dbDelete('client_accounts', { id: accountId });
+    log.push(`  Deleted portal account`);
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { token } = req.body;
-  if (!token) return res.status(400).json({ error: 'token is required' });
-
+  const { tokens, engagement_id } = req.body;
   const log = [];
 
   try {
-    // 1. Find the token row to get account_id
-    const tokenRows = await dbGet('tokens', { token });
-    if (!tokenRows.length) return res.status(404).json({ error: 'Token not found' });
-    const tokenRow = tokenRows[0];
-    const accountId = tokenRow.account_id;
-
-    // 2. Delete assessment
-    const assessments = await dbDelete('assessments', { token }).catch(() => []);
-    if (assessments.length) log.push(`Deleted ${assessments.length} assessment row(s)`);
-
-    // 3. Delete the token
-    await dbDelete('tokens', { token });
-    log.push('Deleted token');
-
-    // 4. If an account was created, delete licenses, users, and account
-    if (accountId) {
-      const licenses = await dbDelete('account_licenses', { account_id: accountId }).catch(() => []);
-      if (licenses.length) log.push(`Deleted ${licenses.length} license(s)`);
-
-      const users = await dbDelete('client_users', { account_id: accountId }).catch(() => []);
-      if (users.length) log.push(`Deleted ${users.length} portal user(s)`);
-
-      await dbDelete('client_accounts', { id: accountId });
-      log.push('Deleted portal account');
+    if (engagement_id) {
+      // Delete all tokens for an engagement
+      const engTokens = await dbQuery('tokens', { engagement_id: `eq.${engagement_id}` });
+      if (!engTokens.length) return res.status(404).json({ error: `No tokens found for engagement "${engagement_id}"` });
+      log.push(`Found ${engTokens.length} token(s) for engagement "${engagement_id}"`);
+      for (const t of engTokens) {
+        log.push(`Token: ${t.token}`);
+        await deleteToken(t.token, log);
+      }
+    } else if (tokens?.length) {
+      for (const token of tokens) {
+        log.push(`Token: ${token}`);
+        await deleteToken(token, log);
+      }
+    } else {
+      return res.status(400).json({ error: 'tokens array or engagement_id is required' });
     }
 
     return res.status(200).json({ ok: true, log });
