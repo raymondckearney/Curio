@@ -1,7 +1,11 @@
 import { getAdminSession } from '../../../../../lib/adminSession';
 import { dbInsert, dbDelete, dbPatch } from '../../../../../lib/supabase';
 
-const VALID_TYPES = ['assessment_tokens', 'role_analyzer', 'jd_analyzer'];
+const VALID_TYPES = [
+  'assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer',
+  'precision_companion', 'purpose_companion', 'progress_companion',
+  'library_full', 'library_a', 'library_b', 'library_c', 'library_d', 'library_e',
+];
 
 export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });

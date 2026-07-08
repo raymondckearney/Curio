@@ -7,9 +7,14 @@ import { useRouter } from 'next/router';
 const PROFILES = ['WHY-WHAT','WHY-HOW','WHAT-WHY','WHAT-HOW','HOW-WHY','HOW-WHAT'];
 const CAREER_LEVELS = ['Student','Early Career','Mid Career','Senior or Executive'];
 const PRIMARY_COLOR = { WHY: '#059669', WHAT: '#2563EB', HOW: '#D97706' };
-const LICENSE_TYPES = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
-const TOOL_LABELS = { assessment_tokens: 'MindPrint™ Assessment', role_analyzer: 'Role Analyzer', career_guidance: 'Career Guidance', jd_analyzer: 'JD Analyzer' };
-const ALL_TOOLS = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
+const LICENSE_TYPES = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer', 'precision_companion', 'purpose_companion', 'progress_companion', 'library_full', 'library_a', 'library_b', 'library_c', 'library_d', 'library_e'];
+const TOOL_LABELS = {
+  assessment_tokens: 'MindPrint™ Assessment', role_analyzer: 'Role Analyzer', career_guidance: 'Career Guidance', jd_analyzer: 'JD Analyzer',
+  precision_companion: 'Precision Companion', purpose_companion: 'Purpose Companion', progress_companion: 'Progress Companion',
+  library_full: 'Client Library (Full)', library_a: 'Client Library — Collection A', library_b: 'Client Library — Collection B',
+  library_c: 'Client Library — Collection C', library_d: 'Client Library — Collection D', library_e: 'Client Library — Collection E',
+};
+const ALL_TOOLS = LICENSE_TYPES;
 
 function profileColor(id) { return PRIMARY_COLOR[id?.split('-')[0]] || '#64748B'; }
 

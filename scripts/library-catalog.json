@@ -1,0 +1,260 @@
+[
+  {
+    "num": 1,
+    "collection": "A",
+    "mode": "Scaffold",
+    "title": "Vision-to-Task Decomposition"
+  },
+  {
+    "num": 2,
+    "collection": "A",
+    "mode": "Replace",
+    "title": "The Pre-Flight Checklist Library"
+  },
+  {
+    "num": 3,
+    "collection": "A",
+    "mode": "Scaffold",
+    "title": "The Last 10% Protocol"
+  },
+  {
+    "num": 4,
+    "collection": "A",
+    "mode": "Support",
+    "title": "The Detail Debt Log"
+  },
+  {
+    "num": 5,
+    "collection": "A",
+    "mode": "Support",
+    "title": "Timeboxed Detail Sprints"
+  },
+  {
+    "num": 6,
+    "collection": "A",
+    "mode": "Scaffold",
+    "title": "The Edge-Case Question Bank"
+  },
+  {
+    "num": 7,
+    "collection": "A",
+    "mode": "Scaffold",
+    "title": "Definition-of-Done Cards"
+  },
+  {
+    "num": 8,
+    "collection": "A",
+    "mode": "Scaffold",
+    "title": "The Effort Reality-Check"
+  },
+  {
+    "num": 9,
+    "collection": "A",
+    "mode": "Replace",
+    "title": "The AI Precision Companion"
+  },
+  {
+    "num": 10,
+    "collection": "A",
+    "mode": "Replace",
+    "title": "The HOW-Partner Review Protocol"
+  },
+  {
+    "num": 11,
+    "collection": "B",
+    "mode": "Scaffold",
+    "title": "The Good-Enough Threshold"
+  },
+  {
+    "num": 12,
+    "collection": "B",
+    "mode": "Scaffold",
+    "title": "The Closing Card"
+  },
+  {
+    "num": 13,
+    "collection": "B",
+    "mode": "Support",
+    "title": "The Decision Deadline Ritual"
+  },
+  {
+    "num": 14,
+    "collection": "B",
+    "mode": "Teach",
+    "title": "The Version 0.5 Reframe"
+  },
+  {
+    "num": 15,
+    "collection": "B",
+    "mode": "Scaffold",
+    "title": "Milestone Backplanning"
+  },
+  {
+    "num": 16,
+    "collection": "B",
+    "mode": "Teach",
+    "title": "The WIP Limit Practice"
+  },
+  {
+    "num": 17,
+    "collection": "B",
+    "mode": "Support",
+    "title": "The Momentum Board"
+  },
+  {
+    "num": 18,
+    "collection": "B",
+    "mode": "Scaffold",
+    "title": "The Progress Broadcast"
+  },
+  {
+    "num": 19,
+    "collection": "B",
+    "mode": "Teach",
+    "title": "The 48-Hour Draft Rule"
+  },
+  {
+    "num": 20,
+    "collection": "B",
+    "mode": "Replace",
+    "title": "The WHAT-Partner Cadence"
+  },
+  {
+    "num": 21,
+    "collection": "C",
+    "mode": "Scaffold",
+    "title": "The Five-Question Purpose Brief"
+  },
+  {
+    "num": 22,
+    "collection": "C",
+    "mode": "Replace",
+    "title": "The North Star One-Pager"
+  },
+  {
+    "num": 23,
+    "collection": "C",
+    "mode": "Scaffold",
+    "title": "The Problem Reframe Deck"
+  },
+  {
+    "num": 24,
+    "collection": "C",
+    "mode": "Scaffold",
+    "title": "The So-What Translator"
+  },
+  {
+    "num": 25,
+    "collection": "C",
+    "mode": "Replace",
+    "title": "The Vision Extraction Interview"
+  },
+  {
+    "num": 26,
+    "collection": "C",
+    "mode": "Support",
+    "title": "The Quarterly Altitude Check"
+  },
+  {
+    "num": 27,
+    "collection": "C",
+    "mode": "Scaffold",
+    "title": "The Assumption Audit"
+  },
+  {
+    "num": 28,
+    "collection": "C",
+    "mode": "Scaffold",
+    "title": "The Narrative Arc Template"
+  },
+  {
+    "num": 29,
+    "collection": "C",
+    "mode": "Teach",
+    "title": "The Opening Line Habit"
+  },
+  {
+    "num": 30,
+    "collection": "C",
+    "mode": "Teach",
+    "title": "The Pre-Mortem Protocol"
+  },
+  {
+    "num": 31,
+    "collection": "D",
+    "mode": "Support",
+    "title": "The Energy Budget Planner"
+  },
+  {
+    "num": 32,
+    "collection": "D",
+    "mode": "Teach",
+    "title": "The Tertiary Triage Decision Tree"
+  },
+  {
+    "num": 33,
+    "collection": "D",
+    "mode": "Replace",
+    "title": "The Team Trade Board"
+  },
+  {
+    "num": 34,
+    "collection": "D",
+    "mode": "Teach",
+    "title": "The Drain Signals Field Guide"
+  },
+  {
+    "num": 35,
+    "collection": "E",
+    "mode": "Scaffold",
+    "title": "The Orientation-Balanced Agenda"
+  },
+  {
+    "num": 36,
+    "collection": "E",
+    "mode": "Scaffold",
+    "title": "The Three-Question Kickoff"
+  },
+  {
+    "num": 37,
+    "collection": "E",
+    "mode": "Support",
+    "title": "The Team MindPrint\u2122 Map"
+  },
+  {
+    "num": 38,
+    "collection": "E",
+    "mode": "Teach",
+    "title": "The Friction Forecast"
+  },
+  {
+    "num": 39,
+    "collection": "E",
+    "mode": "Scaffold",
+    "title": "Decision Rights by Orientation"
+  },
+  {
+    "num": 40,
+    "collection": "E",
+    "mode": "Scaffold",
+    "title": "The Mixed-Audience Deck Structure"
+  },
+  {
+    "num": 41,
+    "collection": "E",
+    "mode": "Support",
+    "title": "Meeting Keeper Cards"
+  },
+  {
+    "num": 42,
+    "collection": "E",
+    "mode": "Scaffold",
+    "title": "The Handoff Contract"
+  },
+  {
+    "num": 43,
+    "collection": "E",
+    "mode": "Support",
+    "title": "The Team Energy Audit"
+  }
+]

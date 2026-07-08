@@ -5,6 +5,12 @@ import { useRouter } from 'next/router';
 import profiles from '../../lib/profiles';
 import PortalSidebar from '../../components/PortalSidebar';
 
+const COMPANION_META = [
+  { key: 'precision', tertiary: 'HOW', label: 'Precision Companion', href: '/portal/tools/precision-companion', desc: 'Detail-level thinking: decomposition, pre-flight checklists, gap review, edge cases, definition of done.' },
+  { key: 'purpose', tertiary: 'WHY', label: 'Purpose Companion', href: '/portal/tools/purpose-companion', desc: 'Purpose-level framing: the Purpose Brief interview, North Star, So-What Translator, opening lines.' },
+  { key: 'progress', tertiary: 'WHAT', label: 'Progress Companion', href: '/portal/tools/progress-companion', desc: 'Progress-level thinking: shipping thresholds, milestone backplans, progress broadcasts, closing cards.' },
+];
+
 export default function PortalDashboard() {
   const router = useRouter();
   const [me, setMe] = useState(null);
@@ -34,6 +40,12 @@ export default function PortalDashboard() {
   const isIndividual = !!assessment;
   const hasRoleAnalyzer = data?.hasRoleAnalyzer;
   const hasAssessment = data?.hasAssessment;
+  const tertiary = data?.tertiary;
+  const companionFlags = { precision: data?.hasPrecisionCompanion, purpose: data?.hasPurposeCompanion, progress: data?.hasProgressCompanion };
+  const matchingCompanions = COMPANION_META.filter(c => companionFlags[c.key] && c.tertiary === tertiary);
+  const otherCompanions = COMPANION_META.filter(c => companionFlags[c.key] && c.tertiary !== tertiary);
+  const companionCards = [...matchingCompanions, ...otherCompanions];
+  const hasLibrary = data?.hasLibrary;
   const { total = 0, used = 0, available = 0 } = data?.tokenStats || {};
   const typeKey = assessment?.type?.toLowerCase();
   const profile = profiles[typeKey];
@@ -187,6 +199,33 @@ export default function PortalDashboard() {
                       <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Use the Role Alignment Analyzer to explore what energizes you, what drains you, and how you collaborate best — for any role you enter.</div>
                     </div>
                     <Link href="/portal/tools/fit" style={{ ...s.analyzerBtn, background: color }}>Open Analyzer →</Link>
+                  </div>
+                )}
+
+                {companionCards.length > 0 && (
+                  <div style={s.contentCard}>
+                    <div style={{ ...s.cardLabel, color }}>Your AI Companions</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {companionCards.map(c => (
+                        <div key={c.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 16px', borderRadius: 10, border: `1px solid ${c.tertiary === tertiary ? color + '40' : '#E2E8F0'}`, background: c.tertiary === tertiary ? `${color}08` : '#FAFAFA' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.925rem' }}>{c.label}{c.tertiary === tertiary && <span style={{ marginLeft: 8, fontSize: '0.65rem', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Matches your tertiary</span>}</div>
+                            <div style={{ fontSize: '0.825rem', color: '#64748B', marginTop: 2 }}>{c.desc}</div>
+                          </div>
+                          <Link href={c.href} style={{ ...s.analyzerBtn, background: color, flexShrink: 0 }}>Open →</Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {hasLibrary && (
+                  <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Your Client Library</div>
+                      <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>One-pagers and kits for your tertiary collection, plus the universal collection.</div>
+                    </div>
+                    <Link href="/portal/library" style={{ ...s.analyzerBtn, background: color }}>Open Library →</Link>
                   </div>
                 )}
               </div>

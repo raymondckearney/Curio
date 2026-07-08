@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+const LIBRARY_LICENSES = ['library_full', 'library_a', 'library_b', 'library_c', 'library_d', 'library_e'];
+
 const NAV_ITEMS = [
   { key: 'dashboard',        href: '/portal/dashboard',        label: 'My Profile',           alwaysShow: true },
   { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
@@ -9,6 +11,10 @@ const NAV_ITEMS = [
   { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance Tool', license: 'career_guidance' },
   { key: 'jd',               href: '/portal/tools/jd',        label: 'JD Analyzer',          license: 'jd_analyzer' },
   { key: 'analyzer-history', href: '/portal/analyzer-history', label: 'Analyzer History',     license: 'role_analyzer' },
+  { key: 'precision',        href: '/portal/tools/precision-companion', label: 'Precision Companion', license: 'precision_companion' },
+  { key: 'purpose',          href: '/portal/tools/purpose-companion',   label: 'Purpose Companion',   license: 'purpose_companion' },
+  { key: 'progress',         href: '/portal/tools/progress-companion',  label: 'Progress Companion',  license: 'progress_companion' },
+  { key: 'library',          href: '/portal/library',          label: 'Client Library',       licenseAny: LIBRARY_LICENSES },
 ];
 
 export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false }) {
@@ -18,7 +24,9 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
   const visibleItems = NAV_ITEMS.filter(item => {
     if (item.enterpriseOnly && isIndividual) return false;
     if (item.ownerOnly && !isOwner) return false;
-    return item.alwaysShow || licenseTypes.has(item.license);
+    if (item.alwaysShow) return true;
+    if (item.licenseAny) return item.licenseAny.some(t => licenseTypes.has(t));
+    return licenseTypes.has(item.license);
   });
 
   return (

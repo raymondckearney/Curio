@@ -67,6 +67,8 @@ export default function Manual() {
             <a href="#portal-tokens" className="nav-link">Assessment Tokens</a>
             <a href="#portal-results" className="nav-link">Assessment Results</a>
             <a href="#portal-tools" className="nav-link">AI Tools</a>
+            <a href="#portal-companions" className="nav-link">AI Companions</a>
+            <a href="#portal-library" className="nav-link">Client Library</a>
           </div>
 
           <div className="nav-group">
@@ -185,7 +187,7 @@ export default function Manual() {
               <span className="badge badge-admin">Admin</span>
             </div>
             <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, and last login. Filterable by type, tier, and name/email search.</Card>
-            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer) at creation time.</Card>
+            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, Client Library) at creation time.</Card>
             <Card title="Edit Account">
               Click <strong>Edit</strong> on any account to expand a panel with four sections:
               <ul>
@@ -300,6 +302,39 @@ export default function Manual() {
             <Card title="Career Guidance Tool · /portal/tools/career · license: career_guidance">Generates a structured career report with best-fit roles, energizers, challenges, and strategies. Optional inputs: current role, years of experience, additional results, strengths, and areas for growth. Includes a PDF export.</Card>
             <Card title="JD Analyzer · /portal/tools/jd · license: jd_analyzer">Paste a job description. Returns an analysis of fit vs. the user's profile — what will energize them, what will drain them, and how to position themselves for that role.</Card>
             <Card title="Analyzer History · /portal/analyzer-history · license: role_analyzer">A log of all Role Analyzer runs for the account — role title, profile, alignment score, and date. Saved automatically after each analysis.</Card>
+          </section>
+
+          {/* ─── AI Companions ─── */}
+          <section className="section" id="portal-companions">
+            <div className="section-header">
+              <h2 className="section-title">AI Companions</h2>
+              <span className="section-path">/portal/tools/precision-companion, purpose-companion, progress-companion</span>
+            </div>
+            <div className="badges">
+              <span className="badge badge-owner">Owner</span>
+              <span className="badge badge-member">Member</span>
+            </div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>Each Companion generates the tertiary-orientation thinking that drains its matching profile, so the user reviews and judges instead of producing from a blank page. The system prompt is composed server-side per call (SOT preamble + companion base + mode task + the user's own profile, read from their assessment) in <code>lib/companion-prompts.js</code> and never reaches the browser. All three share one route, <code>/api/portal/companion</code>, and a 50-call-per-user daily cap. Every call writes a row to <code>tool_sessions</code>.</p>
+            <Card title="Precision Companion · license: precision_companion · supports tertiary HOW">Modes: Decompose (goal to milestones/workstreams/tasks), Pre-Flight (deliverable checklist), Gap Review (paste a draft, get what's missing), Edge Cases (boundary conditions and failure modes), Definition of Done (checkable completion criteria).</Card>
+            <Card title="Purpose Companion · license: purpose_companion · supports tertiary WHY">Modes: Purpose Brief (a five-question guided interview, conversational — the full message history round-trips to the model each turn), North Star (one-pager from raw notes), So-What Translator (translate content into reader-specific meaning), Opening Lines (the purpose sentence that should open a message).</Card>
+            <Card title="Progress Companion · license: progress_companion · supports tertiary WHAT">Modes: Good-Enough Threshold (pre-commit shipping criteria), Milestone Backplan (work backward from an end date to a visible checkpoint chain), Progress Broadcast (raw notes to a four-line weekly update), Closing Card (meeting notes to one action/owner/date/context).</Card>
+            <div className="info-block"><strong>My Profile ordering:</strong> licensed Companions appear on <code>/portal/dashboard</code> with the one matching the user's own tertiary orientation listed first. An account with no license for a Companion never sees it, there is no locked-tool teaser.</div>
+          </section>
+
+          {/* ─── Client Library ─── */}
+          <section className="section" id="portal-library">
+            <div className="section-header">
+              <h2 className="section-title">Client Library</h2>
+              <span className="section-path">/portal/library</span>
+            </div>
+            <div className="badges">
+              <span className="badge badge-owner">Owner</span>
+              <span className="badge badge-member">Member</span>
+            </div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>43 tools (one-pager + kit PDF each, 86 files) stored in the private <code>library</code> Supabase Storage bucket, cataloged in the <code>library_items</code> table. Gated by <code>library_full</code> or a per-collection key (<code>library_a</code>…<code>library_e</code>); the page's collection filter chips only ever show collections the account is licensed for, and files are served through short-lived signed URLs generated after a server-side license check, never a public bucket URL.</p>
+            <Card title="Collections">A amber, tertiary HOW · B blue, tertiary WHAT · C mint, tertiary WHY · D teal, universal, always included with any library license · E emerald, teams.</Card>
+            <Card title="Default filter">The collection matching the user's own tertiary orientation, when the account is licensed for it; otherwise Collection D.</Card>
+            <Card title="Regenerating content">PDFs are generated by the Python pipeline in <code>library-pipeline/</code> (see its own CLAUDE.md) into <code>curio_library/</code>. After any content change, re-run <code>npm run seed:library</code> (needs <code>SUPABASE_URL</code> / <code>SUPABASE_SERVICE_KEY</code>) to re-upload the PDFs and refresh <code>library_items</code>.</Card>
           </section>
 
           <hr className="divider" />

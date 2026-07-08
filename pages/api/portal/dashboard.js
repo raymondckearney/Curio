@@ -1,5 +1,8 @@
 import { getPortalSession } from '../../../lib/portalSession';
 import { dbQuery, dbGet } from '../../../lib/supabase';
+import { tertiaryFromProfileSlug } from '../../../lib/tertiary';
+
+const LIBRARY_LICENSES = ['library_full', 'library_a', 'library_b', 'library_c', 'library_d', 'library_e'];
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -26,6 +29,10 @@ export default async function handler(req, res) {
     const hasRoleAnalyzer = licenseTypes.has('role_analyzer');
     const hasCareerGuidance = licenseTypes.has('career_guidance');
     const hasJdAnalyzer = licenseTypes.has('jd_analyzer');
+    const hasPrecisionCompanion = licenseTypes.has('precision_companion');
+    const hasPurposeCompanion = licenseTypes.has('purpose_companion');
+    const hasProgressCompanion = licenseTypes.has('progress_companion');
+    const hasLibrary = LIBRARY_LICENSES.some(t => licenseTypes.has(t));
 
     const tokenCount = tokens.length;
     const usedTokens = tokens.filter(t => t.used).length;
@@ -48,6 +55,8 @@ export default async function handler(req, res) {
       }
     }
 
+    const tertiary = myAssessment?.type ? tertiaryFromProfileSlug(myAssessment.type.toLowerCase()) : null;
+
     return res.status(200).json({
       licenses: activeLicenses,
       tokenStats: { total: tokenCount, used: usedTokens, available: tokenCount - usedTokens },
@@ -57,6 +66,11 @@ export default async function handler(req, res) {
       hasRoleAnalyzer,
       hasCareerGuidance,
       hasJdAnalyzer,
+      hasPrecisionCompanion,
+      hasPurposeCompanion,
+      hasProgressCompanion,
+      hasLibrary,
+      tertiary,
       myAssessment,
     });
   } catch (err) {
