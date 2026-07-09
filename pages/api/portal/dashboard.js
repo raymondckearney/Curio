@@ -32,6 +32,7 @@ export default async function handler(req, res) {
     const hasPrecisionCompanion = licenseTypes.has('precision_companion');
     const hasPurposeCompanion = licenseTypes.has('purpose_companion');
     const hasProgressCompanion = licenseTypes.has('progress_companion');
+    const hasOrientationTranslator = licenseTypes.has('orientation_translator');
     const hasLibrary = LIBRARY_LICENSES.some(t => licenseTypes.has(t));
 
     const tokenCount = tokens.length;
@@ -78,6 +79,7 @@ export default async function handler(req, res) {
       hasPrecisionCompanion,
       hasPurposeCompanion,
       hasProgressCompanion,
+      hasOrientationTranslator,
       hasLibrary,
       tertiary,
       myAssessment,

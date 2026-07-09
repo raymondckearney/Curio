@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { key: 'precision',        href: '/portal/tools/precision-companion', label: 'Precision Companion', license: 'precision_companion' },
   { key: 'purpose',          href: '/portal/tools/purpose-companion',   label: 'Purpose Companion',   license: 'purpose_companion' },
   { key: 'progress',         href: '/portal/tools/progress-companion',  label: 'Progress Companion',  license: 'progress_companion' },
+  { key: 'translator',       href: '/portal/tools/orientation-translator', label: 'Orientation Translator', license: 'orientation_translator' },
   { key: 'library',          href: '/portal/library',          label: 'Client Library',       licenseAny: LIBRARY_LICENSES },
 ];
 

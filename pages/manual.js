@@ -68,6 +68,7 @@ export default function Manual() {
             <a href="#portal-results" className="nav-link">Assessment Results</a>
             <a href="#portal-tools" className="nav-link">AI Tools</a>
             <a href="#portal-companions" className="nav-link">AI Companions</a>
+            <a href="#portal-translator" className="nav-link">Orientation Translator</a>
             <a href="#portal-library" className="nav-link">Client Library</a>
           </div>
 
@@ -187,7 +188,7 @@ export default function Manual() {
               <span className="badge badge-admin">Admin</span>
             </div>
             <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, and last login. Filterable by type, tier, and name/email search.</Card>
-            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, Client Library) at creation time.</Card>
+            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, Client Library) at creation time.</Card>
             <Card title="Edit Account">
               Click <strong>Edit</strong> on any account to expand a panel with four sections:
               <ul>
@@ -319,6 +320,21 @@ export default function Manual() {
             <Card title="Purpose Companion · license: purpose_companion · supports tertiary WHY">Modes: Purpose Brief (a five-question guided interview, conversational — the full message history round-trips to the model each turn), North Star (one-pager from raw notes), So-What Translator (translate content into reader-specific meaning), Opening Lines (the purpose sentence that should open a message).</Card>
             <Card title="Progress Companion · license: progress_companion · supports tertiary WHAT">Modes: Good-Enough Threshold (pre-commit shipping criteria), Milestone Backplan (work backward from an end date to a visible checkpoint chain), Progress Broadcast (raw notes to a four-line weekly update), Closing Card (meeting notes to one action/owner/date/context).</Card>
             <div className="info-block"><strong>My Profile ordering:</strong> licensed Companions appear on <code>/portal/dashboard</code> with the one matching the user's own tertiary orientation listed first. An account with no license for a Companion never sees it, there is no locked-tool teaser.</div>
+          </section>
+
+          {/* ─── Orientation Translator ─── */}
+          <section className="section" id="portal-translator">
+            <div className="section-header">
+              <h2 className="section-title">Orientation Translator</h2>
+              <span className="section-path">/portal/tools/orientation-translator</span>
+            </div>
+            <div className="badges">
+              <span className="badge badge-owner">Owner</span>
+              <span className="badge badge-member">Member</span>
+            </div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>A universal tool, not personalized to the caller's own profile: it translates a pasted message into WHY-speak, WHAT-speak, HOW-speak, all three at once, or the primary register of a named person's profile. Shares the same <code>/api/portal/companion</code> route as the Companions (<code>tool: "translator"</code>), the same license/auth/50-call daily cap pattern, but skips the "complete your assessment" requirement since it doesn't need the caller's own profile to run. Register definitions and the four-step translation method (extract, reorder, add what's missing and mark it <code>(proposed)</code>, shift the register) live in <code>lib/translation-prompts.js</code>, sourced verbatim from <code>MindPrint_Language_Framework.md</code> and shared with the Purpose Companion's So-What mode.</p>
+            <Card title="license: orientation_translator">Every translation ends with a "What changed and why" note naming the moves made, and any added fact not present in the source (a date, an owner, a caveat) is marked <code>(proposed)</code> for the user to confirm before sending. Source register reads are phrased as hypotheses ("reads WHAT-forward"), never as a diagnosis of the author.</Card>
+            <div className="info-block"><strong>Profile dropdown:</strong> if the account has a completed assessment, its own profile appears last in the "translate to a person's profile" list rather than defaulted, since people mostly translate to others.</div>
           </section>
 
           {/* ─── Client Library ─── */}

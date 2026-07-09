@@ -231,6 +231,16 @@ export default function PortalDashboard() {
                   </div>
                 )}
 
+                {data?.hasOrientationTranslator && (
+                  <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Orientation Translator</div>
+                      <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Translate a message to WHY-speak, WHAT-speak, HOW-speak, or a specific person's profile. Universal, works for any profile.</div>
+                    </div>
+                    <Link href="/portal/tools/orientation-translator" style={{ ...s.analyzerBtn, background: color }}>Open Translator →</Link>
+                  </div>
+                )}
+
                 {hasLibrary && (
                   <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                     <div>

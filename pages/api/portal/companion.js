@@ -8,6 +8,7 @@ const LICENSE_KEY_BY_TOOL = {
   precision: 'precision_companion',
   purpose: 'purpose_companion',
   progress: 'progress_companion',
+  translator: 'orientation_translator',
 };
 
 const DAILY_CALL_CAP = 50;
@@ -59,11 +60,14 @@ export default async function handler(req, res) {
     let profile = await resolveAccountProfile(accountId, user.email);
     if (isAdmin && profileOverride && TERTIARY_BY_PROFILE[profileOverride]) profile = profileOverride;
 
-    if (!profile) {
+    // The Translator is universal: it doesn't require the caller to have a
+    // completed assessment on file. The three Companions still do, since
+    // their output is personalized to the caller's own profile.
+    if (tool !== 'translator' && !profile) {
       return res.status(400).json({ error: 'Complete your MindPrint™ assessment to use the Companions.' });
     }
 
-    const tertiary = tertiaryFromProfileSlug(profile.toLowerCase());
+    const tertiary = profile ? tertiaryFromProfileSlug(profile.toLowerCase()) : null;
 
     // Per-user daily cap, counted against calendar-day UTC boundaries.
     const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
