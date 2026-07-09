@@ -57,6 +57,15 @@ export default async function handler(req, res) {
 
     const tertiary = myAssessment?.type ? tertiaryFromProfileSlug(myAssessment.type.toLowerCase()) : null;
 
+    // If this user hasn't completed their own assessment yet, surface their
+    // unused assessment token so the portal can link straight to /go/<token>
+    // instead of only saying "check your email".
+    let assessmentPath = null;
+    if (!myAssessment) {
+      const myToken = tokens.find(t => t.purpose === 'assessment' && !t.used && (t.email === user?.email || !t.email));
+      if (myToken) assessmentPath = `/go/${myToken.token}`;
+    }
+
     return res.status(200).json({
       licenses: activeLicenses,
       tokenStats: { total: tokenCount, used: usedTokens, available: tokenCount - usedTokens },
@@ -72,6 +81,7 @@ export default async function handler(req, res) {
       hasLibrary,
       tertiary,
       myAssessment,
+      assessmentPath,
     });
   } catch (err) {
     console.error('[portal/dashboard]', err);

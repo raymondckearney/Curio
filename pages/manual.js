@@ -236,7 +236,7 @@ export default function Manual() {
               <ul>
                 <li>Profile type shown as a colored pill label.</li>
                 <li><strong>Download Full Profile PDF</strong> — opens the full results page in a new tab, pre-loaded with a print-optimized view. The "Back to dashboard" link returns them here.</li>
-                <li>If the user hasn't completed an assessment yet, a pending state is shown with instructions.</li>
+                <li>If the user hasn't completed an assessment yet, a pending state is shown. If they have an unused assessment token on the account, a <strong>Start Your Assessment →</strong> button links straight to their <code>/go/&lt;token&gt;</code> link, with an <strong>Email me the link</strong> fallback (<code>/api/portal/resend-assessment</code>) that re-sends the same link to their own address. If no token is found at all, it falls back to "Check your email for the link."</li>
               </ul>
             </Card>
           </section>

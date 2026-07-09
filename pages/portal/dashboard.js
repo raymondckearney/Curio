@@ -16,6 +16,7 @@ export default function PortalDashboard() {
   const [me, setMe] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [resendState, setResendState] = useState('idle'); // 'idle' | 'sending' | 'sent' | 'error'
 
   useEffect(() => {
     Promise.all([
@@ -30,6 +31,17 @@ export default function PortalDashboard() {
   async function logout() {
     await fetch('/api/portal/logout', { method: 'POST' });
     router.push('/portal/login');
+  }
+
+  async function resendAssessment() {
+    setResendState('sending');
+    try {
+      const res = await fetch('/api/portal/resend-assessment', { method: 'POST' });
+      if (!res.ok) throw new Error();
+      setResendState('sent');
+    } catch {
+      setResendState('error');
+    }
   }
 
   if (loading) return <div style={s.loading}>Loading…</div>;
@@ -236,7 +248,22 @@ export default function PortalDashboard() {
                 <div style={s.pendingWrap}>
                   <div style={s.pendingIcon}>◎</div>
                   <h1 style={s.pendingTitle}>Your account is ready.</h1>
-                  <p style={s.pendingText}>Your MindPrint™ profile will appear here once you've completed your assessment. Check your email for the link.</p>
+                  <p style={s.pendingText}>Your MindPrint™ profile will appear here once you've completed your assessment.</p>
+                  {data?.assessmentPath ? (
+                    <>
+                      <Link href={data.assessmentPath} style={s.pendingCta}>Start Your Assessment →</Link>
+                      <p style={{ ...s.pendingContact, marginTop: 16 }}>
+                        {resendState === 'sent'
+                          ? 'Sent — check your email.'
+                          : (
+                            <>Prefer to do it later? <button onClick={resendAssessment} disabled={resendState === 'sending'} style={s.pendingLinkBtn}>{resendState === 'sending' ? 'Sending…' : 'Email me the link'}</button></>
+                          )}
+                        {resendState === 'error' && <span style={{ color: '#B91C1C' }}> Something went wrong, try again.</span>}
+                      </p>
+                    </>
+                  ) : (
+                    <p style={s.pendingText}>Check your email for the link.</p>
+                  )}
                   <p style={s.pendingContact}>Questions? <a href="mailto:hello@choosecurio.com" style={{ color: '#059669', textDecoration: 'none', fontWeight: 500 }}>hello@choosecurio.com</a></p>
                 </div>
               ) : (
@@ -345,6 +372,8 @@ const s = {
   pendingTitle: { fontFamily: "'Caveat', cursive", fontSize: '2.2rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 },
   pendingText: { fontSize: '1rem', color: '#64748B', lineHeight: 1.7, marginBottom: 16 },
   pendingContact: { fontSize: '0.875rem', color: '#94A3B8' },
+  pendingCta: { display: 'inline-block', padding: '12px 28px', background: '#059669', color: '#fff', textDecoration: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.95rem' },
+  pendingLinkBtn: { background: 'none', border: 'none', padding: 0, color: '#059669', fontWeight: 600, fontSize: 'inherit', fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline' },
 
   welcomeTitle: { fontFamily: "'Caveat', cursive", fontSize: '2rem', fontWeight: 700, color: '#0F172A', marginBottom: 24 },
   statsRow: { display: 'flex', gap: 16, marginBottom: 32, flexWrap: 'wrap' },
