@@ -89,7 +89,7 @@ export default function LibraryPage() {
             <div style={s.pill}>Resources</div>
             <h1 style={s.title}>Your Curated Library of Support Resources</h1>
             <p style={s.sub}>
-              Every resource here reduces the cost of work in your tertiary orientation, the work that drains rather than energizes. None of them make tertiary work energizing. All of them make it cheaper.
+              Every resource here reduces the cost of work in your tertiary orientation, the work that drains rather than energizes. None of them make tertiary work energizing. All of them make it cheaper. Each resource addresses the tertiary through one of 4 approaches:
             </p>
             <div style={s.modeList}>
               {SUPPORT_MODES.map(m => (
@@ -165,10 +165,10 @@ const s = {
   pill: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#059669', marginBottom: 12 },
   title: { fontFamily: "'Caveat', cursive", fontSize: '2.6rem', fontWeight: 700, color: '#0F172A', marginBottom: 8 },
   sub: { fontSize: '0.95rem', color: '#475569', maxWidth: 760, lineHeight: 1.7, marginBottom: 24 },
-  modeList: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 28px', maxWidth: 720 },
+  modeList: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 28px', maxWidth: 920 },
   modeRow: { display: 'flex', alignItems: 'center', gap: 12 },
-  modePill: { flexShrink: 0, minWidth: 96, textAlign: 'center', borderRadius: 99, padding: '3px 10px', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', background: 'rgba(5,150,105,0.13)', color: '#065F46' },
-  modeDef: { fontSize: '0.875rem', color: '#374151', lineHeight: 1.5 },
+  modePill: { flexShrink: 0, minWidth: 90, textAlign: 'center', borderRadius: 99, padding: '3px 10px', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', background: 'rgba(5,150,105,0.13)', color: '#065F46' },
+  modeDef: { fontSize: '0.875rem', color: '#374151', lineHeight: 1.5, whiteSpace: 'nowrap' },
   body: { padding: '32px 40px 64px' },
   chipRow: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 28 },
   chip: { padding: '8px 16px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
