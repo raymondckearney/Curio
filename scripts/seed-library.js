@@ -7,11 +7,12 @@
 //
 // Usage: node scripts/seed-library.js
 //
-// Catalog metadata (tool_num, collection, support_mode, title) is generated
-// from library-pipeline/content_ab.py and content_cde.py, the pipeline's own
-// source of truth for that content. If those files gain a new tool, add its
-// { num, collection, mode, title } entry to library-catalog.json before
-// re-running this script.
+// Catalog metadata (tool_num, collection, support_mode, title, summary) is
+// generated from library-pipeline/content_ab.py and content_cde.py (the
+// pipeline's own source of truth for that content - summary is each tool's
+// "lead" field with HTML tags stripped). If those files gain a new tool, add
+// its { num, collection, mode, title, summary } entry to
+// library-catalog.json before re-running this script.
 
 const fs = require('fs');
 const path = require('path');
@@ -77,6 +78,7 @@ async function main() {
       collection: tool.collection,
       title: tool.title,
       support_mode: tool.mode,
+      summary: tool.summary,
       onepager_path: onepagerPath,
       kit_path: kitPath,
     });

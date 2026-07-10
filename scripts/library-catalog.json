@@ -3,258 +3,301 @@
     "num": 1,
     "collection": "A",
     "mode": "Scaffold",
-    "title": "Vision-to-Task Decomposition"
+    "title": "Vision-to-Task Decomposition",
+    "summary": "A structured worksheet that walks a goal down four levels, from destination to next physical action. Decomposition runs on structure instead of instinct, so nothing depends on a level of detail thinking that drains you."
   },
   {
     "num": 2,
     "collection": "A",
     "mode": "Replace",
-    "title": "The Pre-Flight Checklist Library"
+    "title": "The Pre-Flight Checklist Library",
+    "summary": "Reusable completeness checklists for the deliverables you produce again and again. Completeness stops depending on memory, the checklist holds the details so you don't have to."
   },
   {
     "num": 3,
     "collection": "A",
     "mode": "Scaffold",
-    "title": "The Last 10% Protocol"
+    "title": "The Last 10% Protocol",
+    "summary": "A defined closing ritual for any deliverable. The hardest part of finishing becomes a checklist, not a judgment call, run in one pass before anything ships."
   },
   {
     "num": 4,
     "collection": "A",
     "mode": "Support",
-    "title": "The Detail Debt Log"
+    "title": "The Detail Debt Log",
+    "summary": "A running capture list for details consciously deferred in the moment, reviewed on a fixed weekly rhythm. Deferring stops turning into dropping."
   },
   {
     "num": 5,
     "collection": "A",
     "mode": "Support",
-    "title": "Timeboxed Detail Sprints"
+    "title": "Timeboxed Detail Sprints",
+    "summary": "A method for batching detail work into short, scheduled, high-energy blocks. The drain gets contained to windows you chose, instead of leaking across the whole week."
   },
   {
     "num": 6,
     "collection": "A",
     "mode": "Scaffold",
-    "title": "The Edge-Case Question Bank"
+    "title": "The Edge-Case Question Bank",
+    "summary": "A printed set of boundary-testing questions to run against any plan. You borrow the signature question of the HOW orientation as a tool, without needing the instinct behind it."
   },
   {
     "num": 7,
     "collection": "A",
     "mode": "Scaffold",
-    "title": "Definition-of-Done Cards"
+    "title": "Definition-of-Done Cards",
+    "summary": "A card completed at the start of any piece of work that specifies, objectively, what finished means. Done becomes a fact, not a feeling."
   },
   {
     "num": 8,
     "collection": "A",
     "mode": "Scaffold",
-    "title": "The Effort Reality-Check"
+    "title": "The Effort Reality-Check",
+    "summary": "A structured correction for the chronic underestimation of execution effort. The estimate gets built from tasks and history, not from optimism."
   },
   {
     "num": 9,
     "collection": "A",
     "mode": "Replace",
-    "title": "The AI Precision Companion"
+    "title": "The AI Precision Companion",
+    "summary": "A curated prompt pack for delegating precision work to AI: decomposition, checklists, gap reviews, edge cases. The detail thinking gets generated for you, and you stay the judge."
   },
   {
     "num": 10,
     "collection": "A",
     "mode": "Replace",
-    "title": "The HOW-Partner Review Protocol"
+    "title": "The HOW-Partner Review Protocol",
+    "summary": "A structured way to request a precision review from a HOW-primary colleague. The right partner completes the work, and the protocol makes asking cheap for you and answering easy for them."
   },
   {
     "num": 11,
     "collection": "B",
     "mode": "Scaffold",
-    "title": "The Good-Enough Threshold"
+    "title": "The Good-Enough Threshold",
+    "summary": "A worksheet that defines the shipping criteria before work begins. Done becomes a pre-commitment, not an in-the-moment fight against the pull of one more improvement."
   },
   {
     "num": 12,
     "collection": "B",
     "mode": "Scaffold",
-    "title": "The Closing Card"
+    "title": "The Closing Card",
+    "summary": "An end-of-meeting forcing function: one action, one owner, one date, written before anyone leaves. No conversation ends without becoming movement."
   },
   {
     "num": 13,
     "collection": "B",
     "mode": "Support",
-    "title": "The Decision Deadline Ritual"
+    "title": "The Decision Deadline Ritual",
+    "summary": "A ritual that timeboxes analysis by setting the decision date in advance. When the date arrives, you decide with the information in hand."
   },
   {
     "num": 14,
     "collection": "B",
     "mode": "Teach",
-    "title": "The Version 0.5 Reframe"
+    "title": "The Version 0.5 Reframe",
+    "summary": "A mental model and a vocabulary for shipping imperfect work as data collection. The early release becomes a method of understanding, which is the register this wiring can genuinely accept."
   },
   {
     "num": 15,
     "collection": "B",
     "mode": "Scaffold",
-    "title": "Milestone Backplanning"
+    "title": "Milestone Backplanning",
+    "summary": "A template that converts a deep understanding of the work into dated milestones, built backward from the end. The system view becomes a schedule."
   },
   {
     "num": 16,
     "collection": "B",
     "mode": "Teach",
-    "title": "The WIP Limit Practice"
+    "title": "The WIP Limit Practice",
+    "summary": "A hard cap on open threads that forces completion before new exploration. Finishing becomes the price of starting, which is the only currency this drain reliably responds to."
   },
   {
     "num": 17,
     "collection": "B",
     "mode": "Support",
-    "title": "The Momentum Board"
+    "title": "The Momentum Board",
+    "summary": "A dead-simple visible tracker of movement, three columns, updated weekly. It externalizes the progress sense your wiring doesn't generate internally."
   },
   {
     "num": 18,
     "collection": "B",
     "mode": "Scaffold",
-    "title": "The Progress Broadcast"
+    "title": "The Progress Broadcast",
+    "summary": "A fill-in weekly update format, four lines, five minutes. Communicating momentum stops being a writing task and becomes a form."
   },
   {
     "num": 19,
     "collection": "B",
     "mode": "Teach",
-    "title": "The 48-Hour Draft Rule"
+    "title": "The 48-Hour Draft Rule",
+    "summary": "A protocol: any new deliverable produces a shareable rough draft within forty-eight hours. Refinement comes after contact, not before."
   },
   {
     "num": 20,
     "collection": "B",
     "mode": "Replace",
-    "title": "The WHAT-Partner Cadence"
+    "title": "The WHAT-Partner Cadence",
+    "summary": "A structured pairing with a WHAT-primary who owns pace-setting for a defined piece of work. Momentum becomes someone's energizing job instead of your draining one."
   },
   {
     "num": 21,
     "collection": "C",
     "mode": "Scaffold",
-    "title": "The Five-Question Purpose Brief"
+    "title": "The Five-Question Purpose Brief",
+    "summary": "A ten-minute structured brief, completed once before any significant piece of work begins. It generates the purpose thinking that would otherwise cost you real energy, and captures it in a form you can reference for the life of the project instead of regenerating it every time someone asks."
   },
   {
     "num": 22,
     "collection": "C",
     "mode": "Replace",
-    "title": "The North Star One-Pager"
+    "title": "The North Star One-Pager",
+    "summary": "The purpose of a project, captured once, usually extracted from the person who holds it, and kept visible for its whole life. The why never has to be regenerated mid-flight."
   },
   {
     "num": 23,
     "collection": "C",
     "mode": "Scaffold",
-    "title": "The Problem Reframe Deck"
+    "title": "The Problem Reframe Deck",
+    "summary": "A card deck of prompts that pressure-test whether the right problem is being solved. The reframing question gets asked by the cards, so it no longer depends on an instinct that drains you."
   },
   {
     "num": 24,
     "collection": "C",
     "mode": "Scaffold",
-    "title": "The So-What Translator"
+    "title": "The So-What Translator",
+    "summary": "A template that converts detailed output into audience meaning. For every section, one completed sentence: \"which means that...\" The reader gets significance without you having to feel it first."
   },
   {
     "num": 25,
     "collection": "C",
     "mode": "Replace",
-    "title": "The Vision Extraction Interview"
+    "title": "The Vision Extraction Interview",
+    "summary": "A structured interview that pulls the vision out of the person who holds it, before execution begins. Purpose gets borrowed from a primary source instead of generated from a drained one."
   },
   {
     "num": 26,
     "collection": "C",
     "mode": "Support",
-    "title": "The Quarterly Altitude Check"
+    "title": "The Quarterly Altitude Check",
+    "summary": "A scheduled, structured zoom-out: ninety minutes, four questions, once a quarter. Perspective becomes an appointment instead of an instinct you have to summon."
   },
   {
     "num": 27,
     "collection": "C",
     "mode": "Scaffold",
-    "title": "The Assumption Audit"
+    "title": "The Assumption Audit",
+    "summary": "A checklist that surfaces the unexamined premises baked into a plan, before execution effort is invested in them. The beliefs get listed, tested, and owned on purpose."
   },
   {
     "num": 28,
     "collection": "C",
     "mode": "Scaffold",
-    "title": "The Narrative Arc Template"
+    "title": "The Narrative Arc Template",
+    "summary": "A five-beat structure that converts detail-rich content into a meaning-led story. The narrative is assembled, not inspired, from material you already have."
   },
   {
     "num": 29,
     "collection": "C",
     "mode": "Teach",
-    "title": "The Opening Line Habit"
+    "title": "The Opening Line Habit",
+    "summary": "A micro-practice: every email, deck, and deliverable opens with one sentence of purpose before any content. Small, trainable, and disproportionate in effect."
   },
   {
     "num": 30,
     "collection": "C",
     "mode": "Teach",
-    "title": "The Pre-Mortem Protocol"
+    "title": "The Pre-Mortem Protocol",
+    "summary": "A structured session held before launch: it is twelve months from now, and this failed. Working backward from imagined failure gives systematic thinkers a concrete doorway into strategic thinking."
   },
   {
     "num": 31,
     "collection": "D",
     "mode": "Support",
-    "title": "The Energy Budget Planner"
+    "title": "The Energy Budget Planner",
+    "summary": "A weekly calendar audit that tags work by orientation and rebuilds the schedule around your energy. Tertiary work gets placed at peak hours, in limited doses, with recovery adjacent."
   },
   {
     "num": 32,
     "collection": "D",
     "mode": "Teach",
-    "title": "The Tertiary Triage Decision Tree"
+    "title": "The Tertiary Triage Decision Tree",
+    "summary": "A repeatable decision path for any draining task: scaffold it, timebox it, trade it, or automate it. White-knuckling stops being the default strategy."
   },
   {
     "num": 33,
     "collection": "D",
     "mode": "Replace",
-    "title": "The Team Trade Board"
+    "title": "The Team Trade Board",
+    "summary": "A team ritual for openly trading work out of tertiaries and into primaries. Under the energy model, a trade is not a favor exchange, it is a net energy gain on both sides."
   },
   {
     "num": 34,
     "collection": "D",
     "mode": "Teach",
-    "title": "The Drain Signals Field Guide"
+    "title": "The Drain Signals Field Guide",
+    "summary": "A guide to recognizing depletion early, in yourself and in teammates. The signals arrive well before the burnout conversation, for those who know what to look for."
   },
   {
     "num": 35,
     "collection": "E",
     "mode": "Scaffold",
-    "title": "The Orientation-Balanced Agenda"
+    "title": "The Orientation-Balanced Agenda",
+    "summary": "A meeting agenda template with a segment that serves each orientation, in a deliberate order. No orientation spends the whole meeting drained, and each contributes from its energy."
   },
   {
     "num": 36,
     "collection": "E",
     "mode": "Scaffold",
-    "title": "The Three-Question Kickoff"
+    "title": "The Three-Question Kickoff",
+    "summary": "A project kickoff protocol requiring the why, the what, and the how each be answered before work starts. Ten minutes that prevents the three classic mid-project stalls."
   },
   {
     "num": 37,
     "collection": "E",
     "mode": "Support",
-    "title": "The Team MindPrint\u2122 Map"
+    "title": "The Team MindPrint\u2122 Map",
+    "summary": "A one-page visual of the team's profile composition: where energy concentrates, which orientation is uncovered, and whose role is misloaded. The team's wiring, on one page, in the room."
   },
   {
     "num": 38,
     "collection": "E",
     "mode": "Teach",
-    "title": "The Friction Forecast"
+    "title": "The Friction Forecast",
+    "summary": "A guide to the predictable friction between orientations, readable from the team map. What looks like a personality clash is usually orientation friction, and friction you can forecast, you can design around."
   },
   {
     "num": 39,
     "collection": "E",
     "mode": "Scaffold",
-    "title": "Decision Rights by Orientation"
+    "title": "Decision Rights by Orientation",
+    "summary": "A template that assigns the stages of a decision to the people energized by each stage. Decision load gets matched to cognitive wiring, the way task load already should be."
   },
   {
     "num": 40,
     "collection": "E",
     "mode": "Scaffold",
-    "title": "The Mixed-Audience Deck Structure"
+    "title": "The Mixed-Audience Deck Structure",
+    "summary": "A presentation architecture for rooms that contain all three orientations. Each wiring hears what it needs to say yes, in the order that keeps everyone in the room."
   },
   {
     "num": 41,
     "collection": "E",
     "mode": "Support",
-    "title": "Meeting Keeper Cards"
+    "title": "Meeting Keeper Cards",
+    "summary": "Three rotating meeting roles, purpose keeper, progress keeper, precision keeper, each with a card of licensed interventions. Every orientation's question gets asked, even when its wiring isn't in the room."
   },
   {
     "num": 42,
     "collection": "E",
     "mode": "Scaffold",
-    "title": "The Handoff Contract"
+    "title": "The Handoff Contract",
+    "summary": "A short template completed at any cross-orientation handoff: what the receiver needs that the sender wouldn't naturally include, made explicit in both directions."
   },
   {
     "num": 43,
     "collection": "E",
     "mode": "Support",
-    "title": "The Team Energy Audit"
+    "title": "The Team Energy Audit",
+    "summary": "A quarterly team ritual mapping who is spending sustained time in their tertiary, and why. Structural drain becomes a team agenda item instead of a private endurance test."
   }
 ]

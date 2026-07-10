@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const items = await dbQuery('library_items', {
       collection: `in.(${visibleCollections.join(',')})`,
       order: 'tool_num.asc',
-      select: 'tool_num,collection,title,support_mode',
+      select: 'tool_num,collection,title,support_mode,summary',
     });
 
     const userRows = await dbGet('client_users', { id: userId });

@@ -4,11 +4,11 @@ import { useRouter } from 'next/router';
 import PortalSidebar from '../../components/PortalSidebar';
 
 const COLLECTION_META = {
-  A: { label: 'Collection A · Tertiary HOW', accent: '#FCD34D', text: '#92400E' },
-  B: { label: 'Collection B · Tertiary WHAT', accent: '#93C5FD', text: '#1E40AF' },
-  C: { label: 'Collection C · Tertiary WHY', accent: '#6EE7B7', text: '#065F46' },
-  D: { label: 'Collection D · Universal', accent: '#14B8A6', text: '#0F5C52' },
-  E: { label: 'Collection E · Teams', accent: '#059669', text: '#065F46' },
+  A: { label: 'Tertiary HOW Resources', accent: '#FCD34D', text: '#92400E' },
+  B: { label: 'Tertiary WHAT Resources', accent: '#93C5FD', text: '#1E40AF' },
+  C: { label: 'Tertiary WHY Resources', accent: '#6EE7B7', text: '#065F46' },
+  D: { label: 'Universal Resources', accent: '#14B8A6', text: '#0F5C52' },
+  E: { label: 'Teams Resources', accent: '#059669', text: '#065F46' },
 };
 
 export default function LibraryPage() {
@@ -45,10 +45,14 @@ export default function LibraryPage() {
     router.push('/portal/login');
   }
 
+  // "guide"/"template" here map to the onepager/kit PDFs stored under those
+  // names in library_items; kept as the API's internal vocabulary since
+  // nothing outside this page depends on it.
   async function openFile(toolNum, kind) {
     setDownloading(`${toolNum}-${kind}`);
     try {
-      const res = await fetch(`/api/portal/library-file?toolNum=${toolNum}&kind=${kind}`);
+      const apiKind = kind === 'template' ? 'kit' : 'onepager';
+      const res = await fetch(`/api/portal/library-file?toolNum=${toolNum}&kind=${apiKind}`);
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Failed to open file');
       window.open(d.url, '_blank', 'noopener');
@@ -68,16 +72,18 @@ export default function LibraryPage() {
   return (
     <>
       <Head>
-        <title>Client Library — Curio</title>
+        <title>Resources — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <div style={s.layout}>
         <PortalSidebar me={me} onLogout={logout} active="library" licenses={licenses} isIndividual={isIndividual} />
         <main style={s.main}>
           <div style={s.hero}>
-            <div style={s.pill}>MindPrint&trade; Client Library</div>
-            <h1 style={s.title}>Your Tertiary Support Library</h1>
-            <p style={s.sub}>One-pagers and kits for the work that drains your wiring. View or download each, no locked-content teasers, only what your account is licensed to see.</p>
+            <div style={s.pill}>Resources</div>
+            <h1 style={s.title}>Your Curated Library of Support Resources</h1>
+            <p style={s.sub}>
+              Every resource here reduces the cost of work in your tertiary orientation, the work that drains rather than energizes. Each one uses one of four support modes: <strong>Scaffold</strong> (structure that carries the thinking), <strong>Teach</strong> (a learnable micro-skill), <strong>Support</strong> (a ritual that reduces the drain), or <strong>Replace</strong> (delegate, automate, or partner it away). None of them make tertiary work energizing. All of them make it cheaper.
+            </p>
           </div>
 
           <div style={s.body}>
@@ -111,15 +117,15 @@ export default function LibraryPage() {
                         <div key={item.tool_num} style={{ ...s.card, borderTop: `3px solid ${meta.accent}` }}>
                           <div style={s.cardModeRow}>
                             <span style={{ ...s.modeChip, background: `${meta.accent}22`, color: meta.text }}>{item.support_mode}</span>
-                            <span style={s.toolNum}>Tool {item.tool_num}</span>
                           </div>
                           <div style={s.cardTitle}>{item.title}</div>
+                          {item.summary && <p style={s.cardSummary}>{item.summary}</p>}
                           <div style={s.cardActions}>
-                            <button style={s.cardBtn} disabled={downloading === `${item.tool_num}-onepager`} onClick={() => openFile(item.tool_num, 'onepager')}>
-                              {downloading === `${item.tool_num}-onepager` ? 'Opening…' : 'View one-pager'}
+                            <button style={s.cardBtn} disabled={downloading === `${item.tool_num}-guide`} onClick={() => openFile(item.tool_num, 'guide')}>
+                              {downloading === `${item.tool_num}-guide` ? 'Opening…' : 'Download Guide'}
                             </button>
-                            <button style={s.cardBtnSecondary} disabled={downloading === `${item.tool_num}-kit`} onClick={() => openFile(item.tool_num, 'kit')}>
-                              {downloading === `${item.tool_num}-kit` ? 'Opening…' : 'View kit'}
+                            <button style={s.cardBtnSecondary} disabled={downloading === `${item.tool_num}-template`} onClick={() => openFile(item.tool_num, 'template')}>
+                              {downloading === `${item.tool_num}-template` ? 'Opening…' : 'Download Template'}
                             </button>
                           </div>
                         </div>
@@ -143,7 +149,7 @@ const s = {
   hero: { padding: '52px 40px 32px', background: 'linear-gradient(135deg, rgba(5,150,105,0.05) 0%, rgba(5,150,105,0.02) 100%)', borderBottom: '1px solid #E2E8F022' },
   pill: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#059669', marginBottom: 12 },
   title: { fontFamily: "'Caveat', cursive", fontSize: '2.6rem', fontWeight: 700, color: '#0F172A', marginBottom: 8 },
-  sub: { fontSize: '0.95rem', color: '#475569', maxWidth: 640, lineHeight: 1.6 },
+  sub: { fontSize: '0.95rem', color: '#475569', maxWidth: 760, lineHeight: 1.7 },
   body: { padding: '32px 40px 64px' },
   chipRow: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 28 },
   chip: { padding: '8px 16px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
@@ -151,8 +157,8 @@ const s = {
   card: { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' },
   cardModeRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   modeChip: { fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: 99, textTransform: 'uppercase', letterSpacing: '0.04em' },
-  toolNum: { fontSize: '0.7rem', color: '#94A3B8', fontWeight: 600 },
-  cardTitle: { fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', marginBottom: 16, lineHeight: 1.4 },
+  cardTitle: { fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', marginBottom: 8, lineHeight: 1.4 },
+  cardSummary: { fontSize: '0.825rem', color: '#64748B', lineHeight: 1.6, marginBottom: 16 },
   cardActions: { display: 'flex', gap: 8 },
   cardBtn: { flex: 1, padding: '8px 12px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   cardBtnSecondary: { flex: 1, padding: '8px 12px', background: '#fff', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
