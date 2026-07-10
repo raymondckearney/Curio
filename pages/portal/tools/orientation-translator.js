@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { loadCompanionProps } from '../../../lib/companionAuth';
 import { TERTIARY_BY_PROFILE } from '../../../lib/tertiary';
 import MD from '../../../components/CompanionMarkdown';
+import PortalSidebar from '../../../components/PortalSidebar';
 
 const NAVY = '#0F172A';
 const EMERALD = '#059669';
@@ -21,10 +23,18 @@ export async function getServerSideProps({ req }) {
   const result = await loadCompanionProps(req, 'orientation_translator');
   if (result.redirect) return { redirect: { destination: '/portal/login', permanent: false } };
   if (result.locked) return { redirect: { destination: '/portal/dashboard', permanent: false } };
-  return { props: { initialProfile: result.profile } };
+  return {
+    props: {
+      initialProfile: result.profile,
+      me: result.me,
+      licenses: result.licenses,
+      isIndividual: result.isIndividual,
+    },
+  };
 }
 
-export default function OrientationTranslatorPage({ initialProfile }) {
+export default function OrientationTranslatorPage({ initialProfile, me, licenses, isIndividual }) {
+  const router = useRouter();
   // People translate to others, not to themselves: their own profile is a
   // valid choice, but listed last rather than defaulted or up front.
   const profileOptions = initialProfile
@@ -94,12 +104,21 @@ export default function OrientationTranslatorPage({ initialProfile }) {
     border: `1px solid ${active ? NAVY : RULE}`,
   });
 
+  async function logout() {
+    await fetch('/api/portal/logout', { method: 'POST' });
+    router.push('/portal/login');
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF8', fontFamily: "'DM Sans', sans-serif", color: INK }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFAF8', fontFamily: "'DM Sans', sans-serif", color: INK }}>
       <Head>
         <title>Orientation Translator — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
+
+      <PortalSidebar me={me} onLogout={logout} active="translator" licenses={licenses} isIndividual={isIndividual} />
+
+      <main style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
 
       <div style={{ background: NAVY, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
@@ -183,6 +202,8 @@ export default function OrientationTranslatorPage({ initialProfile }) {
       <div style={{ textAlign: 'center', padding: '16px 0', fontSize: 10, color: '#94A3B8' }}>
         MindPrint&trade; Language Framework v1.0 · choosecurio.com
       </div>
+
+      </main>
     </div>
   );
 }

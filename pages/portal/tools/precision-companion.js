@@ -11,6 +11,9 @@ export async function getServerSideProps({ req }) {
       initialTertiary: result.tertiary,
       isAdmin: result.isAdmin,
       hasProfile: result.hasProfile,
+      me: result.me,
+      licenses: result.licenses,
+      isIndividual: result.isIndividual,
     },
   };
 }

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { COMPANIONS_UI } from '../lib/companion-ui';
 import { TERTIARY_BY_PROFILE } from '../lib/tertiary';
 import MD from './CompanionMarkdown';
+import PortalSidebar from './PortalSidebar';
 
 const NAVY = '#0F172A';
 const EMERALD = '#059669';
@@ -12,7 +14,8 @@ const INK = '#1E293B';
 const RULE = '#E2E8F0';
 const ALL_PROFILES = Object.keys(TERTIARY_BY_PROFILE);
 
-export default function CompanionShell({ companionKey, initialProfile, initialTertiary, isAdmin, hasProfile }) {
+export default function CompanionShell({ companionKey, initialProfile, initialTertiary, isAdmin, hasProfile, me, licenses, isIndividual }) {
+  const router = useRouter();
   const companion = COMPANIONS_UI[companionKey];
   const modeKeys = Object.keys(companion.modes);
 
@@ -99,12 +102,21 @@ export default function CompanionShell({ companionKey, initialProfile, initialTe
 
   const visibleChat = convo.filter((c, i) => !(m.chat && i === 0));
 
+  async function logout() {
+    await fetch('/api/portal/logout', { method: 'POST' });
+    router.push('/portal/login');
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF8', fontFamily: "'DM Sans', sans-serif", color: INK }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFAF8', fontFamily: "'DM Sans', sans-serif", color: INK }}>
       <Head>
         <title>{companion.label} — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
+
+      <PortalSidebar me={me} onLogout={logout} active={companionKey} licenses={licenses} isIndividual={isIndividual} />
+
+      <main style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
 
       <div style={{ background: NAVY, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
@@ -252,6 +264,8 @@ export default function CompanionShell({ companionKey, initialProfile, initialTe
       <div style={{ textAlign: 'center', padding: '16px 0', fontSize: 10, color: '#94A3B8' }}>
         MindPrint&trade; Tertiary Support Library · choosecurio.com
       </div>
+
+      </main>
     </div>
   );
 }
