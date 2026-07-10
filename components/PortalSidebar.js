@@ -1,7 +1,5 @@
 import Link from 'next/link';
 
-const LIBRARY_LICENSES = ['library_full', 'library_a', 'library_b', 'library_c', 'library_d', 'library_e'];
-
 const NAV_ITEMS = [
   { key: 'dashboard',        href: '/portal/dashboard',        label: 'My Profile',           alwaysShow: true },
   { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
@@ -15,7 +13,7 @@ const NAV_ITEMS = [
   { key: 'purpose',          href: '/portal/tools/purpose-companion',   label: 'Purpose Companion',   license: 'purpose_companion' },
   { key: 'progress',         href: '/portal/tools/progress-companion',  label: 'Progress Companion',  license: 'progress_companion' },
   { key: 'translator',       href: '/portal/tools/orientation-translator', label: 'Orientation Translator', license: 'orientation_translator' },
-  { key: 'library',          href: '/portal/library',          label: 'Resources',            licenseAny: LIBRARY_LICENSES },
+  { key: 'library',          href: '/portal/library',          label: 'Resources',            alwaysShow: true },
 ];
 
 export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false }) {

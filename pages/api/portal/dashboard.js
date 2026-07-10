@@ -2,8 +2,6 @@ import { getPortalSession } from '../../../lib/portalSession';
 import { dbQuery, dbGet } from '../../../lib/supabase';
 import { tertiaryFromProfileSlug } from '../../../lib/tertiary';
 
-const LIBRARY_LICENSES = ['library_full', 'library_a', 'library_b', 'library_c', 'library_d', 'library_e'];
-
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -33,7 +31,10 @@ export default async function handler(req, res) {
     const hasPurposeCompanion = licenseTypes.has('purpose_companion');
     const hasProgressCompanion = licenseTypes.has('progress_companion');
     const hasOrientationTranslator = licenseTypes.has('orientation_translator');
-    const hasLibrary = LIBRARY_LICENSES.some(t => licenseTypes.has(t));
+    // Resources are on by default for every account (own tertiary + universal,
+    // plus Team for enterprise owners - see pages/api/portal/library.js),
+    // not gated behind a license row.
+    const hasLibrary = true;
 
     const tokenCount = tokens.length;
     const usedTokens = tokens.filter(t => t.used).length;

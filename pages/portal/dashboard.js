@@ -244,10 +244,10 @@ export default function PortalDashboard() {
                 {hasLibrary && (
                   <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                     <div>
-                      <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Your Client Library</div>
-                      <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>One-pagers and kits for your tertiary collection, plus the universal collection.</div>
+                      <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Your Resources</div>
+                      <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Guides and templates for your tertiary collection, plus the universal collection.</div>
                     </div>
-                    <Link href="/portal/library" style={{ ...s.analyzerBtn, background: color }}>Open Library →</Link>
+                    <Link href="/portal/library" style={{ ...s.analyzerBtn, background: color }}>Open Resources →</Link>
                   </div>
                 )}
               </div>
@@ -280,6 +280,16 @@ export default function PortalDashboard() {
                 <>
                   {/* Enterprise dashboard — token stats + recent assessments */}
                   <h1 style={s.welcomeTitle}>Welcome back{me.user.name ? `, ${me.user.name.split(' ')[0]}` : ''}</h1>
+
+                  {hasLibrary && (
+                    <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08`, marginBottom: 24 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Your Resources</div>
+                        <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Guides and templates for your team's collections, plus the universal collection.</div>
+                      </div>
+                      <Link href="/portal/library" style={{ ...s.analyzerBtn, background: color }}>Open Resources →</Link>
+                    </div>
+                  )}
 
                   {hasAssessment !== false && (
                     <div style={s.statsRow}>

@@ -1,6 +1,7 @@
 import { getPortalSession } from '../../../lib/portalSession';
 import { dbGet } from '../../../lib/supabase';
 import { createSignedUrl } from '../../../lib/supabaseStorage';
+import { getVisibleCollections } from '../../../lib/libraryAccess';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -14,17 +15,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const licenses = await dbGet('account_licenses', { account_id: session.accountId });
-    const now = new Date();
-    const types = new Set(licenses.filter(l => !l.expires_at || new Date(l.expires_at) > now).map(l => l.type));
-    const hasFull = types.has('library_full');
-
     const items = await dbGet('library_items', { tool_num: toolNum });
     const item = items[0];
     if (!item) return res.status(404).json({ error: 'Not found' });
 
-    const allowed = hasFull || item.collection === 'D' || types.has(`library_${item.collection.toLowerCase()}`);
-    if (!allowed) return res.status(403).json({ error: 'Not licensed for this collection.' });
+    const { visibleCollections } = await getVisibleCollections(session.accountId, session.userId);
+    if (!visibleCollections.includes(item.collection)) {
+      return res.status(403).json({ error: 'Not licensed for this collection.' });
+    }
 
     const path = kind === 'kit' ? item.kit_path : item.onepager_path;
     if (!path) return res.status(404).json({ error: 'File not available' });
