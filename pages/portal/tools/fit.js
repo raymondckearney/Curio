@@ -2,6 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import PortalSidebar from '../../../components/PortalSidebar';
 
 const TYPES = [
   { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "Purpose-driven, progress-oriented",   primary: "WHY",  secondary: "WHAT" },
@@ -311,6 +312,8 @@ export default function PortalFitPage() {
   const router = useRouter();
   const [me, setMe] = useState(null);
   const [licensed, setLicensed] = useState(null);
+  const [licenses, setLicenses] = useState([]);
+  const [isIndividual, setIsIndividual] = useState(false);
 
   useEffect(() => {
     fetch('/api/portal/me')
@@ -322,6 +325,8 @@ export default function PortalFitPage() {
           .then(dash => {
             const has = (dash?.licenses || []).some(l => l.type === 'role_analyzer' && (!l.expires_at || new Date(l.expires_at) > new Date()));
             setLicensed(has);
+            setLicenses(dash?.licenses || []);
+            setIsIndividual(!!dash?.myAssessment);
           });
       })
       .catch(() => router.replace('/portal/login'));
@@ -335,30 +340,26 @@ export default function PortalFitPage() {
   if (!me || licensed === null) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'sans-serif', color: '#94A3B8' }}>Loading…</div>;
 
   return (
-    <>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Head>
         <title>Role Fit Analyzer — {me.account.name} — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
         <style>{fitCss}</style>
       </Head>
-      <nav className="nav">
-        <Link href="/portal/dashboard" className="nav-logo">Curio<span>.</span></Link>
-        <Link href="/portal/dashboard" className="nav-back">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          Back to portal
-        </Link>
-      </nav>
-      {!licensed ? (
-        <div style={{ maxWidth: 820, margin: '80px auto', padding: '0 24px' }}>
-          <div style={{ background: '#FAFAF9', border: '1px solid #E7E5E4', borderLeft: '3px solid #059669', borderRadius: 8, padding: '40px 48px', maxWidth: 520 }}>
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1C1917', marginBottom: 12 }}>Role Fit Analyzer not included</div>
-            <p style={{ fontSize: '0.95rem', color: '#78716C', lineHeight: 1.75 }}>Your account doesn't have access to the Role Fit Analyzer. Contact your Curio account manager to upgrade.</p>
+      <PortalSidebar me={me} onLogout={logout} active="fit" licenses={licenses} isIndividual={isIndividual} />
+      <main style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
+        {!licensed ? (
+          <div style={{ maxWidth: 820, margin: '80px auto', padding: '0 24px' }}>
+            <div style={{ background: '#FAFAF9', border: '1px solid #E7E5E4', borderLeft: '3px solid #059669', borderRadius: 8, padding: '40px 48px', maxWidth: 520 }}>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1C1917', marginBottom: 12 }}>Role Fit Analyzer not included</div>
+              <p style={{ fontSize: '0.95rem', color: '#78716C', lineHeight: 1.75 }}>Your account doesn't have access to the Role Fit Analyzer. Contact your Curio account manager to upgrade.</p>
+            </div>
           </div>
-        </div>
-      ) : (
-        <FitAnalyzer me={me} />
-      )}
-    </>
+        ) : (
+          <FitAnalyzer me={me} />
+        )}
+      </main>
+    </div>
   );
 }
 
