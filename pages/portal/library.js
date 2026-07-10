@@ -3,6 +3,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import PortalSidebar from '../../components/PortalSidebar';
 
+const SUPPORT_MODES = [
+  { word: 'Scaffold', def: 'Structure that carries the thinking.' },
+  { word: 'Teach', def: 'A learnable micro-skill.' },
+  { word: 'Support', def: 'A ritual that reduces the drain.' },
+  { word: 'Replace', def: 'Delegate, automate, or partner it away.' },
+];
+
 const COLLECTION_META = {
   A: { label: 'Tertiary HOW Resources', accent: '#FCD34D', text: '#92400E' },
   B: { label: 'Tertiary WHAT Resources', accent: '#93C5FD', text: '#1E40AF' },
@@ -82,8 +89,16 @@ export default function LibraryPage() {
             <div style={s.pill}>Resources</div>
             <h1 style={s.title}>Your Curated Library of Support Resources</h1>
             <p style={s.sub}>
-              Every resource here reduces the cost of work in your tertiary orientation, the work that drains rather than energizes. Each one uses one of four support modes: <strong>Scaffold</strong> (structure that carries the thinking), <strong>Teach</strong> (a learnable micro-skill), <strong>Support</strong> (a ritual that reduces the drain), or <strong>Replace</strong> (delegate, automate, or partner it away). None of them make tertiary work energizing. All of them make it cheaper.
+              Every resource here reduces the cost of work in your tertiary orientation, the work that drains rather than energizes. None of them make tertiary work energizing. All of them make it cheaper.
             </p>
+            <div style={s.modeList}>
+              {SUPPORT_MODES.map(m => (
+                <div key={m.word} style={s.modeRow}>
+                  <span style={s.modePill}>{m.word}</span>
+                  <span style={s.modeDef}>{m.def}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div style={s.body}>
@@ -149,7 +164,11 @@ const s = {
   hero: { padding: '52px 40px 32px', background: 'linear-gradient(135deg, rgba(5,150,105,0.05) 0%, rgba(5,150,105,0.02) 100%)', borderBottom: '1px solid #E2E8F022' },
   pill: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#059669', marginBottom: 12 },
   title: { fontFamily: "'Caveat', cursive", fontSize: '2.6rem', fontWeight: 700, color: '#0F172A', marginBottom: 8 },
-  sub: { fontSize: '0.95rem', color: '#475569', maxWidth: 760, lineHeight: 1.7 },
+  sub: { fontSize: '0.95rem', color: '#475569', maxWidth: 760, lineHeight: 1.7, marginBottom: 24 },
+  modeList: { display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 640 },
+  modeRow: { display: 'flex', alignItems: 'center', gap: 16 },
+  modePill: { flexShrink: 0, minWidth: 104, textAlign: 'center', borderRadius: 9999, padding: '6px 16px', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#059669', color: '#fff' },
+  modeDef: { fontSize: '0.875rem', color: '#374151', lineHeight: 1.5 },
   body: { padding: '32px 40px 64px' },
   chipRow: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 28 },
   chip: { padding: '8px 16px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
