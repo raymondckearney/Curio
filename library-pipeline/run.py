@@ -43,11 +43,18 @@ async def main():
         pg = await b.new_page(viewport={"width":816,"height":1056})
         for hp, pp, label in jobs:
             await pg.goto("file://"+hp)
-            h = await pg.evaluate("""() => {const p=document.querySelector('.page');
-                p.style.height='auto'; p.style.overflow='visible';
-                const h=p.scrollHeight; p.style.height='11in'; p.style.overflow='hidden'; return h;}""")
-            heights.append((label,h))
-            if h > 1056: over.append((label,h))
+            hs = await pg.evaluate("""() => {
+                const pages = document.querySelectorAll('.page');
+                const out = [];
+                pages.forEach(p => {
+                    p.style.height='auto'; p.style.overflow='visible';
+                    out.push(p.scrollHeight);
+                    p.style.height='11in'; p.style.overflow='hidden';
+                });
+                return out;}""")
+            h = max(hs)
+            heights.append((label, h))
+            if h > 1056: over.append((label, hs) if len(hs) > 1 else (label, h))
             await pg.pdf(path=pp, width="8.5in", height="11in", print_background=True)
         await b.close()
     print("rendered", len(jobs), "pages")

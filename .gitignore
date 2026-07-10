@@ -5,3 +5,6 @@ node_modules/
 .env.local
 .env*.local
 .claude/
+library-pipeline/dist/
+library-pipeline/.build/
+library-pipeline/__pycache__/
