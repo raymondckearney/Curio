@@ -75,6 +75,7 @@ export default function Manual() {
           <div className="nav-group">
             <div className="nav-group-label">Public</div>
             <a href="#public-flows" className="nav-link">Public Flows</a>
+            <a href="#language-mirror" className="nav-link">Language Mirror (hidden)</a>
             <a href="#email-notifications" className="nav-link">Email Notifications</a>
           </div>
         </nav>
@@ -381,6 +382,21 @@ export default function Manual() {
                 </tbody>
               </table>
             </div>
+          </section>
+
+          <section className="section" id="language-mirror">
+            <div className="section-header">
+              <h2 className="section-title">Language Mirror (hidden)</h2>
+              <span className="section-path">/mirror</span>
+            </div>
+            <div className="badges"><span className="badge badge-public">Public</span></div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>A public, unauthenticated, hidden page: no nav/footer link anywhere, <code>&lt;meta name="robots" content="noindex, nofollow"&gt;</code>, reached only via <code>/mirror?key=&lt;token&gt;</code>. Not gated by portal auth, since testers have no account. Pastes a sample of the visitor's own writing and returns a hypothesis read (register signals plus the conspicuously quiet orientation), then a CTA to <code>/buy</code>. Prototype: <code>handoff/language_mirror.jsx</code>.</p>
+            <Card title="Token gate: mirror_tokens">A separate table from the assessment <code>tokens</code> table, no shared logic. <code>getServerSideProps</code> checks the <code>curio_mirror</code> httpOnly cookie first; if absent or invalid, falls back to the <code>?key=</code> query param, and on a valid key sets the cookie so the key never needs to reappear in the URL. Any invalid or missing credential returns a real <code>404</code> (via <code>notFound: true</code>), never 401/403, so the page reveals nothing about its own existence. <code>lib/mirrorAuth.js</code> holds the shared cookie/validation/rate-limit logic used by both the page and <code>/api/mirror</code>.</Card>
+            <Card title="Rate limit and counters">20 reads per token per day, a friendly message past the limit. <code>mirror_tokens.use_count</code> is a lifetime total (shown in admin); <code>daily_count</code> / <code>daily_count_date</code> are a separate pair that reset when the stored date isn't today, so the daily cap and the lifetime count don't fight over the same column.</Card>
+            <Card title="System prompt: lib/language-framework.js">Composed server-side in <code>pages/api/mirror.js</code> from the same shared module as the Translator and Detector (register definitions, the absence principle, detection guardrails, locked language rules), plus a small Mirror-specific task and four-section output format (The read / The evidence / The quiet third / One experiment). Never imported by any client page.</Card>
+            <Card title="Consent and writing_samples">Two checkboxes: "This is my own writing" (required to run) and an optional consent checkbox ("Curio may keep this sample to improve how MindPrint&trade; reads language"). A <code>writing_samples</code> row (<code>mirror_token_id</code>, <code>sample_text</code>, <code>mirror_output</code>, <code>consented</code>) is written only when consent is checked; unchecked, nothing is stored, not even a hash. Since every consented row is tied to a labeled token, this is an attributable corpus by design, the consent copy does not claim anonymity.</Card>
+            <Card title="Admin: Mirror Tokens">/admin, "Language Tools" nav section. Create a labeled token (e.g. "Kari pilot"), copy its <code>/mirror?key=...</code> link, deactivate it any time, killing access on the token's next request regardless of how widely the link was shared.</Card>
+            <div className="info-block"><strong>Going public later:</strong> per the handoff notes, removing the token gate, swapping in per-IP rate limiting, dropping <code>noindex</code>, and adding a nav link are the only changes needed, the page itself does not change.</div>
           </section>
 
           <section className="section" id="email-notifications">

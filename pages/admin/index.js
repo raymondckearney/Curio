@@ -60,6 +60,7 @@ const NAV = [
   ]},
   { section: 'LANGUAGE TOOLS', items: [
     { id: 'detection-feedback', label: 'Detection Feedback' },
+    { id: 'mirror-tokens',      label: 'Mirror Tokens' },
   ]},
   { section: 'SETTINGS', items: [
     { id: 'settings',     label: 'Settings' },
@@ -2038,6 +2039,120 @@ function DetectionFeedbackPanel() {
   );
 }
 
+// ─── Mirror Tokens Panel ──────────────────────────────────────────────────────
+// Create, label, and deactivate access to the hidden /mirror preview.
+// mirror_tokens is a separate table from the assessment `tokens` table and
+// has nothing to do with that flow.
+
+function MirrorTokensPanel() {
+  const [tokens, setTokens] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [label, setLabel] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [justCreated, setJustCreated] = useState(null);
+  const [copied, setCopied] = useState(null);
+
+  async function load() {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch('/api/admin/mirror-tokens');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setTokens(data.tokens);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function create() {
+    if (!label.trim()) return setError('Label is required, e.g. "Kari pilot"');
+    setError(''); setCreating(true); setJustCreated(null);
+    try {
+      const res = await fetch('/api/admin/mirror-tokens', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label: label.trim() }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setJustCreated(data.token);
+      setLabel('');
+      load();
+    } catch (e) { setError(e.message); }
+    finally { setCreating(false); }
+  }
+
+  async function setActive(id, active) {
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/mirror-tokens/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setTokens(prev => prev.map(t => t.id === id ? { ...t, active } : t));
+    } catch (e) { setError(e.message); }
+  }
+
+  function mirrorUrl(token) { return `https://www.choosecurio.com/mirror?key=${token}`; }
+  function copyUrl(token) {
+    navigator.clipboard.writeText(mirrorUrl(token));
+    setCopied(token); setTimeout(() => setCopied(null), 1500);
+  }
+
+  return (
+    <section style={s.panel}>
+      <h2 style={s.panelTitle}>Mirror Tokens</h2>
+      <p style={{ fontSize: '0.875rem', color: '#64748B', marginTop: -16, marginBottom: 20 }}>
+        Issue one labeled link per tester (e.g. "Kari pilot"). Deactivating a token kills access on its next request, no matter how many times the link was shared.
+      </p>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          <label style={s.label}>Label</label>
+          <input style={s.input} value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Kari pilot" onKeyDown={e => e.key === 'Enter' && !creating && create()} />
+        </div>
+        <button style={s.btn} onClick={create} disabled={creating}>{creating ? 'Creating…' : 'Create Token'}</button>
+      </div>
+      {error && <p style={s.error}>{error}</p>}
+
+      {justCreated && (
+        <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Link ready for "{justCreated.label}"</div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <code style={{ ...s.code, flex: 1, fontSize: '0.82rem', wordBreak: 'break-all' }}>{mirrorUrl(justCreated.token)}</code>
+            <button style={s.copyBtn} onClick={() => copyUrl(justCreated.token)}>{copied === justCreated.token ? 'Copied' : 'Copy'}</button>
+          </div>
+        </div>
+      )}
+
+      {loading && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>}
+
+      {tokens && (
+        <div style={s.tableWrap}>
+          <table style={s.table}>
+            <thead><tr>{['Label', 'Status', 'Created', 'Last used', 'Uses (total)', 'Today', 'Link', ''].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+            <tbody>
+              {tokens.map((t, i) => (
+                <tr key={t.id} style={i % 2 === 0 ? s.trEven : {}}>
+                  <td style={s.td}>{t.label}</td>
+                  <td style={s.td}>{t.active ? <span style={s.badgeUsed}>Active</span> : <span style={s.badgeRevoked}>Deactivated</span>}</td>
+                  <td style={s.td}>{new Date(t.created_at).toLocaleDateString()}</td>
+                  <td style={s.td}>{t.last_used_at ? new Date(t.last_used_at).toLocaleString() : '—'}</td>
+                  <td style={s.td}>{t.use_count}</td>
+                  <td style={s.td}>{t.daily_count_date === new Date().toISOString().slice(0, 10) ? t.daily_count : 0}</td>
+                  <td style={s.td}><button style={s.copyBtn} onClick={() => copyUrl(t.token)}>{copied === t.token ? 'Copied' : 'Copy link'}</button></td>
+                  <td style={s.td}>
+                    {t.active
+                      ? <button style={s.sendProfileBtn} onClick={() => setActive(t.id, false)}>Deactivate</button>
+                      : <button style={s.sendLinkBtn} onClick={() => setActive(t.id, true)}>Reactivate</button>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
@@ -2084,6 +2199,7 @@ export default function AdminDashboard() {
           {active === 'career' && <CareerReportsSection />}
           {active === 'accounts' && <AccountsSection />}
           {active === 'detection-feedback' && <DetectionFeedbackPanel />}
+          {active === 'mirror-tokens' && <MirrorTokensPanel />}
           {active === 'settings' && (
             <section style={s.panel}>
               <h2 style={s.panelTitle}>Settings</h2>
