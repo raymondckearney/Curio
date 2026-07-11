@@ -58,6 +58,9 @@ const NAV = [
   { section: 'MANAGE', items: [
     { id: 'accounts',     label: 'Accounts' },
   ]},
+  { section: 'LANGUAGE TOOLS', items: [
+    { id: 'detection-feedback', label: 'Detection Feedback' },
+  ]},
   { section: 'SETTINGS', items: [
     { id: 'settings',     label: 'Settings' },
     { id: 'cleanup',      label: 'Cleanup' },
@@ -1956,6 +1959,85 @@ function LinkAssessmentPanel() {
   );
 }
 
+// ─── Detection Feedback Panel ─────────────────────────────────────────────────
+// The validation corpus for the Profile Detector (beta). The agreement rate
+// here (leading hypothesis vs. labeled actual profile) is the number that
+// eventually graduates the tool out of beta, not intuition.
+
+function DetectionFeedbackPanel() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function load() {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch('/api/admin/detection-feedback');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed');
+      setData(json);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <section style={s.panel}>
+      <h2 style={s.panelTitle}>Detection Feedback</h2>
+      <p style={{ fontSize: '0.875rem', color: '#64748B', marginTop: -16, marginBottom: 20 }}>
+        Every row is a Profile Detector run someone labeled with the writer's actual profile. The agreement rate below (leading hypothesis vs. actual, where labeled) is what eventually graduates the tool out of beta.
+      </p>
+
+      {loading && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>}
+      {error && <p style={s.error}>{error}</p>}
+
+      {data && (
+        <>
+          <div style={{ display: 'flex', gap: 24, marginBottom: 20 }}>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 18px' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8' }}>Total runs</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{data.total}</div>
+            </div>
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 18px' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8' }}>Labeled</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{data.labeledCount}</div>
+            </div>
+            <div style={{ background: data.agreementRate == null ? '#F8FAFC' : '#F0FDF4', border: `1px solid ${data.agreementRate == null ? '#E2E8F0' : '#BBF7D0'}`, borderRadius: 8, padding: '12px 18px' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8' }}>Agreement rate</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 700, color: data.agreementRate == null ? '#0F172A' : '#059669' }}>
+                {data.agreementRate == null ? 'Not enough labels yet' : `${Math.round(data.agreementRate * 100)}%`}
+              </div>
+            </div>
+          </div>
+
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead><tr>{['Date', 'Writer', 'Context', 'Leading hypothesis', 'Actual profile', 'Agrees?', 'Sample'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {data.rows.map((r, i) => {
+                  const agrees = r.actual_profile ? r.leading_hypothesis === r.actual_profile : null;
+                  return (
+                    <tr key={r.id} style={i % 2 === 0 ? s.trEven : {}}>
+                      <td style={s.td}>{new Date(r.created_at).toLocaleString()}</td>
+                      <td style={s.td}>{r.own_writing ? 'Own writing' : "Colleague's"}</td>
+                      <td style={s.td}>{r.context || '—'}</td>
+                      <td style={s.td}>{r.leading_hypothesis ? <span style={profileBadgeStyle(r.leading_hypothesis)}>{r.leading_hypothesis}</span> : '—'}</td>
+                      <td style={s.td}>{r.actual_profile ? <span style={profileBadgeStyle(r.actual_profile)}>{r.actual_profile}</span> : '—'}</td>
+                      <td style={s.td}>{agrees == null ? '—' : agrees ? <span style={s.badgeUsed}>Agrees</span> : <span style={s.badgeRevoked}>Disagrees</span>}</td>
+                      <td style={{ ...s.td, ...s.urlCell }}>{r.sample_text || (r.own_writing ? '—' : 'not stored')}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
@@ -2001,6 +2083,7 @@ export default function AdminDashboard() {
           {active === 'engagements' && <EngagementsPanel onGenerateMore={handleGenerateMore} />}
           {active === 'career' && <CareerReportsSection />}
           {active === 'accounts' && <AccountsSection />}
+          {active === 'detection-feedback' && <DetectionFeedbackPanel />}
           {active === 'settings' && (
             <section style={s.panel}>
               <h2 style={s.panelTitle}>Settings</h2>

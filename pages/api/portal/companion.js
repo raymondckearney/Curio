@@ -9,6 +9,7 @@ const LICENSE_KEY_BY_TOOL = {
   purpose: 'purpose_companion',
   progress: 'progress_companion',
   translator: 'orientation_translator',
+  detector: 'orientation_translator',
 };
 
 const DAILY_CALL_CAP = 50;
@@ -60,10 +61,11 @@ export default async function handler(req, res) {
     let profile = await resolveAccountProfile(accountId, user.email);
     if (isAdmin && profileOverride && TERTIARY_BY_PROFILE[profileOverride]) profile = profileOverride;
 
-    // The Translator is universal: it doesn't require the caller to have a
-    // completed assessment on file. The three Companions still do, since
-    // their output is personalized to the caller's own profile.
-    if (tool !== 'translator' && !profile) {
+    // The Translator and the Detector are universal: neither requires the
+    // caller to have a completed assessment on file. The three Companions
+    // still do, since their output is personalized to the caller's own
+    // profile.
+    if (tool !== 'translator' && tool !== 'detector' && !profile) {
       return res.status(400).json({ error: 'Complete your MindPrint™ assessment to use the Companions.' });
     }
 
