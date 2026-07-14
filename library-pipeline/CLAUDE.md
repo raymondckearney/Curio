@@ -18,6 +18,13 @@ This folder regenerates the MindPrint™ Tertiary Support Library: 43 tool one-p
 - Collection structure and accent colors: A amber #FCD34D (tertiary HOW), B blue #93C5FD (tertiary WHAT), C mint #6EE7B7 (tertiary WHY), D teal #14B8A6 (universal), E emerald #059669 (teams).
 - `fonts_embedded.css` (base64 Caveat + DM Sans; Google Fonts CDN is not reliable in headless render environments, keep fonts embedded).
 
+## Field guides (fieldguides.py)
+Six MindPrint™ Communication Field Guides, one per profile, render to `dist/Field_Guides/` as `Field_Guide_<PRIMARY>_<SECONDARY>.pdf`. They are a separate content type from the 43 tools: their content derives from `MindPrint_Language_Framework.md` Sections 2–5 (how each profile writes and speaks, how each orientation hears it, what lands, what reads as blind, the adjustments that buy the most understanding), not from the tool one-pager/kit copy.
+
+Editable per guide, in the `GUIDES` dicts in `fieldguides.py`: `write` (prose on how this profile writes/speaks), `present` (4-item list of what shows up), `absent` (4-item list of what's missing to other orientations), `land` (3 tuples of what lands with each orientation), `blind` (prose on the profile's blind spot), `adjust` (3 tuples of adjustments). Flag content changes to Ray for approval before rendering, same as tool copy.
+
+LOCKED (do not change without Ray's explicit approval): the template layout and page size in `fieldguide_html()` (its own standalone HTML/CSS, distinct from `gen.py`'s onepager/kit templates, importing only `FONTS` from `gen.py`), and the curly-quote rule — use `“`/`”`/`’` unicode escapes for quotes and apostrophes in guide copy, never straight quotes. Each guide's accent color is its primary orientation's color (WHY mint #6EE7B7, WHAT blue #93C5FD, HOW amber #FCD34D) via the `ACCENTS` dict in `fieldguides.py` — this is independent of the tool library's collection accent colors above.
+
 ## Language rules (from MindPrint_AI_Source_of_Truth.md, non-negotiable)
 - "Energizing" and "draining", never "strength" or "weakness".
 - "Cognitive orientation", never "personality", "style", or "type".

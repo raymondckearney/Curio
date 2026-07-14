@@ -5,6 +5,7 @@ from content_ab import TOOLS_AB
 from content_cde import TOOLS_CDE
 from arts1 import ARTS_1
 from arts2 import ARTS_2
+from fieldguides import GUIDES, fieldguide_html
 
 TOOLS = TOOLS_AB + TOOLS_CDE
 ARTS = ARTS_1 + ARTS_2
@@ -23,6 +24,12 @@ for t in TOOLS:
     hp = f"{HTML}/op_{t['num']:02d}.html"
     open(hp,"w").write(onepager_html(t))
     jobs.append((hp, f"{d}/Tool_{t['num']:02d}_{slug(t['title'])}.pdf", f"OP{t['num']:02d}"))
+
+for g in GUIDES:
+    d = f"{OUT}/Field_Guides"; os.makedirs(d, exist_ok=True)
+    hp = f"{HTML}/fg_{g['profile']}.html"
+    open(hp,"w").write(fieldguide_html(g))
+    jobs.append((hp, f"{d}/Field_Guide_{g['profile'].replace('-','_')}.pdf", f"FG-{g['profile']}"))
 
 hp = f"{HTML}/catalog.html"
 open(hp,"w").write(catalog_html(TOOLS))
