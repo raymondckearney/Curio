@@ -9,7 +9,8 @@ export default async function handler(req, res) {
   if (!session) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const { visibleCollections, tertiaryCollection } = await getVisibleCollections(session.accountId, session.userId);
+    const { visibleCollections, tertiaryCollection, profile, hasFull, hasTeamAccess } =
+      await getVisibleCollections(session.accountId, session.userId);
 
     const items = await dbQuery('library_items', {
       collection: `in.(${visibleCollections.join(',')})`,
@@ -21,7 +22,17 @@ export default async function handler(req, res) {
       ? tertiaryCollection
       : (visibleCollections.includes('D') ? 'D' : visibleCollections[0]);
 
-    return res.status(200).json({ items, visibleCollections, defaultCollection });
+    // Field guides are per-profile, not collection-shaped: own guide is
+    // always visible with a completed assessment; all six with library_full
+    // or team access; unassessed callers with neither see none.
+    const allGuides = await dbQuery('library_items', {
+      item_type: 'eq.field_guide',
+      order: 'profile.asc',
+      select: 'profile,title,onepager_path',
+    });
+    const fieldGuides = (hasFull || hasTeamAccess) ? allGuides : allGuides.filter(g => g.profile === profile);
+
+    return res.status(200).json({ items, visibleCollections, defaultCollection, fieldGuides, ownProfile: profile });
   } catch (err) {
     console.error('[portal/library]', err);
     return res.status(500).json({ error: err.message });

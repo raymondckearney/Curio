@@ -18,6 +18,16 @@ const COLLECTION_META = {
   E: { label: 'Teams Resources', accent: '#059669', text: '#065F46' },
 };
 
+// Field guide accent is by PRIMARY orientation, a different axis from the
+// tertiary-collection accents above (same palette values, different meaning).
+const PRIMARY_META = {
+  WHY: { accent: '#6EE7B7', text: '#065F46' },
+  WHAT: { accent: '#93C5FD', text: '#1E40AF' },
+  HOW: { accent: '#FCD34D', text: '#92400E' },
+};
+
+const FIELD_GUIDE_LEAD = 'How your wiring shows up in writing, how each orientation hears it, and the three adjustments that buy the most understanding.';
+
 export default function LibraryPage() {
   const router = useRouter();
   const [me, setMe] = useState(null);
@@ -70,11 +80,27 @@ export default function LibraryPage() {
     }
   }
 
+  async function openGuideFile(profile) {
+    setDownloading(`guide-${profile}`);
+    try {
+      const res = await fetch(`/api/portal/library-file?profile=${profile}`);
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed to open file');
+      window.open(d.url, '_blank', 'noopener');
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setDownloading(null);
+    }
+  }
+
   if (loading) return <div style={s.loading}>Loading…</div>;
   if (!me) return null;
 
   const items = (data?.items || []).filter(i => !filter || i.collection === filter);
   const visibleCollections = data?.visibleCollections || [];
+  const fieldGuides = data?.fieldGuides || [];
+  const ownProfile = data?.ownProfile;
 
   return (
     <>
@@ -148,6 +174,34 @@ export default function LibraryPage() {
                     })}
                   </div>
                 )}
+
+                {fieldGuides.length > 0 && (
+                  <div style={s.guideSection}>
+                    <h2 style={s.guideSectionTitle}>Communication Field Guides</h2>
+                    <p style={s.guideSectionSub}>{FIELD_GUIDE_LEAD}</p>
+                    <div style={s.grid}>
+                      {fieldGuides.map(g => {
+                        const primary = g.profile.split('-')[0];
+                        const meta = PRIMARY_META[primary];
+                        const mine = g.profile === ownProfile;
+                        return (
+                          <div key={g.profile} style={{ ...s.card, borderTop: `3px solid ${meta.accent}` }}>
+                            <div style={s.cardModeRow}>
+                              <span style={{ ...s.modeChip, background: `${meta.accent}22`, color: meta.text }}>{g.profile}</span>
+                              {mine && <span style={{ ...s.modeChip, background: '#0F172A11', color: '#0F172A' }}>Your Guide</span>}
+                            </div>
+                            <div style={s.cardTitle}>{g.title}</div>
+                            <div style={s.cardActions}>
+                              <button style={s.cardBtn} disabled={downloading === `guide-${g.profile}`} onClick={() => openGuideFile(g.profile)}>
+                                {downloading === `guide-${g.profile}` ? 'Opening…' : 'Download Guide'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -182,4 +236,8 @@ const s = {
   cardBtn: { flex: 1, padding: '8px 12px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   cardBtnSecondary: { flex: 1, padding: '8px 12px', background: '#fff', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   emptyState: { background: '#fff', borderRadius: 12, padding: '40px 28px', textAlign: 'center', color: '#64748B', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' },
+
+  guideSection: { marginTop: 40 },
+  guideSectionTitle: { fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, color: '#0F172A', marginBottom: 6 },
+  guideSectionSub: { fontSize: '0.875rem', color: '#64748B', lineHeight: 1.6, marginBottom: 20, maxWidth: 640 },
 };
