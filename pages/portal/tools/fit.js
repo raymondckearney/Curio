@@ -210,7 +210,10 @@ function FitAnalyzer({ me }) {
 
   return (
     <div className="page">
-      <div className="page-label">Role Alignment Analyzer</div>
+      <div className="page-label-row">
+        <div className="page-label">Role Alignment Analyzer</div>
+        <Link href="/portal/analyzer-history" className="history-link">View past analyses →</Link>
+      </div>
       <h1 className="page-title">How well does your role<br />fit the way you think?</h1>
       <p className="page-subtitle">Select a MindPrint profile, enter a role, and get a detailed alignment analysis.</p>
       <div className="page-rule" />
@@ -373,8 +376,11 @@ const fitCss = `
   .nav-back { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #78716C; text-decoration: none; }
   .nav-back:hover { color: #059669; }
   .page { max-width: 820px; margin: 0 auto; padding: 56px clamp(24px,5vw,72px) 100px; }
-  .page-label { display: inline-flex; align-items: center; gap: 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.17em; text-transform: uppercase; color: #059669; margin-bottom: 20px; }
+  .page-label-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+  .page-label { display: inline-flex; align-items: center; gap: 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.17em; text-transform: uppercase; color: #059669; }
   .page-label::before { content: ''; display: block; width: 36px; height: 1px; background: #059669; flex-shrink: 0; }
+  .history-link { font-size: 0.8rem; font-weight: 600; color: #78716C; text-decoration: none; white-space: nowrap; }
+  .history-link:hover { color: #059669; }
   .page-title { font-family: 'Caveat', cursive; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; color: #1C1917; line-height: 1.12; margin-bottom: 16px; }
   .page-subtitle { font-size: 1rem; color: #78716C; max-width: 560px; line-height: 1.75; margin-bottom: 48px; }
   .page-rule { width: 100%; height: 1px; background: #E7E5E4; margin-bottom: 48px; }
