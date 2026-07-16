@@ -413,7 +413,7 @@ export default function Manual() {
             <div className="section-header">
               <h2 className="section-title">Email Notifications</h2>
             </div>
-            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>All outbound email goes through Resend from <code>hello@choosecurio.com</code> (participant-facing) or <code>notifications@choosecurio.com</code> (admin notifications to you). You receive a BCC on every participant email.</p>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>All outbound email goes through Resend from <code>hello@choosecurio.com</code> (participant-facing) or <code>notifications@choosecurio.com</code> (admin notifications to you). You receive a BCC on every participant email. In the three token-link emails below (admin panel, portal owner "Send Assessment Links", and the dashboard's "Email me the link" resend), the token URL renders as a green button rather than a plain text link, whenever it sits alone on its own line in the message, exactly how each one's default template already places it.</p>
             <div className="table-wrap">
               <table className="ref-table">
                 <thead><tr><th>Trigger</th><th>Recipient</th><th>Subject</th></tr></thead>

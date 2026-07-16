@@ -80,6 +80,13 @@ function buildEmailHtml(text) {
   const bodyHtml = text
     .split(/\n\n+/)
     .map(para => {
+      // A paragraph that's just a bare URL renders as a button; a URL mixed
+      // into other text stays an inline link, since a button can't sit
+      // mid-sentence.
+      if (/^https?:\/\/\S+$/.test(para.trim())) {
+        const url = para.trim();
+        return `<p style="margin:0 0 16px"><a href="${url}" style="display:inline-block;padding:12px 28px;background:#059669;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.95rem">Start Your Assessment &rarr;</a></p>`;
+      }
       const escaped = para.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const linked = escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" style="color:#059669;font-weight:600">$1</a>');
       return `<p style="margin:0 0 16px;line-height:1.7;color:#0F172A">${linked.replace(/\n/g, '<br>')}</p>`;

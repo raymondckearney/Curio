@@ -114,9 +114,9 @@ const sb = {
 
 function buildDefaultMessage(name, tokenUrl, purpose) {
   if (purpose === 'career') {
-    return `Hi ${name},\n\nI'd like to invite you to use the Curio Career Guidance Tool — an AI-powered tool that generates a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.\n\nYour personal link: ${tokenUrl}\n\nLooking forward to sharing the results with you.\n\nRay Kearney\nCurio`;
+    return `Hi ${name},\n\nI'd like to invite you to use the Curio Career Guidance Tool — an AI-powered tool that generates a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.\n\nYour personal link:\n\n${tokenUrl}\n\nLooking forward to sharing the results with you.\n\nRay Kearney\nCurio`;
   }
-  return `Hi ${name},\n\nI'd like to invite you to take the MindPrint™ Assessment — a short exercise that identifies how you're naturally wired to think through and solve problems.\n\nYour personal link: ${tokenUrl}\n\nThis link is unique to you and can only be used once. It will take approximately 10 minutes to complete.\n\nLooking forward to sharing the results with you.\n\nRay Kearney\nCurio`;
+  return `Hi ${name},\n\nI'd like to invite you to take the MindPrint™ Assessment — a short exercise that identifies how you're naturally wired to think through and solve problems.\n\nYour personal link:\n\n${tokenUrl}\n\nThis link is unique to you and can only be used once. It will take approximately 10 minutes to complete.\n\nLooking forward to sharing the results with you.\n\nRay Kearney\nCurio`;
 }
 
 function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, purpose, onClose, onSent }) {
@@ -132,7 +132,7 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
     if (!to.trim()) return setError('Recipient email is required');
     setSending(true); setError('');
     try {
-      const res = await fetch('/api/email/send-token-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, to: to.trim(), subject, message, participantEmail }) });
+      const res = await fetch('/api/email/send-token-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, to: to.trim(), subject, message, participantEmail, purpose }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send');
       onSent();

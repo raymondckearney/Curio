@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const hasCookie = !!getAdminSession(req);
   if (!hasBearer && !hasCookie) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { token, to, subject, message, participantEmail } = req.body;
+  const { token, to, subject, message, participantEmail, purpose } = req.body;
   if (!token || !to || !subject || !message) {
     return res.status(400).json({ error: 'token, to, subject, and message are required' });
   }
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       bcc: ['raymondckearney@gmail.com'],
       subject,
       text: message,
-      html: buildEmailHtml(message),
+      html: buildEmailHtml(message, purpose),
     });
   } catch (err) {
     console.error('[send-token-link] resend failed:', err);
@@ -49,10 +49,18 @@ export default async function handler(req, res) {
   return res.status(200).json({ success: true });
 }
 
-function buildEmailHtml(text) {
+function buildEmailHtml(text, purpose) {
+  const buttonLabel = purpose === 'career' ? 'Access Your Career Guidance Tool' : 'Start Your Assessment';
   const bodyHtml = text
     .split(/\n\n+/)
     .map(para => {
+      // A paragraph that's just a bare URL renders as a button; a URL mixed
+      // into other text stays an inline link, since a button can't sit
+      // mid-sentence.
+      if (/^https?:\/\/\S+$/.test(para.trim())) {
+        const url = para.trim();
+        return `<p style="margin:0 0 16px"><a href="${url}" style="display:inline-block;padding:12px 28px;background:#059669;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.95rem">${buttonLabel} &rarr;</a></p>`;
+      }
       const escaped = para
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
