@@ -16,5 +16,10 @@ export default async function handler(req, res) {
     name: [row.created_for_name, row.name].find(n => n && n.toLowerCase() !== 'individual') || '',
     email: row.created_for_email || row.email || '',
     used: row.used || false,
+    // Whether this token already belongs to an existing portal account (e.g.
+    // it's a team member's own pending-assessment token, surfaced back to
+    // them from their dashboard) rather than a cold token from initial
+    // distribution. Never expose the account_id itself here, unauthenticated.
+    hasAccount: !!row.account_id,
   });
 }

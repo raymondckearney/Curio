@@ -7,14 +7,43 @@ import profiles from '../../lib/profiles';
 export default function ResultsPage() {
   const router = useRouter();
   const { type, name: urlName, email: urlEmail, token, from } = router.query;
+  // A token param means this page was reached fresh off the quiz, and will
+  // very likely redirect to /signup once the lookup below resolves. Default
+  // to "checking" so the full profile never flashes before that redirect
+  // fires; only stop checking once we know for certain we're staying here
+  // (no token, an already-used token, or the lookup failing).
+  const [checkingToken, setCheckingToken] = useState(true);
 
   useEffect(() => {
-    if (!router.isReady || !token || !type) return;
-    // Look up token to get tier + participant info, then redirect to signup
+    if (!router.isReady) return;
+    if (!token || !type) { setCheckingToken(false); return; }
+    // Look up token to get tier + participant info, then either apply it to
+    // an already-logged-in existing account, or route a brand-new visitor
+    // to signup.
     fetch(`/api/tokens/info?token=${encodeURIComponent(token)}`)
       .then(r => r.ok ? r.json() : null)
-      .then(info => {
-        if (!info || info.used) return; // already consumed or not found — do nothing
+      .then(async info => {
+        if (!info || info.used) { setCheckingToken(false); return; } // already consumed or not found — show the profile
+
+        // This token already belongs to an existing account (e.g. it's the
+        // caller's own pending-assessment token, surfaced from their
+        // dashboard) rather than a cold token from initial distribution.
+        // If they're still logged in from having started there, apply the
+        // token to their account and send them straight back to the
+        // dashboard instead of through signup (which 400s on a duplicate
+        // email for an account that already exists).
+        if (info.hasAccount) {
+          const me = await fetch('/api/portal/me').then(r => r.ok ? r.json() : null).catch(() => null);
+          if (me) {
+            const applied = await fetch('/api/portal/complete-assessment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token }),
+            }).then(r => r.ok).catch(() => false);
+            if (applied) { router.replace('/portal/dashboard'); return; }
+          }
+        }
+
         // Prefer DB-stored quiz data; fall back to URL params piped from Typeform
         const sigName = info.name || urlName || '';
         const sigEmail = info.email || urlEmail || '';
@@ -22,11 +51,31 @@ export default function ResultsPage() {
         if (sigName) params.set('name', sigName);
         if (sigEmail) params.set('email', sigEmail);
         router.replace(`/signup?${params.toString()}`);
+        // Leave checkingToken true — this page unmounts once the redirect completes.
       })
-      .catch(() => {});
+      .catch(() => setCheckingToken(false));
   }, [router.isReady, token, type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const profile = type ? profiles[type] : null;
+
+  if (profile && checkingToken) {
+    return (
+      <>
+        <Head>
+          <title>Preparing your profile… — Curio</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Head>
+        <div className="checking-page">
+          <div className="checking-spinner" />
+        </div>
+        <style>{`
+          .checking-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #fff; }
+          .checking-spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid #E7E5E4; border-top-color: #059669; animation: checking-spin 0.8s linear infinite; }
+          @keyframes checking-spin { to { transform: rotate(360deg); } }
+        `}</style>
+      </>
+    );
+  }
 
   if (!profile) {
     return (
