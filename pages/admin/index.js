@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { TERTIARY_BY_PROFILE, COMPANION_BY_TERTIARY, COLLECTION_BY_TERTIARY } from '../../lib/tertiary';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,18 @@ const TOOL_LABELS = {
 const ALL_TOOLS = LICENSE_TYPES;
 
 function profileColor(id) { return PRIMARY_COLOR[id?.split('-')[0]] || '#64748B'; }
+
+// The Companion + Resources collection that a given profile's tertiary
+// orientation maps to, for the admin panel's profile-match preset (used to
+// stand up sales demo accounts without hunting for the right license types).
+function profileMatchLicenses(profile) {
+  const tertiary = TERTIARY_BY_PROFILE[profile];
+  if (!tertiary) return [];
+  return [
+    { type: `${COMPANION_BY_TERTIARY[tertiary]}_companion`, quantity: null, expires_at: null },
+    { type: `library_${COLLECTION_BY_TERTIARY[tertiary].toLowerCase()}`, quantity: null, expires_at: null },
+  ];
+}
 
 const FIT_TYPES = [
   { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "Purpose-driven, progress-oriented",   primary: "WHY",  secondary: "WHAT" },
@@ -1327,10 +1340,19 @@ function InvitePanel({ onClose, onSuccess }) {
   const [licType, setLicType] = useState('role_analyzer');
   const [licQty, setLicQty] = useState('');
   const [licExpiry, setLicExpiry] = useState('');
+  const [matchProfile, setMatchProfile] = useState(PROFILES[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   function addLicense() { setLicenses(prev => [...prev, { type: licType, quantity: licQty || null, expires_at: licExpiry || null }]); setLicQty(''); setLicExpiry(''); }
+
+  function addProfileMatch() {
+    const toAdd = profileMatchLicenses(matchProfile);
+    setLicenses(prev => {
+      const existingTypes = new Set(prev.map(l => l.type));
+      return [...prev, ...toAdd.filter(l => !existingTypes.has(l.type))];
+    });
+  }
 
   async function submit() {
     if (!email.trim()) { setError('Email is required'); return; }
@@ -1374,6 +1396,13 @@ function InvitePanel({ onClose, onSuccess }) {
           <div><label style={s.fieldLabel}>Expiry</label><input style={s.fieldInput} type="date" value={licExpiry} onChange={e => setLicExpiry(e.target.value)} /></div>
           <button style={s.btnSmall} onClick={addLicense}>+ Add</button>
         </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 10, paddingTop: 10, borderTop: '1px dashed #E2E8F0' }}>
+          <div style={{ flex: 1 }}>
+            <label style={s.fieldLabel}>Or grant profile match (Companion + Resources collection, for demos)</label>
+            <select style={s.fieldInput} value={matchProfile} onChange={e => setMatchProfile(e.target.value)}>{PROFILES.map(p => <option key={p} value={p}>{p}</option>)}</select>
+          </div>
+          <button style={s.btnSmall} onClick={addProfileMatch}>+ Add Match</button>
+        </div>
       </div>
       {error && <p style={s.error}>{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
@@ -1390,6 +1419,7 @@ function EditPanel({ account, onClose, onSave }) {
   const [licType, setLicType] = useState('role_analyzer');
   const [licQty, setLicQty] = useState('');
   const [licExpiry, setLicExpiry] = useState('');
+  const [matchProfile, setMatchProfile] = useState(PROFILES[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tokenData, setTokenData] = useState(null);
@@ -1448,6 +1478,14 @@ function EditPanel({ account, onClose, onSave }) {
 
   function addLicense() { setLicenses(prev => [...prev, { type: licType, quantity: licQty || null, expires_at: licExpiry || null }]); setLicQty(''); setLicExpiry(''); }
 
+  function addProfileMatch() {
+    const toAdd = profileMatchLicenses(matchProfile);
+    setLicenses(prev => {
+      const existingTypes = new Set(prev.map(l => l.type));
+      return [...prev, ...toAdd.filter(l => !existingTypes.has(l.type))];
+    });
+  }
+
   async function save() {
     setLoading(true); setError('');
     try {
@@ -1486,6 +1524,13 @@ function EditPanel({ account, onClose, onSave }) {
           <div><label style={s.fieldLabel}>Qty</label><input style={{ ...s.fieldInput, width: 70 }} type="number" value={licQty} onChange={e => setLicQty(e.target.value)} placeholder="—" /></div>
           <div><label style={s.fieldLabel}>Expiry</label><input style={s.fieldInput} type="date" value={licExpiry} onChange={e => setLicExpiry(e.target.value)} /></div>
           <button style={s.btnSmall} onClick={addLicense}>+ Add</button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 10, paddingTop: 10, borderTop: '1px dashed #E2E8F0' }}>
+          <div style={{ flex: 1 }}>
+            <label style={s.fieldLabel}>Or grant profile match (Companion + Resources collection, for demos)</label>
+            <select style={s.fieldInput} value={matchProfile} onChange={e => setMatchProfile(e.target.value)}>{PROFILES.map(p => <option key={p} value={p}>{p}</option>)}</select>
+          </div>
+          <button style={s.btnSmall} onClick={addProfileMatch}>+ Add Match</button>
         </div>
       </div>
       {purchases.length > 0 && (
