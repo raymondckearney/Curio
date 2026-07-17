@@ -19,6 +19,7 @@ export default async function handler(req, res) {
     ]);
 
     const user = userRows[0];
+    const tier = account[0]?.tier || 'basic';
     const now = new Date();
     const activeLicenses = licenses.filter(l => !l.expires_at || new Date(l.expires_at) > now);
     const licenseTypes = new Set(activeLicenses.map(l => l.type));
@@ -27,9 +28,6 @@ export default async function handler(req, res) {
     const hasRoleAnalyzer = licenseTypes.has('role_analyzer');
     const hasCareerGuidance = licenseTypes.has('career_guidance');
     const hasJdAnalyzer = licenseTypes.has('jd_analyzer');
-    const hasPrecisionCompanion = licenseTypes.has('precision_companion');
-    const hasPurposeCompanion = licenseTypes.has('purpose_companion');
-    const hasProgressCompanion = licenseTypes.has('progress_companion');
     const hasOrientationTranslator = licenseTypes.has('orientation_translator');
     // Resources are on by default for every account (own tertiary + universal,
     // plus Team for enterprise owners - see pages/api/portal/library.js),
@@ -58,6 +56,14 @@ export default async function handler(req, res) {
     }
 
     const tertiary = myAssessment?.type ? tertiaryFromProfileSlug(myAssessment.type.toLowerCase()) : null;
+
+    // Premium accounts get their own tertiary-matching Companion free, same
+    // baseline pattern as Resources' free tertiary collection above; an
+    // explicit license still grants a non-matching Companion on top (used
+    // for sales demos via the admin panel's profile-match preset).
+    const hasPrecisionCompanion = licenseTypes.has('precision_companion') || (tier !== 'basic' && tertiary === 'HOW');
+    const hasPurposeCompanion = licenseTypes.has('purpose_companion') || (tier !== 'basic' && tertiary === 'WHY');
+    const hasProgressCompanion = licenseTypes.has('progress_companion') || (tier !== 'basic' && tertiary === 'WHAT');
 
     // If this user hasn't completed their own assessment yet, surface their
     // unused assessment token so the portal can link straight to /go/<token>

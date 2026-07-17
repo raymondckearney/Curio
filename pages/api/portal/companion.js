@@ -45,15 +45,15 @@ export default async function handler(req, res) {
   const { accountId, userId } = session;
 
   try {
-    const [licenses, userRows] = await Promise.all([
+    const [licenses, userRows, accountRows] = await Promise.all([
       dbGet('account_licenses', { account_id: accountId, type: LICENSE_KEY_BY_TOOL[tool] }),
       dbGet('client_users', { id: userId }),
+      dbGet('client_accounts', { id: accountId }),
     ]);
 
     const now = new Date();
     const hasLicense = licenses.some(l => !l.expires_at || new Date(l.expires_at) > now);
     const isAdmin = !!getAdminSession(req);
-    if (!hasLicense && !isAdmin) return res.status(403).json({ error: 'This Companion is not licensed on your account.' });
 
     const user = userRows[0];
     if (!user) return res.status(401).json({ error: 'Unauthorized' });
@@ -70,6 +70,16 @@ export default async function handler(req, res) {
     }
 
     const tertiary = profile ? tertiaryFromProfileSlug(profile.toLowerCase()) : null;
+
+    // Premium accounts get their tertiary-matching Companion free, same
+    // baseline as the dashboard card and Resources' free tertiary
+    // collection; an explicit license still grants access to a
+    // non-matching Companion (or to a basic-tier account).
+    const TERTIARY_BY_TOOL = { precision: 'HOW', purpose: 'WHY', progress: 'WHAT' };
+    const tier = accountRows[0]?.tier || 'basic';
+    const hasDefaultAccess = tier !== 'basic' && TERTIARY_BY_TOOL[tool] && tertiary === TERTIARY_BY_TOOL[tool];
+
+    if (!hasLicense && !hasDefaultAccess && !isAdmin) return res.status(403).json({ error: 'This Companion is not licensed on your account.' });
 
     // Per-user daily cap, counted against calendar-day UTC boundaries.
     const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
