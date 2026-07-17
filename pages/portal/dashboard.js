@@ -131,7 +131,7 @@ export default function PortalDashboard() {
                     <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>How your wiring shows up in writing, how each orientation hears it, and the three adjustments that buy the most understanding.</div>
                   </div>
                   <button
-                    onClick={() => openFieldGuide(assessment.type)}
+                    onClick={() => openFieldGuide(assessment.type.toUpperCase())}
                     disabled={guideOpening}
                     style={{ ...s.analyzerBtn, background: color, border: 'none', cursor: 'pointer' }}
                   >
