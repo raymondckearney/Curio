@@ -19,13 +19,17 @@ export default async function handler(req, res) {
       }
 
       const enriched = await Promise.all(accounts.map(async acc => {
-        const [users, licenses] = await Promise.all([
+        const [users, licenses, tokens] = await Promise.all([
           dbQuery('client_users', { account_id: `eq.${acc.id}`, select: 'id,email,name,role,last_login_at,provider', order: 'created_at.asc' }),
           dbQuery('account_licenses', { account_id: `eq.${acc.id}`, select: '*' }),
+          dbQuery('tokens', { account_id: `eq.${acc.id}`, select: 'engagement_id', order: 'created_at.asc' }),
         ]);
         const primaryEmail = (users[0] || {}).email;
         const purchases = primaryEmail ? (purchasesByEmail[primaryEmail] || []) : [];
-        return { ...acc, users, licenses, purchases };
+        // An account's tokens may span more than one engagement (e.g. more
+        // added later under a different label); show all distinct ones.
+        const engagementIds = [...new Set(tokens.map(t => t.engagement_id).filter(Boolean))];
+        return { ...acc, users, licenses, purchases, engagementIds };
       }));
 
       return res.status(200).json({ accounts: enriched });

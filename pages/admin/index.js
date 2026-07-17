@@ -172,6 +172,8 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
 // ─── Tool Access Field ────────────────────────────────────────────────────────
 
 function ToolAccessField({ grantedTools, setGrantedTools }) {
+  const [matchProfile, setMatchProfile] = useState(PROFILES[0]);
+
   function applyPreset(preset) {
     if (preset === 'basic') setGrantedTools(['assessment_tokens']);
     else if (preset === 'premium') setGrantedTools([...ALL_TOOLS]);
@@ -179,6 +181,10 @@ function ToolAccessField({ grantedTools, setGrantedTools }) {
   }
   function toggle(tool) {
     setGrantedTools(prev => prev.includes(tool) ? prev.filter(t => t !== tool) : [...prev, tool]);
+  }
+  function addProfileMatch() {
+    const toAdd = profileMatchLicenses(matchProfile).map(l => l.type);
+    setGrantedTools(prev => Array.from(new Set([...prev, ...toAdd])));
   }
   return (
     <div style={s.fieldGroup}>
@@ -188,13 +194,20 @@ function ToolAccessField({ grantedTools, setGrantedTools }) {
           <button key={p.id} onClick={() => applyPreset(p.id)} style={{ padding: '4px 12px', border: '1px solid #CBD5E0', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: '#F8FAFC', color: '#374151' }}>{p.label}</button>
         ))}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
         {ALL_TOOLS.map(tool => (
           <label key={tool} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: '#374151', cursor: 'pointer' }}>
             <input type="checkbox" checked={grantedTools.includes(tool)} onChange={() => toggle(tool)} style={{ accentColor: '#059669', width: 16, height: 16 }} />
             {TOOL_LABELS[tool]}
           </label>
         ))}
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingTop: 10, borderTop: '1px dashed #E2E8F0' }}>
+        <div style={{ flex: 1 }}>
+          <label style={s.label}>Or check the boxes for a profile match (Companion + Resources collection)</label>
+          <select style={s.select} value={matchProfile} onChange={e => setMatchProfile(e.target.value)}>{PROFILES.map(p => <option key={p} value={p}>{p}</option>)}</select>
+        </div>
+        <button type="button" style={{ padding: '4px 12px', border: '1px solid #CBD5E0', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: '#F8FAFC', color: '#374151' }} onClick={addProfileMatch}>+ Add Match</button>
       </div>
     </div>
   );
@@ -1660,6 +1673,31 @@ const accTypeBadge = {
   enterprise: { background: '#1E3A5F', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', fontWeight: 600 },
 };
 
+function FilterTH({ label, kind, value, onChange, options, width }) {
+  return (
+    <th style={{ ...s.th, minWidth: width || 110, verticalAlign: 'top' }}>
+      <div style={{ marginBottom: 5 }}>{label}</div>
+      {kind === 'select' ? (
+        <select
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          style={{ width: '100%', fontSize: '0.75rem', padding: '3px 4px', border: '1px solid #E2E8F0', borderRadius: 4, fontWeight: 400, textTransform: 'none', letterSpacing: 'normal', color: '#374151', background: '#fff', fontFamily: "'DM Sans', sans-serif" }}
+        >
+          <option value="">All</option>
+          {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      ) : (
+        <input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder="Filter…"
+          style={{ width: '100%', fontSize: '0.75rem', padding: '3px 6px', border: '1px solid #E2E8F0', borderRadius: 4, fontWeight: 400, textTransform: 'none', letterSpacing: 'normal', color: '#374151', boxSizing: 'border-box', fontFamily: "'DM Sans', sans-serif" }}
+        />
+      )}
+    </th>
+  );
+}
+
 function AccountsSection() {
   const [accounts, setAccounts] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1667,9 +1705,14 @@ function AccountsSection() {
   const [showInvite, setShowInvite] = useState(false);
   const [editId, setEditId] = useState(null);
   const [actionMsg, setActionMsg] = useState('');
-  const [accSearch, setAccSearch] = useState('');
+  const [engagementFilter, setEngagementFilter] = useState('');
+  const [nameFilter, setNameFilter] = useState('');
+  const [emailFilter, setEmailFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [tierFilter, setTierFilter] = useState('');
+  const [userTypeFilter, setUserTypeFilter] = useState('');
+  const [providerFilter, setProviderFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   async function load() {
     setLoading(true); setError('');
@@ -1691,15 +1734,25 @@ function AccountsSection() {
     enterprise: accounts.filter(a => accountType(a) === 'enterprise').length,
   } : null;
 
+  const anyFilterActive = engagementFilter || nameFilter || emailFilter || typeFilter || tierFilter || userTypeFilter || providerFilter || statusFilter;
+  function clearFilters() {
+    setEngagementFilter(''); setNameFilter(''); setEmailFilter('');
+    setTypeFilter(''); setTierFilter(''); setUserTypeFilter(''); setProviderFilter(''); setStatusFilter('');
+  }
+
   const filtered = (accounts || []).filter(acc => {
-    const q = accSearch.toLowerCase();
-    if (q) {
-      const name = (acc.name || '').toLowerCase();
-      const email = ((acc.users || [])[0]?.email || '').toLowerCase();
-      if (!name.includes(q) && !email.includes(q)) return false;
+    const primaryUser = (acc.users || [])[0];
+    if (engagementFilter) {
+      const q = engagementFilter.toLowerCase();
+      if (!(acc.engagementIds || []).some(e => e.toLowerCase().includes(q))) return false;
     }
+    if (nameFilter && !(acc.name || '').toLowerCase().includes(nameFilter.toLowerCase())) return false;
+    if (emailFilter && !(primaryUser?.email || '').toLowerCase().includes(emailFilter.toLowerCase())) return false;
     if (typeFilter && accountType(acc) !== typeFilter) return false;
     if (tierFilter && (acc.tier || 'basic') !== tierFilter) return false;
+    if (userTypeFilter && (primaryUser?.role || 'owner') !== userTypeFilter) return false;
+    if (providerFilter && (primaryUser?.provider || 'email') !== providerFilter) return false;
+    if (statusFilter && (acc.status || 'active') !== statusFilter) return false;
     return true;
   });
 
@@ -1723,42 +1776,48 @@ function AccountsSection() {
         {loading && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>}
         {error && <p style={s.error}>{error}</p>}
         {accounts && (
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-            <input style={{ ...s.input, maxWidth: 220 }} placeholder="Search name or email…" value={accSearch} onChange={e => setAccSearch(e.target.value)} />
-            <select style={{ ...s.select, maxWidth: 160 }} value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
-              <option value="">All Types</option>
-              <option value="free">Free</option>
-              <option value="paid">Paid</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
-            <select style={{ ...s.select, maxWidth: 140 }} value={tierFilter} onChange={e => setTierFilter(e.target.value)}>
-              <option value="">All Tiers</option>
-              <option value="basic">Basic</option>
-              <option value="premium">Premium</option>
-            </select>
-            {(accSearch || typeFilter || tierFilter) && <button style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.875rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", padding: '4px 8px' }} onClick={() => { setAccSearch(''); setTypeFilter(''); setTierFilter(''); }}>Clear</button>}
-            <span style={{ fontSize: '0.82rem', color: '#94A3B8', marginLeft: 'auto' }}>{filtered.length} of {accounts.length}</span>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 10, gap: 10 }}>
+            {anyFilterActive && <button style={{ background: 'none', border: 'none', color: '#059669', fontSize: '0.875rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", padding: '4px 8px' }} onClick={clearFilters}>Clear filters</button>}
+            <span style={{ fontSize: '0.82rem', color: '#94A3B8' }}>{filtered.length} of {accounts.length}</span>
           </div>
         )}
         {accounts && accounts.length === 0 && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No accounts yet.</p>}
         {accounts && accounts.length > 0 && (
           <div style={s.tableWrap}>
             <table style={s.table}>
-              <thead><tr>{['Name','Email','Type','Tier','Provider','Status','Last Login','Created','Actions'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+              <thead>
+                <tr>
+                  <FilterTH label="Engagement" kind="text" value={engagementFilter} onChange={setEngagementFilter} width={130} />
+                  <FilterTH label="Name" kind="text" value={nameFilter} onChange={setNameFilter} width={130} />
+                  <FilterTH label="Email" kind="text" value={emailFilter} onChange={setEmailFilter} width={160} />
+                  <FilterTH label="Type" kind="select" value={typeFilter} onChange={setTypeFilter} options={[{ value: 'free', label: 'Free' }, { value: 'paid', label: 'Paid' }, { value: 'enterprise', label: 'Enterprise' }]} width={100} />
+                  <FilterTH label="Tier" kind="select" value={tierFilter} onChange={setTierFilter} options={[{ value: 'basic', label: 'Basic' }, { value: 'premium', label: 'Premium' }]} width={100} />
+                  <FilterTH label="User Type" kind="select" value={userTypeFilter} onChange={setUserTypeFilter} options={[{ value: 'owner', label: 'Owner' }, { value: 'member', label: 'Member' }]} width={100} />
+                  <FilterTH label="Provider" kind="select" value={providerFilter} onChange={setProviderFilter} options={[{ value: 'email', label: 'Email' }, { value: 'google', label: 'Google' }]} width={100} />
+                  <FilterTH label="Status" kind="select" value={statusFilter} onChange={setStatusFilter} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} width={100} />
+                  <th style={s.th}>Last Login</th>
+                  <th style={s.th}>Created</th>
+                  <th style={s.th}>Actions</th>
+                </tr>
+              </thead>
               <tbody>
                 {filtered.flatMap((acc, i) => {
                   const primaryUser = (acc.users || [])[0];
                   const provider = primaryUser?.provider || 'email';
+                  const userType = primaryUser?.role || 'owner';
                   const lastLogin = primaryUser?.last_login_at ? new Date(primaryUser.last_login_at).toLocaleDateString() : 'Never';
                   const created = new Date(acc.created_at).toLocaleDateString();
                   const status = acc.status || 'active';
                   const type = accountType(acc);
+                  const engagementLabel = (acc.engagementIds || []).join(', ') || '—';
                   const mainRow = (
                     <tr key={acc.id} style={i % 2 === 0 ? s.trEven : {}}>
+                      <td style={{ ...s.td, fontSize: '0.82rem', color: '#64748B' }}>{engagementLabel}</td>
                       <td style={{ ...s.td, fontWeight: 600 }}>{acc.name}</td>
                       <td style={{ ...s.td, fontSize: '0.82rem' }}>{primaryUser?.email || '—'}</td>
                       <td style={s.td}><span style={accTypeBadge[type]}>{type}</span></td>
                       <td style={s.td}><span style={acc.tier === 'premium' ? s.badgePremium : s.badgeBasic}>{acc.tier || 'basic'}</span></td>
+                      <td style={s.td}><span style={userType === 'owner' ? s.badgePremium : s.badgeBasic}>{userType}</span></td>
                       <td style={s.td}><span style={provider === 'google' ? s.badgeGoogle : s.badgeEmail}>{provider}</span></td>
                       <td style={s.td}><span style={status === 'active' ? s.badgeActive : s.badgeRevoked}>{status}</span></td>
                       <td style={{ ...s.td, fontSize: '0.82rem', color: '#64748B' }}>{lastLogin}</td>
@@ -1774,9 +1833,9 @@ function AccountsSection() {
                     </tr>
                   );
                   if (editId !== acc.id) return [mainRow];
-                  return [mainRow, <tr key={`${acc.id}-edit`}><td colSpan={9} style={{ padding: 0 }}><EditPanel account={acc} onClose={() => setEditId(null)} onSave={() => { load(); setEditId(null); }} /></td></tr>];
+                  return [mainRow, <tr key={`${acc.id}-edit`}><td colSpan={11} style={{ padding: 0 }}><EditPanel account={acc} onClose={() => setEditId(null)} onSave={() => { load(); setEditId(null); }} /></td></tr>];
                 })}
-                {filtered.length === 0 && <tr><td colSpan={9} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>No accounts match your filter.</td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={11} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>No accounts match your filter.</td></tr>}
               </tbody>
             </table>
           </div>
