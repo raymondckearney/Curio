@@ -66,6 +66,7 @@ export default function Manual() {
             <a href="#portal-team" className="nav-link">My Team</a>
             <a href="#portal-tokens" className="nav-link">Assessment Tokens</a>
             <a href="#portal-results" className="nav-link">Assessment Results</a>
+            <a href="#portal-analytics" className="nav-link">Analytics</a>
             <a href="#portal-tools" className="nav-link">AI Tools</a>
             <a href="#portal-companions" className="nav-link">AI Companions</a>
             <a href="#portal-translator" className="nav-link">MindPrint Language Tools</a>
@@ -242,6 +243,7 @@ export default function Manual() {
                 <li>If the user hasn't completed an assessment yet, a pending state is shown. If they have an unused assessment token on the account, a <strong>Start Your Assessment →</strong> button links straight to their <code>/go/&lt;token&gt;</code> link, with an <strong>Email me the link</strong> fallback (<code>/api/portal/resend-assessment</code>) that re-sends the same link to their own address. If no token is found at all, it falls back to "Check your email for the link."</li>
               </ul>
             </Card>
+            <Card title="Whose assessment is &quot;mine&quot;?"><code>pages/api/portal/dashboard.js</code> matches the logged-in user's own completed assessment by email. If nothing matches and the account has exactly one assessment total, it falls back to that one (covers a genuine single-person account whose stored assessment email differs slightly from their portal login email). If the account has more than one assessment and none match, <code>myAssessment</code> stays null rather than falling back to some other person's — an enterprise owner who set up a team's tokens but hasn't taken the assessment themselves sees the pending state, not a random team member's profile. This same value drives <code>isIndividual</code> (which hides My Team / Assessment Tokens / Assessment Results / Analytics from the nav when true) and the tertiary used for the free Companion/Resources defaults below, so getting it right here matters beyond just this page.</Card>
             <Card title="Your Communication Field Guide">A card just below the profile hero, shown to any user with a completed assessment, no extra license required. <strong>View Field Guide →</strong> opens a signed URL for the PDF matching the user's own profile (e.g. WHY-WHAT), fetched via <code>/api/portal/library-file?profile=&lt;type&gt;</code>.</Card>
           </section>
 
@@ -290,6 +292,17 @@ export default function Manual() {
                 <li><strong>Members</strong> see all results unless <em>Restrict Results</em> is enabled on the account (set by admin), in which case they only see their own row.</li>
               </ul>
             </Card>
+          </section>
+
+          <section className="section" id="portal-analytics">
+            <div className="section-header">
+              <h2 className="section-title">Analytics</h2>
+              <span className="section-path">/portal/analytics</span>
+            </div>
+            <div className="badges"><span className="badge badge-owner">Owner only</span></div>
+            <Card title="Two pie charts">One breaks down every completed assessment on the account by full profile (six slices); the other by primary orientation (WHY/WHAT/HOW, three slices). Both pull from every assessment tied to the account's tokens, same data source as Assessment Results, not just the 5 shown on the dashboard.</Card>
+            <Card title="Generate a List">Filter by Profile, Primary Orientation, or Tertiary Orientation, pick a value, and a table appears with name, email, and profile for everyone matching. <strong>Email Group (n) →</strong> opens the account owner's own email client via a <code>mailto:</code> link with every matching email address pre-filled on <code>bcc</code>, so recipients don't see each other's addresses.</Card>
+            <Card title="API: /api/portal/analytics">Owner-only (403 for members), returns every completed assessment on the account regardless of <em>Restrict Results</em>, since that setting only limits what members see, not owners.</Card>
           </section>
 
           <section className="section" id="portal-tools">
