@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
   { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',    license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
   { key: 'results',          href: '/portal/results',          label: 'Assessment Results',   license: 'assessment_tokens', enterpriseOnly: true },
+  { key: 'analytics',        href: '/portal/analytics',        label: 'Analytics',            license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
   { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',        license: 'role_analyzer' },
   { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance Tool', license: 'career_guidance' },
   { key: 'jd',               href: '/portal/tools/jd',        label: 'JD Analyzer',          license: 'jd_analyzer' },
