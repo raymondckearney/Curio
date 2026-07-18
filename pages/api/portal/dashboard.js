@@ -51,7 +51,14 @@ export default async function handler(req, res) {
       recentAssessments = aRes;
 
       if (user?.email) {
-        myAssessment = aRes.find(a => a.email === user.email) || aRes[0] || null;
+        // The aRes[0] fallback exists for a genuine single-person account
+        // whose stored assessment email doesn't exactly match their portal
+        // login email. It must never fire when the account has more than
+        // one assessment (an enterprise owner managing a team who hasn't
+        // taken the assessment themselves), or it misattributes a team
+        // member's profile as the owner's own, both on their dashboard and
+        // via isIndividual, which then hides the enterprise-only nav items.
+        myAssessment = aRes.find(a => a.email === user.email) || (aRes.length === 1 ? aRes[0] : null);
       }
     }
 
