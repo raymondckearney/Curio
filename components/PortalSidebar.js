@@ -1,11 +1,12 @@
+import { useState } from 'react';
 import Link from 'next/link';
 
 const NAV_ITEMS = [
   { key: 'dashboard',        href: '/portal/dashboard',        label: 'My Profile',           alwaysShow: true },
   { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
-  { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',    license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
-  { key: 'results',          href: '/portal/results',          label: 'Assessment Results',   license: 'assessment_tokens', enterpriseOnly: true },
-  { key: 'analytics',        href: '/portal/analytics',        label: 'Analytics',            license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
+  { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',    license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
+  { key: 'results',          href: '/portal/results',          label: 'Assessment Results',   license: 'assessment_tokens', enterpriseOnly: true, groupKey: 'team' },
+  { key: 'analytics',        href: '/portal/analytics',        label: 'Analytics',            license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',        license: 'role_analyzer' },
   { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance Tool', license: 'career_guidance' },
   { key: 'jd',               href: '/portal/tools/jd',        label: 'JD Analyzer',          license: 'jd_analyzer' },
@@ -14,11 +15,15 @@ const NAV_ITEMS = [
   { key: 'progress',         href: '/portal/tools/progress-companion',  label: 'Progress Companion',  license: 'progress_companion' },
   { key: 'translator',       href: '/portal/tools/orientation-translator', label: 'Orientation Translator', license: 'orientation_translator' },
   { key: 'library',          href: '/portal/library',          label: 'Resources',            alwaysShow: true },
+  { key: 'insights',         href: '/portal/insights',         label: 'Recent Articles',      alwaysShow: true },
 ];
+
+const TEAM_CHILD_KEYS = NAV_ITEMS.filter(i => i.groupKey === 'team').map(i => i.key);
 
 export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false }) {
   const licenseTypes = new Set(licenses.map(l => l.type));
   const isOwner = me?.user?.role === 'owner';
+  const [teamOpen, setTeamOpen] = useState(active === 'team' || TEAM_CHILD_KEYS.includes(active));
 
   const visibleItems = NAV_ITEMS.filter(item => {
     // isIndividual means "this specific user has completed their own
@@ -34,6 +39,15 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
     return licenseTypes.has(item.license);
   });
 
+  const visibleKeys = new Set(visibleItems.map(i => i.key));
+  // Assessment Results has no ownerOnly flag, so a member without "My Team"
+  // access can still see it — nest it under the accordion only when the
+  // team parent is actually visible; otherwise render it as its own
+  // top-level item, same as before this redesign.
+  const teamVisible = visibleKeys.has('team');
+  const topLevelItems = visibleItems.filter(item => !(teamVisible && item.groupKey === 'team'));
+  const teamChildren = teamVisible ? visibleItems.filter(item => item.groupKey === 'team') : [];
+
   return (
     <div style={sb.sidebar}>
       <div style={sb.brand}>
@@ -41,17 +55,43 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
         <span style={sb.accountName}>{me?.account?.name}</span>
       </div>
       <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-        {visibleItems.map(item => (
-          <Link
-            key={item.key}
-            href={item.href}
-            style={active === item.key
-              ? { ...sb.navItem, ...sb.navItemActive }
-              : sb.navItem}
-          >
-            {item.label}
-          </Link>
-        ))}
+        {topLevelItems.map(item => {
+          if (item.key !== 'team' || !teamVisible) {
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                style={active === item.key
+                  ? { ...sb.navItem, ...sb.navItemActive }
+                  : sb.navItem}
+              >
+                {item.label}
+              </Link>
+            );
+          }
+          return (
+            <div key={item.key}>
+              <div
+                style={{ ...sb.navItem, ...(active === 'team' ? sb.navItemActive : {}), display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                onClick={() => setTeamOpen(o => !o)}
+              >
+                <Link href={item.href} style={{ color: 'inherit', textDecoration: 'none', flex: 1 }}>{item.label}</Link>
+                <span style={{ fontSize: '0.65rem', opacity: 0.6, transform: teamOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</span>
+              </div>
+              {teamOpen && teamChildren.map(child => (
+                <Link
+                  key={child.key}
+                  href={child.href}
+                  style={active === child.key
+                    ? { ...sb.navItem, ...sb.navItemActive, ...sb.navItemChild }
+                    : { ...sb.navItem, ...sb.navItemChild }}
+                >
+                  {child.label}
+                </Link>
+              ))}
+            </div>
+          );
+        })}
       </nav>
       <div style={sb.footer}>
         <span style={sb.userName}>{me?.user?.name || me?.user?.email}</span>
@@ -113,6 +153,10 @@ const sb = {
     background: 'rgba(5,150,105,0.18)',
     color: '#34D399',
     fontWeight: 600,
+  },
+  navItemChild: {
+    paddingLeft: 34,
+    fontSize: '0.825rem',
   },
   footer: {
     padding: '16px 20px 24px',
