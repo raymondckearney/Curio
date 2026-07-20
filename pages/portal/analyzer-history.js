@@ -48,6 +48,7 @@ export default function AnalyzerHistory() {
         <PortalNav me={me} onLogout={logout} active="analyzer-history" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} />
 
         <main style={s.main}>
+        <div style={s.container}>
           <div style={s.header}>
             <h1 style={s.title}>Role Analyzer History</h1>
             <p style={s.sub}>All role alignment analyses run on your account.</p>
@@ -105,6 +106,7 @@ export default function AnalyzerHistory() {
               })}
             </div>
           )}
+        </div>
         </main>
       </div>
     </>
@@ -114,7 +116,8 @@ export default function AnalyzerHistory() {
 const s = {
   page: { minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' },
   centered: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#94A3B8', fontFamily: 'sans-serif' },
-  main: { maxWidth: 860, margin: '0 auto', padding: '48px 24px' },
+  main: { marginLeft: 220, padding: '48px 24px' },
+  container: { maxWidth: 860, margin: '0 auto' },
   header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 32 },
   title: { fontFamily: "'Caveat', cursive", fontSize: '2.2rem', fontWeight: 700, color: '#0F172A', margin: '0 0 4px' },
   sub: { fontSize: '0.95rem', color: '#64748B', margin: 0 },

@@ -115,6 +115,7 @@ export default function PortalAnalytics() {
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="analytics" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} />
         <main style={s.main}>
+        <div style={s.container}>
           <div style={{ marginBottom: 24 }}>
             <h1 style={s.pageTitle}>Analytics</h1>
             <p style={s.pageSub}>{roster.length} completed assessment{roster.length !== 1 ? 's' : ''} across your engagement.</p>
@@ -185,6 +186,7 @@ export default function PortalAnalytics() {
               </div>
             </>
           )}
+        </div>
         </main>
       </div>
     </>
@@ -194,7 +196,8 @@ export default function PortalAnalytics() {
 const s = {
   page: { minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' },
   loading: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#94A3B8', fontFamily: 'sans-serif' },
-  main: { maxWidth: 1100, margin: '0 auto', padding: '36px 24px' },
+  main: { marginLeft: 220, padding: '36px 24px' },
+  container: { maxWidth: 1100, margin: '0 auto' },
   pageTitle: { fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, marginBottom: 4 },
   pageSub: { fontSize: '0.9rem', color: '#64748B' },
   panel: { background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', marginBottom: 20 },

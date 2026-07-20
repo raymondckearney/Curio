@@ -104,6 +104,7 @@ export default function PortalTeam() {
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="team" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} />
         <main style={s.main}>
+        <div style={s.container}>
           <h1 style={s.pageTitle}>My Team</h1>
 
           {/* Token pool summary */}
@@ -215,6 +216,7 @@ export default function PortalTeam() {
               </div>
             )}
           </div>
+        </div>
         </main>
       </div>
     </>
@@ -232,7 +234,8 @@ const statusBadge = {
 const s = {
   page: { minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' },
   loading: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#94A3B8', fontFamily: 'sans-serif' },
-  main: { maxWidth: 1000, margin: '0 auto', padding: '36px 24px' },
+  main: { marginLeft: 220, padding: '36px 24px' },
+  container: { maxWidth: 1000, margin: '0 auto' },
   pageTitle: { fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, marginBottom: 20 },
   poolRow: { display: 'flex', gap: 16, marginBottom: 28 },
   poolCard: { flex: 1, background: '#fff', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: 4 },

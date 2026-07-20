@@ -52,6 +52,7 @@ export default function PortalResults() {
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="results" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} />
         <main style={s.main}>
+        <div style={s.container}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
             <div>
               <h1 style={s.pageTitle}>Assessment Results</h1>
@@ -103,6 +104,7 @@ export default function PortalResults() {
               {filter ? 'No results match your filter.' : 'No assessment results yet.'}
             </div>
           )}
+        </div>
         </main>
       </div>
     </>
@@ -112,7 +114,8 @@ export default function PortalResults() {
 const s = {
   page: { minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' },
   loading: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#94A3B8', fontFamily: 'sans-serif' },
-  main: { maxWidth: 1200, margin: '0 auto', padding: '36px 24px' },
+  main: { marginLeft: 220, padding: '36px 24px' },
+  container: { maxWidth: 1200, margin: '0 auto' },
   pageTitle: { fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, marginBottom: 4 },
   pageSub: { fontSize: '0.9rem', color: '#64748B' },
   search: { padding: '9px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', width: 240, outline: 'none' },
