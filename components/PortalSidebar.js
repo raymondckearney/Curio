@@ -21,7 +21,13 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
   const isOwner = me?.user?.role === 'owner';
 
   const visibleItems = NAV_ITEMS.filter(item => {
-    if (item.enterpriseOnly && isIndividual) return false;
+    // isIndividual means "this specific user has completed their own
+    // assessment" (see pages/portal/dashboard.js), which is the right
+    // signal for that page's own My-Profile-vs-team-overview layout, but
+    // the wrong one for hiding an owner's management tabs — an owner
+    // taking their own assessment doesn't change whether their account has
+    // a team to manage. Only non-owner members get hidden by it.
+    if (item.enterpriseOnly && isIndividual && !isOwner) return false;
     if (item.ownerOnly && !isOwner) return false;
     if (item.alwaysShow) return true;
     if (item.licenseAny) return item.licenseAny.some(t => licenseTypes.has(t));
