@@ -397,7 +397,7 @@ const s = {
 
   heroBand: { padding: '52px 40px 44px', position: 'relative', overflow: 'hidden' },
   heroInner: { position: 'relative', zIndex: 1 },
-  heroWatermark: { position: 'absolute', top: '50%', right: -360, transform: 'translateY(-50%)', width: 640, maxWidth: 'none', opacity: 0.05, pointerEvents: 'none', zIndex: 0 },
+  heroWatermark: { position: 'absolute', top: '50%', right: -224, transform: 'translateY(-50%)', width: 640, maxWidth: 'none', opacity: 0.05, pointerEvents: 'none', zIndex: 0 },
   heroMeta: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 },
   profilePill: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', paddingBottom: 2, textTransform: 'uppercase' },
   heroDate: { fontSize: '0.8rem', color: '#94A3B8', fontWeight: 500 },
