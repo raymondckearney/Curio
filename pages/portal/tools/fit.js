@@ -59,9 +59,16 @@ function normalizeRole(raw) { return raw.trim().toLowerCase().replace(/\s+/g, ' 
 function getCacheKey(nr, typeId) { return `curio-fit-cache-${CACHE_VERSION}-${nr}-${typeId}`; }
 function getSplitCacheKey(nr) { return `curio-fit-split-${CACHE_VERSION}-${nr}`; }
 
-function FitAnalyzer({ me }) {
+function FitAnalyzer({ me, myProfile }) {
   const [selectedType, setSelectedType] = useState("");
   const [participantName, setParticipantName] = useState("");
+
+  // Pre-fill Step One/Two with the logged-in user's own name and profile,
+  // same as the Career Guidance Tool does for profile.
+  useEffect(() => {
+    if (me?.user?.name) setParticipantName(me.user.name);
+    if (myProfile) setSelectedType(myProfile);
+  }, [me, myProfile]);
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
@@ -317,6 +324,7 @@ export default function PortalFitPage() {
   const [licensed, setLicensed] = useState(null);
   const [licenses, setLicenses] = useState([]);
   const [isIndividual, setIsIndividual] = useState(false);
+  const [myProfile, setMyProfile] = useState(null);
 
   useEffect(() => {
     fetch('/api/portal/me')
@@ -330,6 +338,9 @@ export default function PortalFitPage() {
             setLicensed(has);
             setLicenses(dash?.licenses || []);
             setIsIndividual(!!dash?.myAssessment);
+            if (dash?.myAssessment?.type) {
+              setMyProfile(dash.myAssessment.type.toUpperCase().replace(/\s/g, '-'));
+            }
           });
       })
       .catch(() => router.replace('/portal/login'));
@@ -359,7 +370,7 @@ export default function PortalFitPage() {
             </div>
           </div>
         ) : (
-          <FitAnalyzer me={me} />
+          <FitAnalyzer me={me} myProfile={myProfile} />
         )}
       </main>
     </div>
