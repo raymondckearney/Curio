@@ -96,6 +96,7 @@ export default function PortalDashboard() {
           {assessment && profile ? (
             <>
               <div style={{ ...s.heroBand, background: `linear-gradient(135deg, ${color}0d 0%, ${color}05 100%)`, borderBottom: `1px solid ${color}22` }}>
+                <img src="/images/brain-fingerprint-watermark.webp" alt="" aria-hidden="true" style={s.heroWatermark} />
                 <div style={s.heroInner}>
                   <div style={s.heroMeta}>
                     <span style={{ ...s.profilePill, color, borderBottom: `2px solid ${color}` }}>
@@ -394,8 +395,9 @@ const s = {
   loading: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#94A3B8', fontFamily: 'sans-serif' },
   main: { marginLeft: 220, flex: 1, minHeight: '100vh' },
 
-  heroBand: { padding: '52px 40px 44px' },
-  heroInner: {},
+  heroBand: { padding: '52px 40px 44px', position: 'relative', overflow: 'hidden' },
+  heroInner: { position: 'relative', zIndex: 1 },
+  heroWatermark: { position: 'absolute', top: '50%', right: -360, transform: 'translateY(-50%)', width: 640, maxWidth: 'none', opacity: 0.05, pointerEvents: 'none', zIndex: 0 },
   heroMeta: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 },
   profilePill: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', paddingBottom: 2, textTransform: 'uppercase' },
   heroDate: { fontSize: '0.8rem', color: '#94A3B8', fontWeight: 500 },
