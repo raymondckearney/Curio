@@ -222,30 +222,44 @@ function FitAnalyzer({ me, myProfile }) {
         <Link href="/portal/analyzer-history" className="history-link">View past analyses →</Link>
       </div>
       <h1 className="page-title">How well does your role<br />fit the way you think?</h1>
-      <p className="page-subtitle">Select a MindPrint profile, enter a role, and get a detailed alignment analysis.</p>
+      <p className="page-subtitle">{myProfile ? "Enter a role and get a detailed alignment analysis." : "Select a MindPrint profile, enter a role, and get a detailed alignment analysis."}</p>
       <div className="page-rule" />
 
-      <div className="step-block">
-        <div className="step-label">Step One</div>
-        <div className="step-title">Enter participant name (optional)</div>
-        <input className="role-input" value={participantName} onChange={e => setParticipantName(e.target.value)} placeholder="e.g. Alex Smith" />
-      </div>
-
-      <div className="step-block">
-        <div className="step-label">Step Two</div>
-        <div className="step-title">Select the MindPrint profile</div>
-        <div className="type-grid">
-          {TYPES.map(t => (
-            <button key={t.id} className={`type-btn${selectedType === t.id ? " active" : ""}`} onClick={() => setSelectedType(t.id)}>
-              <div className="type-btn-combo">{t.label}</div>
-              <div className="type-btn-name">{t.tagline}</div>
-            </button>
-          ))}
+      {myProfile ? (
+        <div className="prefill-block">
+          {participantName && (
+            <div className="prefill-row">
+              <div className="prefill-label">Participant</div>
+              <div className="prefill-value">{participantName}</div>
+            </div>
+          )}
+          <div className="prefill-row">
+            <div className="prefill-label">MindPrint Profile</div>
+            <div className="prefill-value">{type?.label} <span className="prefill-tagline">— {type?.tagline}</span></div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="step-block">
+            <div className="step-title">Enter participant name (optional)</div>
+            <input className="role-input" value={participantName} onChange={e => setParticipantName(e.target.value)} placeholder="e.g. Alex Smith" />
+          </div>
+
+          <div className="step-block">
+            <div className="step-title">Select the MindPrint profile</div>
+            <div className="type-grid">
+              {TYPES.map(t => (
+                <button key={t.id} className={`type-btn${selectedType === t.id ? " active" : ""}`} onClick={() => setSelectedType(t.id)}>
+                  <div className="type-btn-combo">{t.label}</div>
+                  <div className="type-btn-name">{t.tagline}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="step-block">
-        <div className="step-label">Step Three</div>
         <div className="step-title">Enter the role to analyze</div>
         <input className="role-input" value={role} onChange={e => setRole(e.target.value)} onKeyDown={e => { if (e.key === "Enter") analyze(); }} placeholder="e.g. Senior Product Manager, VP of Sales…" />
       </div>
@@ -308,7 +322,7 @@ function FitAnalyzer({ me, myProfile }) {
 
           <div className="action-row">
             {saved && <span style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 500 }}>✓ Saved to your history</span>}
-            <button className="reset-btn" style={{ marginTop: 0 }} onClick={() => { setResult(null); setRole(""); setSelectedType(""); setParticipantName(""); setSaved(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+            <button className="reset-btn" style={{ marginTop: 0 }} onClick={() => { setResult(null); setRole(""); if (!myProfile) { setSelectedType(""); setParticipantName(""); } setSaved(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
               ← Analyze a different role
             </button>
           </div>
@@ -395,10 +409,13 @@ const fitCss = `
   .page-title { font-family: 'Caveat', cursive; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; color: #1C1917; line-height: 1.12; margin-bottom: 16px; }
   .page-subtitle { font-size: 1rem; color: #78716C; max-width: 560px; line-height: 1.75; margin-bottom: 48px; }
   .page-rule { width: 100%; height: 1px; background: #E7E5E4; margin-bottom: 48px; }
-  .step-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #059669; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-  .step-label::before { content: ''; display: block; width: 20px; height: 1px; background: #059669; }
   .step-title { font-family: 'Caveat', cursive; font-size: 1.4rem; font-weight: 700; color: #1C1917; margin-bottom: 24px; }
   .step-block { margin-bottom: 48px; }
+  .prefill-block { background: #FAFAF9; border: 1px solid #E7E5E4; border-radius: 6px; padding: 24px 28px; margin-bottom: 48px; display: flex; flex-direction: column; gap: 18px; }
+  .prefill-row { display: flex; flex-direction: column; gap: 4px; }
+  .prefill-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #059669; }
+  .prefill-value { font-family: 'Caveat', cursive; font-size: 1.4rem; font-weight: 700; color: #1C1917; }
+  .prefill-tagline { font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 400; font-style: italic; color: #78716C; }
   .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .type-btn { background: #FAFAF9; border: 1px solid #E7E5E4; border-radius: 6px; padding: 16px 14px; cursor: pointer; text-align: left; transition: all 0.18s ease; font-family: 'DM Sans', sans-serif; }
   .type-btn:hover { background: rgba(5,150,105,0.05); border-color: rgba(5,150,105,0.35); }
