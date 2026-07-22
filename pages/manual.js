@@ -318,7 +318,7 @@ export default function Manual() {
               <span className="badge badge-member">Member</span>
             </div>
             <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>All tools are gated by license. If an account doesn't have the relevant license, the nav item doesn't appear.</p>
-            <Card title="Role Analyzer · /portal/tools/fit · license: role_analyzer">Enter any role title. Generates a real-time streaming report with an alignment score, energizers, drains, and collaboration recommendations — all calibrated to the user's MindPrint™ profile.</Card>
+            <Card title="Role Analyzer · /portal/tools/fit · license: role_analyzer">Enter any role title. Generates a real-time streaming report with an alignment score, energizers, drains, and collaboration recommendations — all calibrated to the user's MindPrint™ profile. Step One (participant name) and Step Two (MindPrint profile) pre-fill from the logged-in user's own name and completed assessment, same as Career Guidance pre-fills its profile step — both stay editable, so a user analyzing on someone else's behalf can just change them.</Card>
             <Card title="Career Guidance Tool · /portal/tools/career · license: career_guidance">Generates a structured career report with best-fit roles, energizers, challenges, and strategies. Optional inputs: current role, years of experience, additional results, strengths, and areas for growth. Includes a PDF export.</Card>
             <Card title="JD Analyzer · /portal/tools/jd · license: jd_analyzer">Paste a job description. Returns an analysis of fit vs. the user's profile — what will energize them, what will drain them, and how to position themselves for that role.</Card>
             <Card title="Analyzer History · /portal/analyzer-history · license: role_analyzer">A log of all Role Analyzer runs for the account — role title, profile, alignment score, and date. Saved automatically after each analysis. Not a separate sidebar tab; reached via the "View past analyses →" link on the Role Analyzer page itself.</Card>
@@ -397,7 +397,8 @@ export default function Manual() {
               <span className="badge badge-owner">Owner</span>
               <span className="badge badge-member">Member</span>
             </div>
-            <Card title="Just the public /insights page, framed">No separate content system — the portal page is a thin wrapper (sidebar + an <code>&lt;iframe src="/insights"&gt;</code> filling the rest of the viewport) around the existing public Sanity-driven Insights page. Always visible, same as Resources, since the articles themselves are public content with nothing to gate.</Card>
+            <Card title="Just the public /insights page, framed">No separate content system — the portal page is a thin wrapper (sidebar + an <code>&lt;iframe src="/insights?embed=1"&gt;</code> filling the rest of the viewport) around the existing public Sanity-driven Insights page. Always visible, same as Resources, since the articles themselves are public content with nothing to gate.</Card>
+            <Card title="embed=1"><code>pages/insights/index.js</code> and <code>pages/insights/[slug].js</code> both read <code>?embed=1</code> off the URL and skip rendering the public site's own <code>&lt;Nav /&gt;</code> and <code>&lt;Footer /&gt;</code> when it's set, so the iframe shows just the article list/content, not a way to navigate off to the rest of the public site. The article grid's links and the post page's "← All Insights" link carry the param forward so embed mode holds across the whole iframe session, not just the first page loaded into it.</Card>
           </section>
 
           <hr className="divider" />
