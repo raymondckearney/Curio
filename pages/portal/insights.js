@@ -36,7 +36,7 @@ export default function PortalInsights() {
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="insights" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} />
         <main style={s.main}>
-          <iframe src="/insights" title="Recent Articles" style={s.frame} />
+          <iframe src="/insights?embed=1" title="Recent Articles" style={s.frame} />
         </main>
       </div>
     </>

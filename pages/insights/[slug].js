@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { PortableText } from '@portabletext/react'
 import { client } from '../../sanity/lib/client'
 import { postBySlugQuery, postSlugsQuery } from '../../sanity/lib/queries'
@@ -46,6 +47,10 @@ const portableTextComponents = {
 }
 
 export default function InsightPost({ post }) {
+  const router = useRouter()
+  // Embedded inside the portal's Recent Articles iframe: just the article
+  // itself, not the public site's own nav and footer chrome.
+  const embed = router.query.embed === '1'
   const imageUrl = post.mainImage
     ? urlFor(post.mainImage).width(1200).height(630).fit('crop').url()
     : null
@@ -56,11 +61,11 @@ export default function InsightPost({ post }) {
         <title>{post.title} | Curio Insights</title>
         {post.excerpt && <meta name="description" content={post.excerpt} />}
       </Head>
-      <Nav />
+      {!embed && <Nav />}
       <main className="post-main">
         <article className="post-article">
           <div className="container post-container">
-            <Link href="/insights" className="post-back">← All Insights</Link>
+            <Link href={embed ? '/insights?embed=1' : '/insights'} className="post-back">← All Insights</Link>
 
             {post.categories && post.categories.length > 0 && (
               <div className="post-categories">
@@ -99,7 +104,7 @@ export default function InsightPost({ post }) {
           </div>
         </article>
       </main>
-      <Footer />
+      {!embed && <Footer />}
     </>
   )
 }

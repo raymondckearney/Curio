@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { client } from '../../sanity/lib/client'
 import { postsQuery } from '../../sanity/lib/queries'
 import Nav from '../../components/Nav'
@@ -24,13 +25,18 @@ function formatDate(dateStr) {
 }
 
 export default function InsightsPage({ posts }) {
+  const router = useRouter()
+  // Embedded inside the portal's Recent Articles iframe: just the article
+  // list/content, not the public site's own nav and footer chrome.
+  const embed = router.query.embed === '1'
+
   return (
     <>
       <Head>
         <title>Insights | Curio</title>
         <meta name="description" content="Perspectives on talent, learning, and what it means to think differently." />
       </Head>
-      <Nav />
+      {!embed && <Nav />}
       <main className="insights-main">
         <section className="insights-hero">
           <div className="container">
@@ -48,7 +54,7 @@ export default function InsightsPage({ posts }) {
             ) : (
               <div className="insights-grid">
                 {posts.map((post) => (
-                  <Link key={post.slug.current} href={`/insights/${post.slug.current}`} className="insight-card">
+                  <Link key={post.slug.current} href={embed ? `/insights/${post.slug.current}?embed=1` : `/insights/${post.slug.current}`} className="insight-card">
                     <div className="insight-card-inner">
                       {post.categories && post.categories.length > 0 && (
                         <span className="insight-category">{post.categories[0].title}</span>
@@ -71,7 +77,7 @@ export default function InsightsPage({ posts }) {
           </div>
         </section>
       </main>
-      <Footer />
+      {!embed && <Footer />}
     </>
   )
 }
