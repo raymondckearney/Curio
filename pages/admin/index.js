@@ -1,36 +1,33 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { TERTIARY_BY_PROFILE, COMPANION_BY_TERTIARY, COLLECTION_BY_TERTIARY } from '../../lib/tertiary';
+import { DIRECT_LICENSE_TYPES, TOKEN_GRANT_TYPES } from '../../lib/licenseTypes';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PROFILES = ['WHY-WHAT','WHY-HOW','WHAT-WHY','WHAT-HOW','HOW-WHY','HOW-WHAT'];
 const CAREER_LEVELS = ['Student','Early Career','Mid Career','Senior or Executive'];
 const PRIMARY_COLOR = { WHY: '#059669', WHAT: '#2563EB', HOW: '#D97706' };
-const LICENSE_TYPES = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer', 'precision_companion', 'purpose_companion', 'progress_companion', 'orientation_translator', 'library_full', 'library_a', 'library_b', 'library_c', 'library_d', 'library_e'];
+// Manual "+ Add License" dropdowns (Invite/Edit — demo accounts where a
+// specific profile is deliberately chosen) only offer concrete types, never
+// the companion_match/library_match sentinels (those only resolve when a
+// token's assessment completes — an account_licenses row has no such step).
+const LICENSE_TYPES = DIRECT_LICENSE_TYPES;
 const TOOL_LABELS = {
   assessment_tokens: 'MindPrint™ Assessment', role_analyzer: 'Role Analyzer', career_guidance: 'Career Guidance', jd_analyzer: 'JD Analyzer',
   precision_companion: 'Precision Companion', purpose_companion: 'Purpose Companion', progress_companion: 'Progress Companion',
+  companion_match: 'Companion — matches their profile',
   orientation_translator: 'Orientation Translator',
   library_full: 'Client Library (Full)', library_a: 'Client Library — Collection A', library_b: 'Client Library — Collection B',
   library_c: 'Client Library — Collection C', library_d: 'Client Library — Collection D', library_e: 'Client Library — Collection E',
+  library_match: 'Client Library — matches their profile',
 };
-const ALL_TOOLS = LICENSE_TYPES;
+// Generate Tokens panel's checkbox list (ToolAccessField) — the one place
+// companion_match/library_match are valid, since a token's granted_tools
+// get resolved once the participant's assessment completes.
+const ALL_TOOLS = TOKEN_GRANT_TYPES;
 
 function profileColor(id) { return PRIMARY_COLOR[id?.split('-')[0]] || '#64748B'; }
-
-// The Companion + Resources collection that a given profile's tertiary
-// orientation maps to, for the admin panel's profile-match preset (used to
-// stand up sales demo accounts without hunting for the right license types).
-function profileMatchLicenses(profile) {
-  const tertiary = TERTIARY_BY_PROFILE[profile];
-  if (!tertiary) return [];
-  return [
-    { type: `${COMPANION_BY_TERTIARY[tertiary]}_companion`, quantity: null, expires_at: null },
-    { type: `library_${COLLECTION_BY_TERTIARY[tertiary].toLowerCase()}`, quantity: null, expires_at: null },
-  ];
-}
 
 const FIT_TYPES = [
   { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "Purpose-driven, progress-oriented",   primary: "WHY",  secondary: "WHAT" },
@@ -172,8 +169,6 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
 // ─── Tool Access Field ────────────────────────────────────────────────────────
 
 function ToolAccessField({ grantedTools, setGrantedTools }) {
-  const [matchProfile, setMatchProfile] = useState(PROFILES[0]);
-
   function applyPreset(preset) {
     if (preset === 'basic') setGrantedTools(['assessment_tokens']);
     else if (preset === 'premium') setGrantedTools([...ALL_TOOLS]);
@@ -181,10 +176,6 @@ function ToolAccessField({ grantedTools, setGrantedTools }) {
   }
   function toggle(tool) {
     setGrantedTools(prev => prev.includes(tool) ? prev.filter(t => t !== tool) : [...prev, tool]);
-  }
-  function addProfileMatch() {
-    const toAdd = profileMatchLicenses(matchProfile).map(l => l.type);
-    setGrantedTools(prev => Array.from(new Set([...prev, ...toAdd])));
   }
   return (
     <div style={s.fieldGroup}>
@@ -194,20 +185,13 @@ function ToolAccessField({ grantedTools, setGrantedTools }) {
           <button key={p.id} onClick={() => applyPreset(p.id)} style={{ padding: '4px 12px', border: '1px solid #CBD5E0', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: '#F8FAFC', color: '#374151' }}>{p.label}</button>
         ))}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {ALL_TOOLS.map(tool => (
           <label key={tool} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: '#374151', cursor: 'pointer' }}>
             <input type="checkbox" checked={grantedTools.includes(tool)} onChange={() => toggle(tool)} style={{ accentColor: '#059669', width: 16, height: 16 }} />
             {TOOL_LABELS[tool]}
           </label>
         ))}
-      </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingTop: 10, borderTop: '1px dashed #E2E8F0' }}>
-        <div style={{ flex: 1 }}>
-          <label style={s.label}>Or check the boxes for a profile match (Companion + Resources collection)</label>
-          <select style={s.select} value={matchProfile} onChange={e => setMatchProfile(e.target.value)}>{PROFILES.map(p => <option key={p} value={p}>{p}</option>)}</select>
-        </div>
-        <button type="button" style={{ padding: '4px 12px', border: '1px solid #CBD5E0', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: '#F8FAFC', color: '#374151' }} onClick={addProfileMatch}>+ Add Match</button>
       </div>
     </div>
   );
@@ -1353,19 +1337,10 @@ function InvitePanel({ onClose, onSuccess }) {
   const [licType, setLicType] = useState('role_analyzer');
   const [licQty, setLicQty] = useState('');
   const [licExpiry, setLicExpiry] = useState('');
-  const [matchProfile, setMatchProfile] = useState(PROFILES[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   function addLicense() { setLicenses(prev => [...prev, { type: licType, quantity: licQty || null, expires_at: licExpiry || null }]); setLicQty(''); setLicExpiry(''); }
-
-  function addProfileMatch() {
-    const toAdd = profileMatchLicenses(matchProfile);
-    setLicenses(prev => {
-      const existingTypes = new Set(prev.map(l => l.type));
-      return [...prev, ...toAdd.filter(l => !existingTypes.has(l.type))];
-    });
-  }
 
   async function submit() {
     if (!email.trim()) { setError('Email is required'); return; }
@@ -1409,13 +1384,6 @@ function InvitePanel({ onClose, onSuccess }) {
           <div><label style={s.fieldLabel}>Expiry</label><input style={s.fieldInput} type="date" value={licExpiry} onChange={e => setLicExpiry(e.target.value)} /></div>
           <button style={s.btnSmall} onClick={addLicense}>+ Add</button>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 10, paddingTop: 10, borderTop: '1px dashed #E2E8F0' }}>
-          <div style={{ flex: 1 }}>
-            <label style={s.fieldLabel}>Or grant profile match (Companion + Resources collection, for demos)</label>
-            <select style={s.fieldInput} value={matchProfile} onChange={e => setMatchProfile(e.target.value)}>{PROFILES.map(p => <option key={p} value={p}>{p}</option>)}</select>
-          </div>
-          <button style={s.btnSmall} onClick={addProfileMatch}>+ Add Match</button>
-        </div>
       </div>
       {error && <p style={s.error}>{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
@@ -1432,7 +1400,6 @@ function EditPanel({ account, onClose, onSave }) {
   const [licType, setLicType] = useState('role_analyzer');
   const [licQty, setLicQty] = useState('');
   const [licExpiry, setLicExpiry] = useState('');
-  const [matchProfile, setMatchProfile] = useState(PROFILES[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tokenData, setTokenData] = useState(null);
@@ -1491,14 +1458,6 @@ function EditPanel({ account, onClose, onSave }) {
 
   function addLicense() { setLicenses(prev => [...prev, { type: licType, quantity: licQty || null, expires_at: licExpiry || null }]); setLicQty(''); setLicExpiry(''); }
 
-  function addProfileMatch() {
-    const toAdd = profileMatchLicenses(matchProfile);
-    setLicenses(prev => {
-      const existingTypes = new Set(prev.map(l => l.type));
-      return [...prev, ...toAdd.filter(l => !existingTypes.has(l.type))];
-    });
-  }
-
   async function save() {
     setLoading(true); setError('');
     try {
@@ -1537,13 +1496,6 @@ function EditPanel({ account, onClose, onSave }) {
           <div><label style={s.fieldLabel}>Qty</label><input style={{ ...s.fieldInput, width: 70 }} type="number" value={licQty} onChange={e => setLicQty(e.target.value)} placeholder="—" /></div>
           <div><label style={s.fieldLabel}>Expiry</label><input style={s.fieldInput} type="date" value={licExpiry} onChange={e => setLicExpiry(e.target.value)} /></div>
           <button style={s.btnSmall} onClick={addLicense}>+ Add</button>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 10, paddingTop: 10, borderTop: '1px dashed #E2E8F0' }}>
-          <div style={{ flex: 1 }}>
-            <label style={s.fieldLabel}>Or grant profile match (Companion + Resources collection, for demos)</label>
-            <select style={s.fieldInput} value={matchProfile} onChange={e => setMatchProfile(e.target.value)}>{PROFILES.map(p => <option key={p} value={p}>{p}</option>)}</select>
-          </div>
-          <button style={s.btnSmall} onClick={addProfileMatch}>+ Add Match</button>
         </div>
       </div>
       {purchases.length > 0 && (

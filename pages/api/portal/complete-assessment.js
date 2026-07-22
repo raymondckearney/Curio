@@ -1,5 +1,6 @@
 import { getPortalSession } from '../../../lib/portalSession';
 import { dbGet, dbPatch, dbInsert } from '../../../lib/supabase';
+import { tertiaryFromProfileSlug, resolveGrantedTools } from '../../../lib/tertiary';
 
 // Applies an assessment token's tier/license grant to the caller's own,
 // already-existing portal account, for the retake-while-logged-in edge
@@ -35,10 +36,19 @@ export default async function handler(req, res) {
       : ['assessment_tokens']);
     const usedAt = new Date().toISOString();
 
+    // Resolve the just-completed assessment's tertiary so the
+    // companion_match/library_match sentinel types (granted when the token
+    // was created, before anyone knew this person's profile) become the
+    // concrete license type to actually insert.
+    const assessmentRows = await dbGet('assessments', { token }).catch(() => []);
+    const assessment = assessmentRows[0];
+    const tertiary = assessment?.type ? tertiaryFromProfileSlug(assessment.type.toLowerCase()) : null;
+    const resolvedTools = resolveGrantedTools(grantedTools, tertiary);
+
     await Promise.all([
       dbPatch('client_accounts', { id: session.accountId }, { tier: grantedTier }),
       dbPatch('tokens', { token }, { used: true, used_at: usedAt }),
-      ...grantedTools.map(type => dbInsert('account_licenses', {
+      ...resolvedTools.map(type => dbInsert('account_licenses', {
         account_id: session.accountId,
         type,
         quantity: 1,

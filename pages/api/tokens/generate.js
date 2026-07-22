@@ -1,8 +1,11 @@
 import { dbInsert } from '../../../lib/supabase';
 import { getAdminSession } from '../../../lib/adminSession';
 import { createSendLinksTask } from '../../../lib/notion';
+import { TOKEN_GRANT_TYPES } from '../../../lib/licenseTypes';
 
-const ALL_TOOLS = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
+// The 4 tools a "premium" tier grants by default (independent of the full
+// set of grantable tool types below — premium doesn't mean "every tool").
+const PREMIUM_TOOLS = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -21,15 +24,15 @@ export default async function handler(req, res) {
     // Resolve tools: explicit list wins; otherwise derive from tier
     let tools;
     if (Array.isArray(granted_tools) && granted_tools.length) {
-      tools = granted_tools.filter(t => ALL_TOOLS.includes(t));
+      tools = granted_tools.filter(t => TOKEN_GRANT_TYPES.includes(t));
     } else if (granted_tier === 'premium') {
-      tools = [...ALL_TOOLS];
+      tools = [...PREMIUM_TOOLS];
     } else {
       tools = ['assessment_tokens'];
     }
 
     // Derive tier from tools for backwards compat
-    const tier = tools.length === ALL_TOOLS.length ? 'premium' : 'basic';
+    const tier = PREMIUM_TOOLS.every(t => tools.includes(t)) ? 'premium' : 'basic';
 
     const rows = participants.map(({ name, email, company, role }) => ({
       token: crypto.randomUUID(),

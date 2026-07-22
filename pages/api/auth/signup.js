@@ -2,6 +2,7 @@ import { dbGet, dbInsert, dbPatch, dbQuery } from '../../../lib/supabase';
 import { hashPassword } from '../../../lib/password';
 import { createSessionToken, sessionCookie } from '../../../lib/portalSession';
 import { syncContactToNotion } from '../../../lib/notionSync';
+import { tertiaryFromProfileSlug, resolveGrantedTools } from '../../../lib/tertiary';
 import { Resend } from 'resend';
 
 export default async function handler(req, res) {
@@ -84,10 +85,20 @@ export default async function handler(req, res) {
           ? ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer']
           : ['assessment_tokens']);
         const usedAt = new Date().toISOString();
+
+        // Resolve the just-completed assessment's tertiary so the
+        // companion_match/library_match sentinel types (granted when the
+        // token was created, before anyone knew this person's profile)
+        // become the concrete license type to actually insert.
+        const assessmentRows = await dbGet('assessments', { token: assessmentToken }).catch(() => []);
+        const assessment = assessmentRows[0];
+        const tertiary = assessment?.type ? tertiaryFromProfileSlug(assessment.type.toLowerCase()) : null;
+        const resolvedTools = resolveGrantedTools(grantedTools, tertiary);
+
         await Promise.all([
           dbPatch('client_accounts', { id: account.id }, { tier: grantedTier }),
           dbPatch('tokens', { token: assessmentToken }, { used: true, used_at: usedAt, account_id: account.id }),
-          ...grantedTools.map(type => dbInsert('account_licenses', {
+          ...resolvedTools.map(type => dbInsert('account_licenses', {
             account_id: account.id,
             type,
             quantity: 1,
@@ -98,8 +109,6 @@ export default async function handler(req, res) {
         // Send assessment completion notification
         try {
           if (process.env.RESEND_API_KEY) {
-            const assessmentRows = await dbGet('assessments', { token: assessmentToken }).catch(() => []);
-            const assessment = assessmentRows[0];
             const profileType = assessment?.type || '—';
             const completedAt = new Date(usedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/New_York' });
             const resend = new Resend(process.env.RESEND_API_KEY);
