@@ -56,6 +56,7 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          set -o pipefail
           mkdir -p backups
           STAMP=$(date -u +'%Y-%m-%d_%H%M')
           pg_dump "$SUPABASE_DB_URL" \
