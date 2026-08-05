@@ -1,0 +1,64 @@
+import { OPENER_TEXT } from '../../lib/quiz-data';
+
+export default function QuizSetup({ name, email, onNameChange, onEmailChange, onBegin }) {
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const canBegin = name.trim().length > 0 && emailValid;
+
+  return (
+    <div style={s.wrap}>
+      <div style={s.opener}>
+        {OPENER_TEXT.map((p, i) => (
+          <p key={i} style={{ ...s.openerP, whiteSpace: 'pre-line' }}>{p}</p>
+        ))}
+      </div>
+
+      <div style={s.field}>
+        <label style={s.label}>First Name</label>
+        <input
+          style={s.input}
+          value={name}
+          onChange={e => onNameChange(e.target.value)}
+          placeholder="e.g. Alex"
+        />
+      </div>
+
+      <div style={s.field}>
+        <label style={s.label}>Email Address</label>
+        <input
+          style={s.input}
+          type="email"
+          value={email}
+          onChange={e => onEmailChange(e.target.value)}
+          placeholder="you@company.com"
+        />
+      </div>
+
+      <button
+        type="button"
+        style={{ ...s.btn, ...(canBegin ? {} : s.btnDisabled) }}
+        disabled={!canBegin}
+        onClick={onBegin}
+      >
+        Begin Assessment →
+      </button>
+    </div>
+  );
+}
+
+const s = {
+  wrap: { maxWidth: 560 },
+  opener: { marginBottom: 40, display: 'flex', flexDirection: 'column', gap: 18 },
+  openerP: { fontSize: '0.95rem', color: '#44403C', lineHeight: 1.8, margin: 0 },
+  field: { marginBottom: 20 },
+  label: { display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716C', marginBottom: 8 },
+  input: {
+    width: '100%', padding: '14px 16px', background: '#FAFAF9', border: '1.5px solid #E7E5E4', borderRadius: 10,
+    fontFamily: "'DM Sans', sans-serif", fontSize: '0.95rem', color: '#1C1917', outline: 'none', boxSizing: 'border-box',
+  },
+  btn: {
+    width: '100%', padding: '16px 24px', marginTop: 12, background: '#059669', border: 'none', borderRadius: 99,
+    color: '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.04em',
+    cursor: 'pointer', transition: 'background 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  btnDisabled: { background: '#E7E5E4', color: '#A8A29E', cursor: 'not-allowed' },
+};
