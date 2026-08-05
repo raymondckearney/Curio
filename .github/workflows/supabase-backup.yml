@@ -1,0 +1,78 @@
+name: Supabase Nightly Backup
+
+# Dumps the production Postgres database every night and commits the
+# gzipped SQL file to the `db-backups` branch, keeping the last 30 days.
+#
+# Setup required (one-time):
+#   1. In GitHub: Settings -> Secrets and variables -> Actions -> New repository secret
+#        Name:  SUPABASE_DB_URL
+#        Value: the DIRECT (non-pooler) connection string from
+#               Supabase Dashboard -> Project Settings -> Database -> Connection string
+#               Use the "URI" format, port 5432, with the password filled in.
+#               (Not the pgbouncer/pooler URL on port 6543 -- pg_dump needs a direct connection.)
+#   2. That's it. This workflow creates the db-backups branch itself on first run.
+#
+# To restore: `gunzip -c backups/<file>.sql.gz | psql "$SUPABASE_DB_URL"`
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 9:00 UTC = 4/5am ET, well after the keepalive ping
+  workflow_dispatch: {}     # allows manual "Run workflow" trigger from the Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout db-backups branch
+        uses: actions/checkout@v4
+        with:
+          ref: db-backups
+          fetch-depth: 0
+        continue-on-error: true
+        id: checkout-existing
+
+      - name: Init db-backups branch if it doesn't exist yet
+        if: steps.checkout-existing.outcome == 'failure'
+        run: |
+          git clone --depth 1 "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" .
+          git checkout --orphan db-backups
+          git rm -rf . || true
+          mkdir -p backups
+          echo "# Supabase nightly backups (auto-generated, do not edit)" > README.md
+          git add README.md
+          git -c user.name="backup-bot" -c user.email="actions@github.com" commit -m "Initialize db-backups branch"
+          git push origin db-backups
+
+      - name: Install matching Postgres client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Dump database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          mkdir -p backups
+          STAMP=$(date -u +'%Y-%m-%d_%H%M')
+          pg_dump "$SUPABASE_DB_URL" \
+            --no-owner --no-acl --format=plain \
+            | gzip -9 > "backups/curio_${STAMP}.sql.gz"
+          echo "BACKUP_FILE=backups/curio_${STAMP}.sql.gz" >> "$GITHUB_ENV"
+
+      - name: Prune backups older than 30 days
+        run: |
+          find backups -name '*.sql.gz' -mtime +30 -print -delete
+
+      - name: Commit and push backup
+        run: |
+          git config user.name "backup-bot"
+          git config user.email "actions@github.com"
+          git add backups
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Nightly backup: $(date -u +'%Y-%m-%d')"
+            git push origin db-backups
+          fi
