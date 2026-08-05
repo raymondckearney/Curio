@@ -59,7 +59,11 @@ jobs:
           set -o pipefail
           mkdir -p backups
           STAMP=$(date -u +'%Y-%m-%d_%H%M')
-          pg_dump "$SUPABASE_DB_URL" \
+          # ubuntu-latest runners ship an older postgresql-client on PATH
+          # already, which shadows the version-17 client this workflow just
+          # installed — call the version-17 binary explicitly so pg_dump
+          # never ends up older than the (Postgres 17) Supabase server.
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" \
             --no-owner --no-acl --format=plain \
             | gzip -9 > "backups/curio_${STAMP}.sql.gz"
           echo "BACKUP_FILE=backups/curio_${STAMP}.sql.gz" >> "$GITHUB_ENV"
