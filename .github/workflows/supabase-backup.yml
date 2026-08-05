@@ -34,7 +34,6 @@ jobs:
       - name: Init db-backups branch if it doesn't exist yet
         if: steps.checkout-existing.outcome == 'failure'
         run: |
-          git clone --depth 1 "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" .
           git checkout --orphan db-backups
           git rm -rf . || true
           mkdir -p backups
