@@ -19,6 +19,9 @@ on:
     - cron: '0 9 * * *'   # 9:00 UTC = 4/5am ET, well after the keepalive ping
   workflow_dispatch: {}     # allows manual "Run workflow" trigger from the Actions tab
 
+permissions:
+  contents: write   # default GITHUB_TOKEN is read-only; this job pushes to db-backups
+
 jobs:
   backup:
     runs-on: ubuntu-latest
