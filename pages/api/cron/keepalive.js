@@ -5,9 +5,9 @@
 // the tokens table via PostgREST, which registers as database activity.
 //
 // Env vars required (already set for the main app):
-//   NEXT_PUBLIC_SUPABASE_URL
-//   SUPABASE_SERVICE_ROLE_KEY   (or swap for the anon key if RLS allows a read)
-//   CRON_SECRET                 (new — any random string; Vercel sends it automatically)
+//   SUPABASE_URL
+//   SUPABASE_SERVICE_KEY
+//   CRON_SECRET            (new — any random string; Vercel sends it automatically)
 
 export default async function handler(req, res) {
   // Vercel Cron sends: Authorization: Bearer <CRON_SECRET>
@@ -17,8 +17,8 @@ export default async function handler(req, res) {
     return res.status(401).json({ ok: false, error: 'Unauthorized' });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     return res.status(500).json({ ok: false, error: 'Missing Supabase env vars' });
