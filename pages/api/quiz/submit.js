@@ -21,12 +21,14 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { token, name, email, answers, tiebreakerType, tiebreakerAnswer } = req.body || {};
+    const { token, name, email, company, role, answers, tiebreakerType, tiebreakerAnswer } = req.body || {};
 
     if (!name || !String(name).trim()) return res.status(400).json({ error: 'Name is required.' });
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
       return res.status(400).json({ error: 'A valid email is required.' });
     }
+    if (!company || !String(company).trim()) return res.status(400).json({ error: 'Organisation / Company is required.' });
+    if (!role || !String(role).trim()) return res.status(400).json({ error: 'Current Role / Job Title is required.' });
     if (!answers || typeof answers !== 'object') return res.status(400).json({ error: 'Answers are required.' });
 
     for (const id of QUESTION_IDS) {
@@ -65,6 +67,8 @@ export default async function handler(req, res) {
       token: token || null,
       name: name.trim(),
       email: email.trim(),
+      company: company.trim(),
+      role: role.trim(),
       type,
       h_score,
       w_score,
@@ -82,6 +86,8 @@ export default async function handler(req, res) {
           if (email) patch.created_for_email = email.trim();
           if (tr.name == null && name) patch.name = name.trim();
           if (tr.email == null && email) patch.email = email.trim();
+          if (tr.company == null && company) patch.company = company.trim();
+          if (tr.role == null && role) patch.role = role.trim();
           if (Object.keys(patch).length) await dbPatch('tokens', { token }, patch);
         }
       } catch (patchErr) {

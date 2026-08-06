@@ -1,8 +1,8 @@
 import { OPENER_TEXT } from '../../lib/quiz-data';
 
-export default function QuizSetup({ name, email, onNameChange, onEmailChange, onBegin }) {
+export default function QuizSetup({ name, email, company, role, onNameChange, onEmailChange, onCompanyChange, onRoleChange, onBegin }) {
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canBegin = name.trim().length > 0 && emailValid;
+  const canBegin = name.trim().length > 0 && emailValid && company.trim().length > 0 && role.trim().length > 0;
 
   return (
     <div style={s.wrap}>
@@ -33,6 +33,26 @@ export default function QuizSetup({ name, email, onNameChange, onEmailChange, on
         />
       </div>
 
+      <div style={s.field}>
+        <label style={s.label}>Organisation / Company</label>
+        <input
+          style={s.input}
+          value={company}
+          onChange={e => onCompanyChange(e.target.value)}
+          placeholder="e.g. Curio"
+        />
+      </div>
+
+      <div style={s.field}>
+        <label style={s.label}>Current Role / Job Title</label>
+        <input
+          style={s.input}
+          value={role}
+          onChange={e => onRoleChange(e.target.value)}
+          placeholder="e.g. VP of Product"
+        />
+      </div>
+
       <button
         type="button"
         style={{ ...s.btn, ...(canBegin ? {} : s.btnDisabled) }}
@@ -52,7 +72,8 @@ const s = {
   field: { marginBottom: 20 },
   label: { display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716C', marginBottom: 8 },
   input: {
-    width: '100%', padding: '14px 16px', background: '#FAFAF9', border: '1.5px solid #E7E5E4', borderRadius: 10,
+    width: '100%', padding: '14px 16px', background: '#FAFAF9',
+    borderWidth: '1.5px', borderStyle: 'solid', borderColor: '#E7E5E4', borderRadius: 10,
     fontFamily: "'DM Sans', sans-serif", fontSize: '0.95rem', color: '#1C1917', outline: 'none', boxSizing: 'border-box',
   },
   btn: {

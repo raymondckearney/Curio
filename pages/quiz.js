@@ -8,10 +8,11 @@ import QuizQuestion from '../components/quiz/QuizQuestion';
 import QuizProgress from '../components/quiz/QuizProgress';
 
 // Native replacement for the Typeform-embedded assessment at /assessment.
-// On completion this hands off to the exact same downstream flow Typeform
-// currently does — /results/pending?token=&name= — so everything past that
-// point (token/signup gating, portal dashboard, profile display) is
-// unchanged. See pages/assessment/index.js for the flow this mirrors.
+// On completion this hands off directly to /results/[type]?token=&name=,
+// the same page/params the Typeform flow eventually lands on (via its own
+// /results/pending polling step) — so everything past that point
+// (token/signup gating, portal dashboard, profile display) is unchanged.
+// See pages/assessment/index.js for the flow this mirrors.
 
 export default function QuizPage() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export default function QuizPage() {
   const [phase, setPhase] = useState('setup'); // setup | questions | tiebreaker | submitting
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [company, setCompany] = useState('');
+  const [role, setRole] = useState('');
   const [sessionSeed, setSessionSeed] = useState(null);
 
   const [qIndex, setQIndex] = useState(0);
@@ -30,10 +33,11 @@ export default function QuizPage() {
 
   useEffect(() => {
     if (!router.isReady) return;
-    const { token: t, name: n, email: e } = router.query;
+    const { token: t, name: n, email: e, role: r } = router.query;
     setToken(t || null);
     if (n) setName(String(n));
     if (e) setEmail(String(e));
+    if (r) setRole(String(r));
     setSessionSeed(t ? String(t) : `${Date.now()}-${Math.random()}`);
     setReady(true);
   }, [router.isReady, router.query]);
@@ -99,6 +103,8 @@ export default function QuizPage() {
           token,
           name: name.trim(),
           email: email.trim(),
+          company: company.trim(),
+          role: role.trim(),
           answers: finalAnswers,
           tiebreakerType,
           tiebreakerAnswer: tbAnswer,
@@ -107,10 +113,16 @@ export default function QuizPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) throw new Error(data.error || 'Something went wrong submitting your assessment.');
 
+      // Go straight to the results page rather than through /results/pending —
+      // that page exists only to paper over Typeform's async webhook delay
+      // (it polls for a row to show up). Our submit is synchronous and
+      // already returns the resolved type, and pending.js has no fallback
+      // when there's no token (as when testing the quiz without one), so
+      // routing through it can strand a respondent on its timeout screen.
       const qs = new URLSearchParams();
       if (token) qs.set('token', token);
       if (name.trim()) qs.set('name', name.trim());
-      window.location.href = `/results/pending?${qs.toString()}`;
+      window.location.href = `/results/${data.type}?${qs.toString()}`;
     } catch (e) {
       setError(e.message || 'Something went wrong. Please try again.');
       // Return to the phase the respondent was in so their answers aren't lost.
@@ -147,8 +159,12 @@ export default function QuizPage() {
             <QuizSetup
               name={name}
               email={email}
+              company={company}
+              role={role}
               onNameChange={setName}
               onEmailChange={setEmail}
+              onCompanyChange={setCompany}
+              onRoleChange={setRole}
               onBegin={beginAssessment}
             />
           )}
