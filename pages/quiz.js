@@ -284,11 +284,11 @@ const s = {
     padding: '64px clamp(24px,5vw,48px)',
   },
   setupHeroWatermark: {
-    position: 'absolute', top: '50%', right: -160, transform: 'translateY(-50%)',
-    width: 480, maxWidth: 'none', opacity: 0.08, filter: 'invert(1)', pointerEvents: 'none', zIndex: 0,
+    position: 'absolute', top: -180, right: -220,
+    width: 760, maxWidth: 'none', opacity: 0.08, filter: 'invert(1)', pointerEvents: 'none', zIndex: 0,
   },
   setupHeroInner: { position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto', width: '100%' },
-  heroLogo: { fontFamily: "'Caveat', cursive", fontSize: '1.6rem', fontWeight: 700, color: '#fff', marginBottom: 32 },
+  heroLogo: { fontFamily: "'Caveat', cursive", fontSize: '2.4rem', fontWeight: 700, color: '#fff', marginBottom: 32 },
   opener: { display: 'flex', flexDirection: 'column', gap: 18 },
   openerP: { fontSize: '0.95rem', color: '#CBD5E1', lineHeight: 1.8, margin: 0 },
 };

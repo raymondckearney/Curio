@@ -10,7 +10,7 @@ export default function QuizSetup({ name, email, company, role, onNameChange, on
           style={s.input}
           value={name}
           onChange={e => onNameChange(e.target.value)}
-          placeholder="e.g. Alex"
+          placeholder="e.g. Alex Johnson"
         />
       </div>
 
