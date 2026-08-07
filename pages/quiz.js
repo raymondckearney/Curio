@@ -177,6 +177,7 @@ export default function QuizPage() {
             <img src="/images/brain-fingerprint-watermark.webp" alt="" aria-hidden="true" style={s.setupHeroWatermark} />
             <div style={s.setupHeroInner}>
               <div style={s.heroLogo}>Curio<span style={s.dot}>.</span></div>
+              <div style={s.heroSubLockup}>MindPrint™</div>
               <div style={s.opener}>
                 {OPENER_TEXT.map((p, i) => (
                   <p key={i} style={{ ...s.openerP, whiteSpace: 'pre-line' }}>{p}</p>
@@ -288,7 +289,8 @@ const s = {
     width: 760, maxWidth: 'none', opacity: 0.08, filter: 'invert(1)', pointerEvents: 'none', zIndex: 0,
   },
   setupHeroInner: { position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto', width: '100%' },
-  heroLogo: { fontFamily: "'Caveat', cursive", fontSize: '2.4rem', fontWeight: 700, color: '#fff', marginBottom: 32 },
+  heroLogo: { fontFamily: "'Caveat', cursive", fontSize: '2.4rem', fontWeight: 700, color: '#fff', marginBottom: 4 },
+  heroSubLockup: { fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#059669', marginBottom: 32 },
   opener: { display: 'flex', flexDirection: 'column', gap: 18 },
   openerP: { fontSize: '0.95rem', color: '#CBD5E1', lineHeight: 1.8, margin: 0 },
 };
