@@ -2,17 +2,18 @@
 //
 // This intentionally mirrors pages/api/webhooks/typeform.js as closely as
 // possible: same `assessments` table, same columns, same token-backfill
-// behavior, same lack of Notion/Sheets/email side effects (none of those
-// happen in that webhook either — if Ray has Sheets/Notion/email wired up
-// today, it's via Typeform's own native connectors, not this codebase).
-// The goal is a drop-in replacement for the Typeform iframe, not a new
-// pipeline — everything downstream of the assessments-row write (token
-// gating, /signup, portal dashboard) is untouched and handles this exactly
-// like it already handles a Typeform submission.
+// behavior. Notion sync (Mindprint™ Quiz Responses database) is the one
+// addition beyond what the Typeform webhook does — Google Sheets was
+// explicitly descoped. The goal otherwise is a drop-in replacement for the
+// Typeform iframe, not a new pipeline — everything downstream of the
+// assessments-row write (token gating, /signup, portal dashboard) is
+// untouched and handles this exactly like it already handles a Typeform
+// submission.
 
 import { dbInsert, dbGet, dbPatch } from '../../../lib/supabase';
 import { determineType } from '../../../lib/profiles';
 import { QUESTIONS } from '../../../lib/quiz-data';
+import { logQuizResponseToNotion } from '../../../lib/quiz-notion';
 
 const VALID_ORIENTATIONS = new Set(['WHY', 'WHAT', 'HOW']);
 const QUESTION_IDS = QUESTIONS.map(q => q.id);
@@ -93,6 +94,25 @@ export default async function handler(req, res) {
       } catch (patchErr) {
         console.error('[quiz/submit] token backfill failed:', patchErr);
       }
+    }
+
+    // Log to Notion. Awaited (rather than truly fire-and-forget) because a
+    // Vercel serverless function can be torn down the moment the response
+    // is sent, which would otherwise race an unawaited fetch — but a
+    // failure here is caught and logged, never surfaced to the respondent
+    // or allowed to block them from seeing their result.
+    try {
+      await logQuizResponseToNotion({
+        name: name.trim(),
+        email: email.trim(),
+        company: company.trim(),
+        role: role.trim(),
+        whyScore: y_score,
+        whatScore: w_score,
+        howScore: h_score,
+      });
+    } catch (notionErr) {
+      console.error('[quiz/submit] Notion sync failed:', notionErr);
     }
 
     return res.status(200).json({ ok: true, type });
