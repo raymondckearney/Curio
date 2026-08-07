@@ -12,7 +12,7 @@
 
 import { dbInsert, dbGet, dbPatch } from '../../../lib/supabase';
 import { determineType } from '../../../lib/profiles';
-import { QUESTIONS } from '../../../lib/quiz-data';
+import { QUESTIONS, TIE_BREAKERS } from '../../../lib/quiz-data';
 import { logQuizResponseToNotion } from '../../../lib/quiz-notion';
 
 const VALID_ORIENTATIONS = new Set(['WHY', 'WHAT', 'HOW']);
@@ -102,6 +102,20 @@ export default async function handler(req, res) {
     // failure here is caught and logged, never surfaced to the respondent
     // or allowed to block them from seeing their result.
     try {
+      const answerDetails = {};
+      for (const id of QUESTION_IDS) {
+        const q = QUESTIONS.find(q => q.id === id);
+        const opt = q.options.find(o => o.orientation === answers[id]);
+        answerDetails[id] = `${answers[id]}: ${opt.text}`;
+      }
+
+      let tiebreakerText = null;
+      const tbDef = tiebreakerType && TIE_BREAKERS[tiebreakerType];
+      if (tiebreakerAnswer && tbDef) {
+        const tbOpt = tbDef.options.find(o => o.orientation === tiebreakerAnswer);
+        if (tbOpt) tiebreakerText = `${tiebreakerAnswer}: ${tbOpt.text}`;
+      }
+
       await logQuizResponseToNotion({
         name: name.trim(),
         email: email.trim(),
@@ -110,6 +124,10 @@ export default async function handler(req, res) {
         whyScore: y_score,
         whatScore: w_score,
         howScore: h_score,
+        profile: type,
+        submittedAt: submitted_at,
+        answers: answerDetails,
+        tiebreakerAnswer: tiebreakerText,
       });
     } catch (notionErr) {
       console.error('[quiz/submit] Notion sync failed:', notionErr);
