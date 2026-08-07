@@ -1,19 +1,11 @@
-import { OPENER_TEXT } from '../../lib/quiz-data';
-
 export default function QuizSetup({ name, email, company, role, onNameChange, onEmailChange, onCompanyChange, onRoleChange, onBegin }) {
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const canBegin = name.trim().length > 0 && emailValid && company.trim().length > 0 && role.trim().length > 0;
 
   return (
     <div style={s.wrap}>
-      <div style={s.opener}>
-        {OPENER_TEXT.map((p, i) => (
-          <p key={i} style={{ ...s.openerP, whiteSpace: 'pre-line' }}>{p}</p>
-        ))}
-      </div>
-
       <div style={s.field}>
-        <label style={s.label}>First Name</label>
+        <label style={s.label}>Name</label>
         <input
           style={s.input}
           value={name}
@@ -34,7 +26,7 @@ export default function QuizSetup({ name, email, company, role, onNameChange, on
       </div>
 
       <div style={s.field}>
-        <label style={s.label}>Organisation / Company</label>
+        <label style={s.label}>Organization / Company</label>
         <input
           style={s.input}
           value={company}
@@ -67,8 +59,6 @@ export default function QuizSetup({ name, email, company, role, onNameChange, on
 
 const s = {
   wrap: { maxWidth: 560 },
-  opener: { marginBottom: 40, display: 'flex', flexDirection: 'column', gap: 18 },
-  openerP: { fontSize: '0.95rem', color: '#44403C', lineHeight: 1.8, margin: 0 },
   field: { marginBottom: 20 },
   label: { display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716C', marginBottom: 8 },
   input: {

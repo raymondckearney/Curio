@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
-import { QUESTIONS, TIE_BREAKERS } from '../lib/quiz-data';
+import { QUESTIONS, TIE_BREAKERS, OPENER_TEXT } from '../lib/quiz-data';
 import { seededShuffle, calculateScores, getTieBreaker } from '../lib/quiz-scoring';
 import QuizSetup from '../components/quiz/QuizSetup';
 import QuizQuestion from '../components/quiz/QuizQuestion';
@@ -67,19 +67,20 @@ export default function QuizPage() {
     const q = QUESTIONS[qIndex];
     const nextAnswers = { ...answers, [q.id]: option.orientation };
     setAnswers(nextAnswers);
-    setTimeout(() => {
-      if (qIndex < QUESTIONS.length - 1) {
-        setQIndex(qIndex + 1);
-        return;
-      }
-      const scores = calculateScores(nextAnswers);
-      const tb = getTieBreaker(scores);
-      if (tb) {
-        setPhase('tiebreaker');
-      } else {
-        submit(nextAnswers, null, null);
-      }
-    }, 300);
+
+    if (qIndex < QUESTIONS.length - 1) {
+      setTimeout(() => setQIndex(qIndex + 1), 300);
+      return;
+    }
+
+    // Last question: only auto-advance if a tie-breaker is needed — that's
+    // another question, not the end. Otherwise this was the final answer,
+    // so stay here and let the respondent hit Submit rather than ending
+    // the assessment on the same tap that picked their answer.
+    const scores = calculateScores(nextAnswers);
+    if (getTieBreaker(scores)) {
+      setTimeout(() => setPhase('tiebreaker'), 300);
+    }
   }
 
   function goBack() {
@@ -89,7 +90,6 @@ export default function QuizPage() {
 
   function selectTiebreaker(tbKey, option) {
     setTiebreakerAnswer(option.orientation);
-    setTimeout(() => submit(answers, tbKey, option.orientation), 300);
   }
 
   async function submit(finalAnswers, tiebreakerType, tbAnswer) {
@@ -142,20 +142,50 @@ export default function QuizPage() {
     tbData = tbKey ? TIE_BREAKERS[tbKey] : null;
   }
 
-  return (
-    <>
-      <Head>
-        <title>MindPrint™ Assessment — Curio</title>
-        <meta name="robots" content="noindex, nofollow" />
-        <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-      </Head>
-      <div style={s.page}>
-        <div style={s.container}>
-          <div style={s.logo}>Curio<span style={s.dot}>.</span></div>
+  // The very last selection (the final question when no tie-breaker is
+  // needed, or the tie-breaker itself) requires an explicit Submit tap
+  // rather than auto-advancing, so a fast/final tap can't end the
+  // assessment by accident.
+  const isLastQuestion = qIndex === QUESTIONS.length - 1;
+  const lastQuestionAnswered = isLastQuestion && !!selectedForCurrent;
+  const tieNeededAtEnd = lastQuestionAnswered ? getTieBreaker(calculateScores(answers)) : null;
+  const showQuestionsSubmit = phase === 'questions' && lastQuestionAnswered && !tieNeededAtEnd;
+  const showTiebreakerSubmit = phase === 'tiebreaker' && !!tiebreakerAnswer;
 
-          {error && <div style={s.errorBox}>{error}</div>}
+  function handleFinalSubmit() {
+    if (phase === 'tiebreaker') {
+      submit(answers, tbKey, tiebreakerAnswer);
+    } else {
+      submit(answers, null, null);
+    }
+  }
 
-          {phase === 'setup' && (
+  const head = (
+    <Head>
+      <title>MindPrint™ Assessment — Curio</title>
+      <meta name="robots" content="noindex, nofollow" />
+      <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+    </Head>
+  );
+
+  if (phase === 'setup') {
+    return (
+      <>
+        {head}
+        <div style={s.page}>
+          <div style={s.setupHero}>
+            <img src="/images/brain-fingerprint-watermark.webp" alt="" aria-hidden="true" style={s.setupHeroWatermark} />
+            <div style={s.setupHeroInner}>
+              <div style={s.heroLogo}>Curio<span style={s.dot}>.</span></div>
+              <div style={s.opener}>
+                {OPENER_TEXT.map((p, i) => (
+                  <p key={i} style={{ ...s.openerP, whiteSpace: 'pre-line' }}>{p}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div style={s.container}>
+            {error && <div style={s.errorBox}>{error}</div>}
             <QuizSetup
               name={name}
               email={email}
@@ -167,7 +197,20 @@ export default function QuizPage() {
               onRoleChange={setRole}
               onBegin={beginAssessment}
             />
-          )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {head}
+      <div style={s.page}>
+        <div style={s.container}>
+          <div style={s.logo}>Curio<span style={s.dot}>.</span></div>
+
+          {error && <div style={s.errorBox}>{error}</div>}
 
           {phase === 'questions' && q && (
             <>
@@ -180,17 +223,29 @@ export default function QuizPage() {
                 onBack={goBack}
                 showBack={qIndex > 0}
               />
+              {showQuestionsSubmit && (
+                <button type="button" style={s.submitBtn} onClick={handleFinalSubmit}>
+                  Submit →
+                </button>
+              )}
             </>
           )}
 
           {phase === 'tiebreaker' && tbData && (
-            <QuizQuestion
-              text={tbData.text}
-              options={tbData.options}
-              selected={tiebreakerAnswer}
-              onSelect={(opt) => selectTiebreaker(tbKey, opt)}
-              showBack={false}
-            />
+            <>
+              <QuizQuestion
+                text={tbData.text}
+                options={tbData.options}
+                selected={tiebreakerAnswer}
+                onSelect={(opt) => selectTiebreaker(tbKey, opt)}
+                showBack={false}
+              />
+              {showTiebreakerSubmit && (
+                <button type="button" style={s.submitBtn} onClick={handleFinalSubmit}>
+                  Submit →
+                </button>
+              )}
+            </>
           )}
 
           {phase === 'submitting' && (
@@ -215,4 +270,25 @@ const s = {
   submitting: { textAlign: 'center', padding: '80px 0' },
   spinner: { width: 36, height: 36, borderRadius: '50%', border: '3px solid #E7E5E4', borderTopColor: '#059669', animation: 'quiz-spin 0.8s linear infinite', margin: '0 auto 20px' },
   submittingText: { fontSize: '0.95rem', color: '#78716C' },
+  submitBtn: {
+    width: '100%', padding: '16px 24px', marginTop: 28, background: '#059669', border: 'none', borderRadius: 99,
+    color: '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.04em',
+    cursor: 'pointer', transition: 'background 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  // Intro-screen hero band — same faint-watermark, clipped-corner treatment
+  // as the profile hero on pages/portal/dashboard.js, inverted to white
+  // since the source mark is black line-art and this band is navy.
+  setupHero: {
+    background: '#0F172A', position: 'relative', overflow: 'hidden',
+    minHeight: '46vh', display: 'flex', alignItems: 'center',
+    padding: '64px clamp(24px,5vw,48px)',
+  },
+  setupHeroWatermark: {
+    position: 'absolute', top: '50%', right: -160, transform: 'translateY(-50%)',
+    width: 480, maxWidth: 'none', opacity: 0.08, filter: 'invert(1)', pointerEvents: 'none', zIndex: 0,
+  },
+  setupHeroInner: { position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto', width: '100%' },
+  heroLogo: { fontFamily: "'Caveat', cursive", fontSize: '1.6rem', fontWeight: 700, color: '#fff', marginBottom: 32 },
+  opener: { display: 'flex', flexDirection: 'column', gap: 18 },
+  openerP: { fontSize: '0.95rem', color: '#CBD5E1', lineHeight: 1.8, margin: 0 },
 };
