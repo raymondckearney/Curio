@@ -8,7 +8,7 @@ export async function getServerSideProps({ params }) {
     if (!rows.length) {
       return { redirect: { destination: '/go/invalid', permanent: false } };
     }
-    const { purpose, name, email, role, used } = rows[0];
+    const { purpose, name, email, role, used, quiz_version } = rows[0];
     if (used) {
       return { redirect: { destination: '/go/invalid?reason=used', permanent: false } };
     }
@@ -16,8 +16,15 @@ export async function getServerSideProps({ params }) {
     if (name)  qs.set('name', name);
     if (email) qs.set('email', email);
     if (role)  qs.set('role', role);
-    // Assessment tokens go to the intro landing page first
-    const dest = purpose === 'assessment' ? `/assessment/intro?${qs}` : `/${purpose}?${qs}`;
+    // Assessment tokens created before the native-quiz cutover are stamped
+    // quiz_version='typeform' (see supabase/migrations/0007_quiz_version.sql)
+    // and keep going through the intro page to the Typeform embed, exactly
+    // as they always have — old links must never change destination.
+    // Everything else (the default going forward) skips straight to /quiz,
+    // whose own setup screen already covers what the intro page did.
+    const dest = purpose === 'assessment'
+      ? (quiz_version === 'typeform' ? `/assessment/intro?${qs}` : `/quiz?${qs}`)
+      : `/${purpose}?${qs}`;
     return { redirect: { destination: dest, permanent: false } };
   } catch {
     return { redirect: { destination: '/go/invalid', permanent: false } };
