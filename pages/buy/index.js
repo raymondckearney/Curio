@@ -1,17 +1,20 @@
 import Head from 'next/head';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Stripe from 'stripe';
 
 const PRODUCTS = [
   {
     id: 'assessment',
     name: 'MindPrint™ Assessment',
     priceEnv: 'STRIPE_PRICE_ASSESSMENT',
-    description: 'Discover how you\'re naturally wired to think through and solve problems. Includes your full MindPrint™ profile report.',
+    description: 'Discover how you\'re naturally wired to think through and solve problems. Includes your full MindPrint™ profile report, your tertiary support library, and a curated feed of insights.',
     included: [
       'Assessment access',
       'Personal profile report',
       'PDF profile delivery',
+      'Tertiary support library',
+      'Recent articles',
     ],
     featured: false,
   },
@@ -19,29 +22,60 @@ const PRODUCTS = [
     id: 'assessment_analyzer',
     name: 'MindPrint™ Assessment + AI Tools',
     priceEnv: 'STRIPE_PRICE_ASSESSMENT_ANALYZER',
-    description: 'Everything in the Assessment, plus access to a suite of AI-powered career tools to explore how your profile applies to the work you do.',
+    description: 'Everything in Assessment, plus a full suite of AI-powered tools — role fit analysis, job description scoring, career guidance, and your profile-matched AI companion.',
     included: [
-      'Assessment access',
-      'Personal profile report',
-      'PDF profile delivery',
-      'AI-powered career tools',
+      'Everything in Assessment',
+      'Role Alignment Analyzer',
+      'JD Analyzer',
+      'Career Guidance',
+      'Profile-matched AI Companion',
     ],
     featured: true,
   },
 ];
 
+function formatPrice(unitAmount, currency = 'usd') {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(unitAmount / 100);
+}
+
 export async function getServerSideProps() {
+  const priceIds = {
+    assessment: process.env.STRIPE_PRICE_ASSESSMENT || null,
+    assessment_analyzer: process.env.STRIPE_PRICE_ASSESSMENT_ANALYZER || null,
+  };
+
+  let displayPrices = { assessment: null, assessment_analyzer: null };
+
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const fetched = await Promise.all(
+      Object.entries(priceIds)
+        .filter(([, id]) => id && !id.startsWith('prod_'))
+        .map(([key, id]) =>
+          stripe.prices.retrieve(id)
+            .then(p => [key, formatPrice(p.unit_amount, p.currency)])
+            .catch(() => [key, null])
+        )
+    );
+    fetched.forEach(([key, val]) => { displayPrices[key] = val; });
+  } catch {
+    // display without prices if Stripe unavailable
+  }
+
   return {
     props: {
-      prices: {
-        assessment: process.env.STRIPE_PRICE_ASSESSMENT || null,
-        assessment_analyzer: process.env.STRIPE_PRICE_ASSESSMENT_ANALYZER || null,
-      },
+      prices: priceIds,
+      displayPrices,
     },
   };
 }
 
-export default function BuyPage({ prices }) {
+export default function BuyPage({ prices, displayPrices }) {
   const router = useRouter();
   const [selected, setSelected] = useState('assessment_analyzer');
   const [name, setName] = useState('');
@@ -115,6 +149,9 @@ export default function BuyPage({ prices }) {
                     </div>
                   </div>
                   <h2 style={s.cardTitle}>{product.name}</h2>
+                  {displayPrices[product.id] && (
+                    <div style={s.cardPrice}>{displayPrices[product.id]}</div>
+                  )}
                   <p style={s.cardDesc}>{product.description}</p>
                   <div style={s.divider} />
                   <ul style={s.list}>
@@ -196,7 +233,8 @@ const s = {
   radioOuter: { width: 20, height: 20, borderRadius: '50%', border: '2px solid #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   radioOuterSelected: { border: '2px solid #059669', background: '#F0FDF4' },
   radioDot: { width: 10, height: 10, borderRadius: '50%', background: '#059669' },
-  cardTitle: { fontSize: '1.05rem', fontWeight: 700, color: '#0F172A', marginBottom: 10 },
+  cardTitle: { fontSize: '1.05rem', fontWeight: 700, color: '#0F172A', marginBottom: 6 },
+  cardPrice: { fontFamily: "'Caveat', cursive", fontSize: '2rem', fontWeight: 700, color: '#0F172A', marginBottom: 6, lineHeight: 1 },
   cardDesc: { fontSize: '0.9rem', color: '#475569', lineHeight: 1.6, marginBottom: 16 },
   divider: { borderTop: '1px solid #F1F5F9', marginBottom: 16 },
   list: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 },
