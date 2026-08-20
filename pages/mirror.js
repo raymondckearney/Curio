@@ -31,7 +31,11 @@ export async function getServerSideProps({ req, res, query }) {
 
 export default function LanguageMirrorPage() {
   const [sample, setSample] = useState('');
-  const [isMine, setIsMine] = useState(false);
+  // TEMPORARY: "This is my own writing" checkbox/requirement disabled below —
+  // defaulting true here so the request still satisfies the API's isMine
+  // check (also temporarily relaxed, see pages/api/mirror.js). Restore the
+  // checkbox and set this back to useState(false) to re-enable.
+  const [isMine] = useState(true);
   const [consent, setConsent] = useState(false);
   const [output, setOutput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -42,7 +46,6 @@ export default function LanguageMirrorPage() {
       setErr('Paste at least a solid paragraph or two, around 200 characters minimum, so the read has something to work with.');
       return;
     }
-    if (!isMine) { setErr('The Mirror reads your own writing only. Please confirm the sample is yours.'); return; }
     setBusy(true); setErr(''); setOutput('');
     try {
       const res = await fetch('/api/mirror', {
@@ -90,11 +93,9 @@ export default function LanguageMirrorPage() {
             onChange={(e) => setSample(e.target.value)}
             style={{ width: '100%', borderRadius: 8, padding: 12, fontSize: '0.875rem', outline: 'none', resize: 'vertical', border: `1px solid ${RULE}`, background: '#FCFCFB', lineHeight: 1.5, fontFamily: 'inherit' }} />
 
+          {/* TEMPORARY: "This is my own writing" checkbox removed — see the
+              isMine useState above for how to restore it. */}
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12, cursor: 'pointer' }}>
-            <input type="checkbox" checked={isMine} onChange={(e) => setIsMine(e.target.checked)} style={{ marginTop: 3 }} />
-            <span style={{ fontSize: 12 }}>This is my own writing.</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 8, cursor: 'pointer' }}>
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 3 }} />
             <span style={{ fontSize: 12, color: '#475569' }}>Optional: Curio may keep this sample to improve how MindPrint&trade; reads language.</span>
           </label>
@@ -110,16 +111,9 @@ export default function LanguageMirrorPage() {
           <div style={{ borderRadius: 12, marginTop: 20, padding: 20, background: SOFT, border: `1px solid ${ACCENT}` }}>
             <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: 22, color: NAVY }}>What your words suggest</span>
             <MD text={output} />
-            <div style={{ borderRadius: 8, marginTop: 20, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, background: NAVY }}>
-              <div>
-                <div style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: 20, color: '#fff' }}>Curious if the read matches your wiring?</div>
-                <div style={{ fontSize: 11.5, color: '#CBD5E1' }}>Writing is shaped by role and audience. The MindPrint&trade; assessment reads the wiring itself.</div>
-              </div>
-              <a href="https://choosecurio.com/buy"
-                style={{ borderRadius: 8, padding: '10px 20px', fontWeight: 600, fontSize: '0.875rem', background: TEAL, color: NAVY, textDecoration: 'none' }}>
-                Take the assessment
-              </a>
-            </div>
+            {/* TEMPORARY: "Take the assessment" CTA removed. Restore by
+                bringing back the navy CTA box that linked to
+                https://choosecurio.com/buy. */}
           </div>
         )}
       </div>

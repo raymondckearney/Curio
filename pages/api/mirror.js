@@ -36,9 +36,11 @@ export default async function handler(req, res) {
   if (typeof sample !== 'string' || sample.trim().length < 200) {
     return res.status(400).json({ error: 'Paste at least 200 characters.' });
   }
-  if (isMine !== true) {
-    return res.status(400).json({ error: 'The Mirror reads your own writing only.' });
-  }
+  // TEMPORARY: isMine requirement disabled to match the checkbox removed
+  // from pages/mirror.js. Restore both together.
+  // if (isMine !== true) {
+  //   return res.status(400).json({ error: 'The Mirror reads your own writing only.' });
+  // }
 
   if (isOverDailyCap(row)) {
     return res.status(429).json({ error: `This preview link has reached its limit of ${DAILY_READ_CAP} reads for today. It resets at midnight UTC.` });
