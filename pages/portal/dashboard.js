@@ -233,6 +233,15 @@ export default function PortalDashboard() {
                   </div>
                 )}
 
+                <div style={s.contentCard}>
+                  <div style={{ ...s.cardLabel, color }}>Recent Articles</div>
+                  <iframe
+                    src="/insights?embed=1"
+                    style={{ width: '100%', height: 420, border: 'none', borderRadius: 8, display: 'block' }}
+                    title="Recent Articles"
+                  />
+                </div>
+
                 {hasRoleAnalyzer && (
                   <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                     <div>

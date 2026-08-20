@@ -5,7 +5,6 @@ from content_ab import TOOLS_AB
 from content_cde import TOOLS_CDE
 from arts1 import ARTS_1
 from arts2 import ARTS_2
-from fieldguides import GUIDES, fieldguide_html
 
 TOOLS = TOOLS_AB + TOOLS_CDE
 ARTS = ARTS_1 + ARTS_2
@@ -24,12 +23,6 @@ for t in TOOLS:
     hp = f"{HTML}/op_{t['num']:02d}.html"
     open(hp,"w").write(onepager_html(t))
     jobs.append((hp, f"{d}/Tool_{t['num']:02d}_{slug(t['title'])}.pdf", f"OP{t['num']:02d}"))
-
-for g in GUIDES:
-    d = f"{OUT}/Field_Guides"; os.makedirs(d, exist_ok=True)
-    hp = f"{HTML}/fg_{g['profile']}.html"
-    open(hp,"w").write(fieldguide_html(g))
-    jobs.append((hp, f"{d}/Field_Guide_{g['profile'].replace('-','_')}.pdf", f"FG-{g['profile']}"))
 
 hp = f"{HTML}/catalog.html"
 open(hp,"w").write(catalog_html(TOOLS))
@@ -50,18 +43,11 @@ async def main():
         pg = await b.new_page(viewport={"width":816,"height":1056})
         for hp, pp, label in jobs:
             await pg.goto("file://"+hp)
-            hs = await pg.evaluate("""() => {
-                const pages = document.querySelectorAll('.page');
-                const out = [];
-                pages.forEach(p => {
-                    p.style.height='auto'; p.style.overflow='visible';
-                    out.push(p.scrollHeight);
-                    p.style.height='11in'; p.style.overflow='hidden';
-                });
-                return out;}""")
-            h = max(hs)
-            heights.append((label, h))
-            if h > 1056: over.append((label, hs) if len(hs) > 1 else (label, h))
+            h = await pg.evaluate("""() => {const p=document.querySelector('.page');
+                p.style.height='auto'; p.style.overflow='visible';
+                const h=p.scrollHeight; p.style.height='11in'; p.style.overflow='hidden'; return h;}""")
+            heights.append((label,h))
+            if h > 1056: over.append((label,h))
             await pg.pdf(path=pp, width="8.5in", height="11in", print_background=True)
         await b.close()
     print("rendered", len(jobs), "pages")
