@@ -24,6 +24,15 @@ Output format:
 ## One experiment (a single concrete rewrite suggestion the user can try on this very text to reach the quiet orientation)
 No preamble, no closing pleasantries.`;
 
+// ADD-ON: profile guess. Fully separable from SYSTEM above — remove this
+// constant, the "+ PROFILE_GUESS_INSTRUCTION" below, and the extraction
+// block in the handler to revert to a plain read with no guess.
+const PROFILE_GUESS_INSTRUCTION = `
+
+Additionally, after the four sections above, on its own final line with nothing else, output your single best guess at which of the six MindPrint(tm) profile combinations (primary-secondary) this sample most likely reflects, formatted exactly as:
+PROFILE_GUESS: <primary>-<secondary>
+Lowercase, one of exactly these six: why-what, why-how, what-why, what-how, how-why, how-what. This is a low-confidence guess from a single sample, not a diagnosis — pick the single most likely one anyway rather than hedging or declining.`;
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -60,7 +69,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
-        system: SYSTEM,
+        system: SYSTEM + PROFILE_GUESS_INSTRUCTION, // ADD-ON: see PROFILE_GUESS_INSTRUCTION above to revert
         messages: [{ role: 'user', content: `My writing sample:\n\n${sample}` }],
       }),
     });
@@ -71,6 +80,16 @@ export default async function handler(req, res) {
     }
 
     const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+
+    // ADD-ON: profile guess extraction. Pulls the PROFILE_GUESS marker line
+    // (see PROFILE_GUESS_INSTRUCTION above) out of the raw model text so it
+    // never shows up in the plain markdown read — it's rendered as its own
+    // distinct box on the frontend instead. Remove this block and the
+    // `profileGuess` field below to revert; `text` alone still works as it
+    // did before this add-on.
+    const guessMatch = text.match(/PROFILE_GUESS:\s*(why-what|why-how|what-why|what-how|how-why|how-what)\b/i);
+    const profileGuess = guessMatch ? guessMatch[1].toLowerCase() : null;
+    const displayText = text.replace(/\n?PROFILE_GUESS:\s*\S+\s*$/i, '').trim();
 
     await recordMirrorRead(row);
 
@@ -87,7 +106,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ text });
+    return res.status(200).json({ text: displayText, profileGuess }); // profileGuess is the ADD-ON field — drop it here to revert
   } catch (err) {
     console.error('[mirror]', err);
     return res.status(500).json({ error: err.message });

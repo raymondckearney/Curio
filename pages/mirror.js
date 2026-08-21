@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { findActiveMirrorToken, getMirrorTokenFromCookie, mirrorCookie } from '../lib/mirrorAuth';
 import MD from '../components/CompanionMarkdown';
+import profiles from '../lib/profiles'; // ADD-ON: profile guess box only — see the block near <MD text={output} /> to revert
 
 const NAVY = '#0F172A';
 const EMERALD = '#059669';
@@ -38,6 +39,7 @@ export default function LanguageMirrorPage() {
   const [isMine] = useState(true);
   const [consent, setConsent] = useState(false);
   const [output, setOutput] = useState('');
+  const [profileGuess, setProfileGuess] = useState(null); // ADD-ON: profile guess box, see below to revert
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -46,7 +48,7 @@ export default function LanguageMirrorPage() {
       setErr('Paste at least a solid paragraph or two, around 200 characters minimum, so the read has something to work with.');
       return;
     }
-    setBusy(true); setErr(''); setOutput('');
+    setBusy(true); setErr(''); setOutput(''); setProfileGuess(null);
     try {
       const res = await fetch('/api/mirror', {
         method: 'POST',
@@ -57,6 +59,7 @@ export default function LanguageMirrorPage() {
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Request failed');
       setOutput(data.text);
+      if (data.profileGuess) setProfileGuess(data.profileGuess); // ADD-ON: drop this line to revert
     } catch (e) { setErr("The request didn't go through. " + e.message); }
     setBusy(false);
   };
@@ -114,6 +117,31 @@ export default function LanguageMirrorPage() {
             {/* TEMPORARY: "Take the assessment" CTA removed. Restore by
                 bringing back the navy CTA box that linked to
                 https://choosecurio.com/buy. */}
+
+            {/* ADD-ON: profile guess box. Self-contained — delete this
+                whole block (and the profileGuess state/import above) to
+                revert with no effect on the rest of the page. */}
+            {profileGuess && profiles[profileGuess] && (
+              <div style={{
+                marginTop: 20, borderRadius: 10, padding: '16px 18px',
+                background: '#FFFBEB', border: `1.5px dashed #D97706`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{
+                    fontSize: 9.5, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase',
+                    color: '#fff', background: '#D97706', borderRadius: 999, padding: '2px 8px',
+                  }}>Guess, not a diagnosis</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: 22, color: '#92400E' }}>
+                    {profiles[profileGuess].label}
+                  </span>
+                  <span style={{ fontSize: 12.5, color: '#78350F' }}>
+                    {profiles[profileGuess].whoYouAre.split(/(?<=\.)\s/)[0]}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
