@@ -126,19 +126,17 @@ export default function LanguageMirrorPage() {
                 marginTop: 20, borderRadius: 10, padding: '16px 18px',
                 background: '#FFFBEB', border: `1.5px dashed #D97706`,
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                   <span style={{
                     fontSize: 9.5, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase',
                     color: '#fff', background: '#D97706', borderRadius: 999, padding: '2px 8px',
-                  }}>Guess, not a diagnosis</span>
+                  }}>Hypothesis on your profile</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: 22, color: '#92400E' }}>
-                    {profiles[profileGuess].label}
-                  </span>
-                  <span style={{ fontSize: 12.5, color: '#78350F' }}>
-                    {profiles[profileGuess].whoYouAre.split(/(?<=\.)\s/)[0]}
-                  </span>
+                <div style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: 24, color: '#92400E', marginBottom: 4 }}>
+                  {profiles[profileGuess].label}
+                </div>
+                <div style={{ fontSize: 12.5, color: '#78350F', lineHeight: 1.55 }}>
+                  {profiles[profileGuess].tagline}. {profiles[profileGuess].whoYouAre.split(/(?<=\.)\s/)[0]}
                 </div>
               </div>
             )}
