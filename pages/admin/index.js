@@ -14,7 +14,7 @@ const PRIMARY_COLOR = { WHY: '#059669', WHAT: '#2563EB', HOW: '#D97706' };
 // token's assessment completes — an account_licenses row has no such step).
 const LICENSE_TYPES = DIRECT_LICENSE_TYPES;
 const TOOL_LABELS = {
-  assessment_tokens: 'MindPrint™ Assessment', role_analyzer: 'Role Analyzer', career_guidance: 'Career Guidance', jd_analyzer: 'JD Analyzer',
+  assessment_tokens: 'MindPrint™ Assessment', role_analyzer: 'Role Analyzer', career_guidance: 'Career Guidance', jd_analyzer: 'Job Description Analyzer',
   precision_companion: 'Precision Companion', purpose_companion: 'Purpose Companion', progress_companion: 'Progress Companion',
   companion_match: 'Companion — matches their profile',
   orientation_translator: 'Orientation Translator',
@@ -286,7 +286,7 @@ function GeneratePanel({ prefillEngId }) {
 
       {batchMode === 'individual' ? (
         <>
-          <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">JD Analyzer</option><option value="career">Career Guidance</option></select></div>
+          <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">Job Description Analyzer</option><option value="career">Career Guidance</option></select></div>
           <ToolAccessField grantedTools={grantedTools} setGrantedTools={setGrantedTools} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
             <div style={s.fieldGroup}><label style={s.label}>Name (optional)</label><input style={s.input} value={indivName} onChange={e => setIndivName(e.target.value)} placeholder="Alex Smith" /></div>
@@ -319,7 +319,7 @@ function GeneratePanel({ prefillEngId }) {
               ))}
             </div>
           </div>
-          <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">JD Analyzer</option><option value="career">Career Guidance</option></select></div>
+          <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">Job Description Analyzer</option><option value="career">Career Guidance</option></select></div>
           <ToolAccessField grantedTools={grantedTools} setGrantedTools={setGrantedTools} />
           <div style={s.fieldGroup}><label style={s.label}>Engagement ID</label><input style={s.input} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2026-q1" /></div>
           <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={s.input} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>

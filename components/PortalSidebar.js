@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { key: 'analytics',        href: '/portal/analytics',        label: 'Analytics',            license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',        license: 'role_analyzer' },
   { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance Tool', license: 'career_guidance' },
-  { key: 'jd',               href: '/portal/tools/jd',        label: 'JD Analyzer',          license: 'jd_analyzer' },
+  { key: 'jd',               href: '/portal/tools/jd',        label: 'Job Description Analyzer', license: 'jd_analyzer' },
   { key: 'precision',        href: '/portal/tools/precision-companion', label: 'Precision Companion', license: 'precision_companion' },
   { key: 'purpose',          href: '/portal/tools/purpose-companion',   label: 'Purpose Companion',   license: 'purpose_companion' },
   { key: 'progress',         href: '/portal/tools/progress-companion',  label: 'Progress Companion',  license: 'progress_companion' },

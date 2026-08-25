@@ -102,7 +102,7 @@ export default function Manual() {
               <Card title="Admin Panel">Your private back-office at <code>/admin</code>. Generate tokens, monitor engagement progress, manage accounts, and view all data across every client.</Card>
               <Card title="Client Portal">A branded workspace at <code>/portal</code> for clients to view their MindPrint™ profile, distribute tokens to their team, and use AI career tools.</Card>
               <Card title="Assessment Flow">A token link → Typeform quiz → results page → optional account creation. Each token is single-use and tied to one profile.</Card>
-              <Card title="AI Tools">Role Analyzer, Career Guidance Tool, and JD Analyzer — all powered by the MindPrint™ profile and streamed in real time. Gated by license.</Card>
+              <Card title="AI Tools">Role Analyzer, Career Guidance Tool, and Job Description Analyzer — all powered by the MindPrint™ profile and streamed in real time. Gated by license.</Card>
             </div>
           </section>
 
@@ -321,7 +321,7 @@ export default function Manual() {
             <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>All tools are gated by license. If an account doesn't have the relevant license, the nav item doesn't appear.</p>
             <Card title="Role Analyzer · /portal/tools/fit · license: role_analyzer">Enter any role title. Generates a real-time streaming report with an alignment score, energizers, drains, and collaboration recommendations — all calibrated to the user's MindPrint™ profile. If the logged-in user has a completed assessment on file, their name and MindPrint™ profile are shown pre-filled and read-only (no step numbering — just the info, then the role field). If they have no assessment on file, the name field and profile grid render editable instead, so the tool still works for analyzing on someone else's behalf.</Card>
             <Card title="Career Guidance Tool · /portal/tools/career · license: career_guidance">Generates a structured career report with best-fit roles, energizers, challenges, and strategies. Optional inputs: current role, years of experience, additional results, strengths, and areas for growth. Includes a PDF export.</Card>
-            <Card title="JD Analyzer · /portal/tools/jd · license: jd_analyzer">Paste a job description. Returns an analysis of fit vs. the user's profile — what will energize them, what will drain them, and how to position themselves for that role.</Card>
+            <Card title="Job Description Analyzer · /portal/tools/jd · license: jd_analyzer">Paste a job description. Returns an analysis of fit vs. the user's profile — what will energize them, what will drain them, and how to position themselves for that role.</Card>
             <Card title="Analyzer History · /portal/analyzer-history · license: role_analyzer">A log of all Role Analyzer runs for the account — role title, profile, alignment score, and date. Saved automatically after each analysis. Not a separate sidebar tab; reached via the "View past analyses →" link on the Role Analyzer page itself.</Card>
           </section>
 

@@ -253,7 +253,7 @@ export default function PortalJDPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Head>
-        <title>JD Analyzer — {me.account.name} — Curio</title>
+        <title>Job Description Analyzer — {me.account.name} — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
         <style>{jdCss}</style>
       </Head>
@@ -262,8 +262,8 @@ export default function PortalJDPage() {
         {!licensed ? (
           <div style={{ maxWidth: 860, margin: '80px auto', padding: '0 24px' }}>
             <div style={{ background: '#FAFAF9', border: '1px solid #E7E5E4', borderLeft: '3px solid #059669', borderRadius: 8, padding: '40px 48px', maxWidth: 520 }}>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1C1917', marginBottom: 12 }}>JD Analyzer not included</div>
-              <p style={{ fontSize: '0.95rem', color: '#78716C', lineHeight: 1.75 }}>Your account doesn't have access to the JD Analyzer. Contact your Curio account manager to upgrade.</p>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '1.5rem', fontWeight: 700, color: '#1C1917', marginBottom: 12 }}>Job Description Analyzer not included</div>
+              <p style={{ fontSize: '0.95rem', color: '#78716C', lineHeight: 1.75 }}>Your account doesn't have access to the Job Description Analyzer. Contact your Curio account manager to upgrade.</p>
             </div>
           </div>
         ) : (

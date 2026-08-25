@@ -562,7 +562,7 @@ COUNTS per profile (do not deviate): succeedEnjoy: exactly 3, challenges: exactl
 // ─── Token gate messages ──────────────────────────────────────────────────────
 
 const TOKEN_MESSAGES = {
-  used:      { title: "This link has already been used.", body: "JD Analyzer links are single-use. Please contact your Curio coordinator for a new link." },
+  used:      { title: "This link has already been used.", body: "Job Description Analyzer links are single-use. Please contact your Curio coordinator for a new link." },
   expired:   { title: "This link has expired.",           body: "Please contact your Curio coordinator for a new link." },
   not_found: { title: "This link is invalid.",            body: "The link you followed doesn't exist. Please check the URL or contact your Curio coordinator." },
 };
@@ -582,7 +582,7 @@ export default function JDPage() {
   return (
     <>
       <Head>
-        <title>JD Analyzer — Curio</title>
+        <title>Job Description Analyzer — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
         <style>{css}</style>
       </Head>

@@ -26,7 +26,7 @@ const PRODUCTS = [
     included: [
       'Everything in Assessment',
       'Role Alignment Analyzer',
-      'JD Analyzer',
+      'Job Description Analyzer',
       'Career Guidance',
       'Profile-matched AI Companion',
     ],

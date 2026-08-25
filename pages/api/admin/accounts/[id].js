@@ -2,7 +2,7 @@ import { getAdminSession } from '../../../../lib/adminSession';
 import { dbGet, dbPatch, dbDelete, dbQuery, dbInsert } from '../../../../lib/supabase';
 import { Resend } from 'resend';
 
-const TOOL_NAMES = { assessment_tokens: 'MindPrint™ Assessment', role_analyzer: 'Role Analyzer', career_guidance: 'Career Guidance', jd_analyzer: 'JD Analyzer' };
+const TOOL_NAMES = { assessment_tokens: 'MindPrint™ Assessment', role_analyzer: 'Role Analyzer', career_guidance: 'Career Guidance', jd_analyzer: 'Job Description Analyzer' };
 
 export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
