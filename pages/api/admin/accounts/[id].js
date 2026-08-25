@@ -46,25 +46,27 @@ export default async function handler(req, res) {
             expires_at: l.expires_at || null,
           })));
         }
-        // Notify account holder of newly added license types
-        const newTypes = licenses.filter(l => !existingTypes.has(l.type)).map(l => l.type);
-        if (newTypes.length) {
-          try {
-            const users = await dbQuery('client_users', { account_id: `eq.${id}`, select: 'email', order: 'created_at.asc', limit: '1' });
-            const holderEmail = users[0]?.email;
-            if (holderEmail) {
-              const resend = new Resend(process.env.RESEND_API_KEY);
-              await Promise.all(newTypes.map(type => resend.emails.send({
-                from: 'hello@choosecurio.com',
-                to: holderEmail,
-                subject: 'You have a new tool available in your Curio portal',
-                html: `<p style="font-family:sans-serif">Your access to <strong>${TOOL_NAMES[type] || type}</strong> has been enabled. Log in to your portal to get started at <a href="https://choosecurio.com/portal/login">choosecurio.com/portal/login</a></p>`,
-              })));
-            }
-          } catch (notifyErr) {
-            console.error('[admin/accounts/[id]] license notify failed:', notifyErr.message);
-          }
-        }
+        // "New tool available" notification email disabled per request —
+        // license/tool grants themselves are unaffected, only the email
+        // send is skipped. Restore by uncommenting this block.
+        // const newTypes = licenses.filter(l => !existingTypes.has(l.type)).map(l => l.type);
+        // if (newTypes.length) {
+        //   try {
+        //     const users = await dbQuery('client_users', { account_id: `eq.${id}`, select: 'email', order: 'created_at.asc', limit: '1' });
+        //     const holderEmail = users[0]?.email;
+        //     if (holderEmail) {
+        //       const resend = new Resend(process.env.RESEND_API_KEY);
+        //       await Promise.all(newTypes.map(type => resend.emails.send({
+        //         from: 'hello@choosecurio.com',
+        //         to: holderEmail,
+        //         subject: 'You have a new tool available in your Curio portal',
+        //         html: `<p style="font-family:sans-serif">Your access to <strong>${TOOL_NAMES[type] || type}</strong> has been enabled. Log in to your portal to get started at <a href="https://choosecurio.com/portal/login">choosecurio.com/portal/login</a></p>`,
+        //       })));
+        //     }
+        //   } catch (notifyErr) {
+        //     console.error('[admin/accounts/[id]] license notify failed:', notifyErr.message);
+        //   }
+        // }
       }
       return res.status(200).json({ success: true });
     } catch (err) {
