@@ -5,7 +5,7 @@ import { PortalNav } from './dashboard';
 
 const DEFAULT_MESSAGE = `Hi [Name],
 
-You've been invited to complete a MindPrint™ assessment. This short assessment identifies how you're naturally wired to think through and solve problems — results typically take about 20 minutes.
+You've been invited to complete a MindPrint™ assessment. This short assessment identifies how you're naturally wired to think through and solve problems — it takes about 7-8 minutes to complete.
 
 Click the link below to get started:
 
