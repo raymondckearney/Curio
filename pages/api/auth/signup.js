@@ -24,13 +24,45 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'An account with that email already exists. Try logging in.' });
   }
 
-  // Create account
-  const slug = normalEmail.split('@')[0].replace(/[^a-z0-9]/g, '-') + '-' + Date.now().toString(36);
-  const [account] = await dbInsert('client_accounts', {
-    name: name.trim(),
-    slug,
-    notes: stripe_session_id ? `Self-serve purchase: ${stripe_session_id}` : 'Self-serve signup',
-  });
+  // If this signup is completing a token that already belongs to an
+  // existing account (an owner distributed it from their team's token
+  // pool — see pages/api/portal/send-token.js), join that account as a
+  // member instead of spinning off a brand-new, disconnected one.
+  // Otherwise the token/assessment silently vanishes from the owner's
+  // team tracking (Sent Tokens, Assessment Results, Analytics) the moment
+  // the recipient finishes signing up, since it would get reassigned away
+  // from the owner's account_id to a new one nobody on the team can see.
+  let tokenRowForSignup = null;
+  let tokenWasAlreadyUsed = false;
+  let teamAccountId = null;
+  if (assessmentToken) {
+    const tokenRows = await dbGet('tokens', { token: assessmentToken });
+    if (tokenRows.length && !tokenRows[0].used) {
+      tokenRowForSignup = tokenRows[0];
+      if (tokenRowForSignup.account_id) teamAccountId = tokenRowForSignup.account_id;
+    } else if (tokenRows.length && tokenRows[0].used) {
+      tokenWasAlreadyUsed = true;
+    }
+  }
+
+  let account;
+  let userRole = 'owner';
+  if (teamAccountId) {
+    const teamAccounts = await dbGet('client_accounts', { id: teamAccountId });
+    if (teamAccounts.length) {
+      account = teamAccounts[0];
+      userRole = 'member';
+    }
+  }
+  if (!account) {
+    // Create account (unchanged self-serve / personal path)
+    const slug = normalEmail.split('@')[0].replace(/[^a-z0-9]/g, '-') + '-' + Date.now().toString(36);
+    [account] = await dbInsert('client_accounts', {
+      name: name.trim(),
+      slug,
+      notes: stripe_session_id ? `Self-serve purchase: ${stripe_session_id}` : 'Self-serve signup',
+    });
+  }
 
   // Create user
   const hash = await hashPassword(password);
@@ -38,7 +70,7 @@ export default async function handler(req, res) {
     account_id: account.id,
     email: normalEmail,
     name: name.trim(),
-    role: 'owner',
+    role: userRole,
     password_hash: hash,
   });
 
@@ -74,12 +106,14 @@ export default async function handler(req, res) {
 
   syncContactToNotion({ name: name.trim(), email: normalEmail, source: 'self-signup' });
 
-  // Apply assessment token: set granted tier, write licenses, and consume
+  // Apply assessment token: set granted tier, write licenses, and consume.
+  // Reuses tokenRowForSignup fetched above rather than re-querying — that
+  // same lookup is what decided whether this signup joined an existing
+  // team account or created a new one.
   if (assessmentToken) {
     try {
-      const tokenRows = await dbGet('tokens', { token: assessmentToken });
-      if (tokenRows.length && !tokenRows[0].used) {
-        const tr = tokenRows[0];
+      if (tokenRowForSignup) {
+        const tr = tokenRowForSignup;
         const grantedTier = tr.granted_tier || 'basic';
         const grantedTools = tr.granted_tools || (grantedTier === 'premium'
           ? ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer']
@@ -95,16 +129,35 @@ export default async function handler(req, res) {
         const tertiary = assessment?.type ? tertiaryFromProfileSlug(assessment.type.toLowerCase()) : null;
         const resolvedTools = resolveGrantedTools(grantedTools, tertiary);
 
-        await Promise.all([
-          dbPatch('client_accounts', { id: account.id }, { tier: grantedTier }),
+        // Joining an existing team account: don't let one member's token
+        // overwrite the account's tier, and don't duplicate license rows
+        // the account already has (it's account-wide, shared by everyone
+        // on the team, not per-member).
+        const writes = [
           dbPatch('tokens', { token: assessmentToken }, { used: true, used_at: usedAt, account_id: account.id }),
-          ...resolvedTools.map(type => dbInsert('account_licenses', {
+        ];
+        if (teamAccountId) {
+          const existingLicenses = await dbQuery('account_licenses', { account_id: `eq.${account.id}`, select: 'type' }).catch(() => []);
+          const existingTypes = new Set(existingLicenses.map(l => l.type));
+          const newTools = resolvedTools.filter(type => !existingTypes.has(type));
+          writes.push(...newTools.map(type => dbInsert('account_licenses', {
             account_id: account.id,
             type,
             quantity: 1,
             expires_at: tr.expires_at || null,
-          })),
-        ]);
+          })));
+        } else {
+          writes.push(
+            dbPatch('client_accounts', { id: account.id }, { tier: grantedTier }),
+            ...resolvedTools.map(type => dbInsert('account_licenses', {
+              account_id: account.id,
+              type,
+              quantity: 1,
+              expires_at: tr.expires_at || null,
+            })),
+          );
+        }
+        await Promise.all(writes);
 
         // Send assessment completion notification
         try {
@@ -136,7 +189,7 @@ export default async function handler(req, res) {
           console.error('[auth/signup] assessment notification failed:', emailErr);
         }
 
-      } else if (tokenRows[0]?.used) {
+      } else if (tokenWasAlreadyUsed) {
         console.warn('[auth/signup] assessment token already used:', assessmentToken);
       }
     } catch (err) {
@@ -161,6 +214,7 @@ export default async function handler(req, res) {
               <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B;width:40%">Name</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;font-weight:600">${name.trim()}</td></tr>
               <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B">Email</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0">${normalEmail}</td></tr>
               <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B">Signed Up</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0">${signedUpAt} ET</td></tr>
+              <tr><td style="padding:10px 0;border-bottom:1px solid #E2E8F0;color:#64748B">Role</td><td style="padding:10px 0;border-bottom:1px solid #E2E8F0">${userRole === 'member' ? 'Member (joined existing team account)' : 'Owner (new account)'}</td></tr>
               ${assessmentToken ? `<tr><td style="padding:10px 0;color:#64748B">Token Used</td><td style="padding:10px 0;font-family:monospace;font-size:0.85rem">${assessmentToken}</td></tr>` : ''}
             </table>
             <a href="https://www.choosecurio.com/admin" style="display:inline-block;padding:12px 20px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:0.9rem">View in Admin →</a>
@@ -172,7 +226,7 @@ export default async function handler(req, res) {
     console.error('[auth/signup] notification email failed:', err);
   }
 
-  const sessionToken = createSessionToken(user.id, account.id, 'owner');
+  const sessionToken = createSessionToken(user.id, account.id, userRole);
   res.setHeader('Set-Cookie', sessionCookie(sessionToken));
   return res.status(201).json({ ok: true });
 }
