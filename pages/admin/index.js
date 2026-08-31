@@ -126,7 +126,7 @@ function buildDefaultMessage(name, tokenUrl, purpose) {
   if (purpose === 'career') {
     return `Hi ${name},\n\nI'd like to invite you to use the Curio Career Guidance Tool — an AI-powered tool that generates a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.\n\nYour personal link:\n\n${tokenUrl}\n\nLooking forward to sharing the results with you.\n\nRay Kearney\nCurio`;
   }
-  return `Hi ${name},\n\nI'd like to invite you to take the MindPrint™ Assessment — a short exercise that identifies how you're naturally wired to think through and solve problems. It will take approximately 10 minutes to complete.\n\nYour personal link:\n\n${tokenUrl}\n\nThis link is unique to you and can only be used once.\n\nLooking forward to sharing the results with you.\n\nRay Kearney\nCurio`;
+  return `Hi ${name},\n\nI'd like to invite you to take the MindPrint™ Assessment — a short exercise that identifies how you're naturally wired to think through and solve problems. It will take approximately 7-10 minutes to complete.\n\nYour personal link:\n\n${tokenUrl}\n\nThis link is unique to you and can only be used once.\n\nLooking forward to sharing the results with you.\n\nRay Kearney\nCurio`;
 }
 
 function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, purpose, onClose, onSent }) {
