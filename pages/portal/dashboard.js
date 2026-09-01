@@ -18,6 +18,7 @@ export default function PortalDashboard() {
   const [loading, setLoading] = useState(true);
   const [resendState, setResendState] = useState('idle'); // 'idle' | 'sending' | 'sent' | 'error'
   const [guideOpening, setGuideOpening] = useState(false);
+  const [renewalLoading, setRenewalLoading] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -45,6 +46,17 @@ export default function PortalDashboard() {
       alert(e.message);
     } finally {
       setGuideOpening(false);
+    }
+  }
+
+  async function startRenewal() {
+    setRenewalLoading(true);
+    try {
+      const res = await fetch('/api/portal/renewal-checkout', { method: 'POST' });
+      const d = await res.json();
+      if (d.url) window.location.href = d.url;
+    } catch {
+      setRenewalLoading(false);
     }
   }
 
@@ -91,6 +103,26 @@ export default function PortalDashboard() {
       <div style={s.layout}>
         <PortalSidebar me={me} onLogout={logout} active="dashboard" licenses={licenses} isIndividual={isIndividual} />
         <main style={s.main}>
+
+          {/* License expiry banners */}
+          {data?.isExpired && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <span style={{ color: '#991B1B', fontWeight: 600, fontSize: '0.95rem' }}>Your access has expired. Renew to restore access to your tools and resources.</span>
+              <button onClick={startRenewal} disabled={renewalLoading} style={{ background: '#DC2626', color: '#fff', border: 'none', borderRadius: 7, padding: '9px 18px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {renewalLoading ? 'Loading…' : 'Renew Access →'}
+              </button>
+            </div>
+          )}
+          {!data?.isExpired && data?.isExpiringSoon && (
+            <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <span style={{ color: '#92400E', fontWeight: 600, fontSize: '0.95rem' }}>
+                Your access expires on {new Date(data.licenseExpiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Renew now to avoid interruption.
+              </span>
+              <button onClick={startRenewal} disabled={renewalLoading} style={{ background: '#D97706', color: '#fff', border: 'none', borderRadius: 7, padding: '9px 18px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {renewalLoading ? 'Loading…' : 'Renew Now →'}
+              </button>
+            </div>
+          )}
 
           {/* My Profile section */}
           {assessment && profile ? (

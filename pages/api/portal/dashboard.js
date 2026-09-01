@@ -24,6 +24,13 @@ export default async function handler(req, res) {
     const activeLicenses = licenses.filter(l => !l.expires_at || new Date(l.expires_at) > now);
     const licenseTypes = new Set(activeLicenses.map(l => l.type));
 
+    // Compute expiry state
+    const expiryDates = activeLicenses.filter(l => l.expires_at).map(l => new Date(l.expires_at));
+    const licenseExpiresAt = expiryDates.length ? new Date(Math.min(...expiryDates)).toISOString() : null;
+    const daysLeft = licenseExpiresAt ? Math.ceil((new Date(licenseExpiresAt) - now) / 86400000) : null;
+    const isExpiringSoon = daysLeft !== null && daysLeft <= 30;
+    const isExpired = licenses.length > 0 && activeLicenses.length === 0;
+
     const hasAssessment = licenseTypes.has('assessment_tokens');
     const hasRoleAnalyzer = licenseTypes.has('role_analyzer');
     const hasCareerGuidance = licenseTypes.has('career_guidance');
@@ -98,6 +105,9 @@ export default async function handler(req, res) {
       tertiary,
       myAssessment,
       assessmentPath,
+      licenseExpiresAt,
+      isExpiringSoon,
+      isExpired,
     });
   } catch (err) {
     console.error('[portal/dashboard]', err);
