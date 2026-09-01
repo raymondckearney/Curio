@@ -2316,6 +2316,8 @@ function EmailsPanel() {
   const [sendTo, setSendTo] = useState('');
   const [sendMsg, setSendMsg] = useState('');
   const [sending, setSending] = useState(false);
+  const [previewTpl, setPreviewTpl] = useState(null); // template to show in preview modal
+  const [loadingEdit, setLoadingEdit] = useState(false);
 
   // New email form state
   const [newName, setNewName] = useState('');
@@ -2334,9 +2336,17 @@ function EmailsPanel() {
   }
   useEffect(reload, []);
 
-  function openEdit(t) {
-    setEditing({ ...t, subject: t.subject || '', html_body: t.html_body || '' });
+  async function openEdit(t) {
+    setLoadingEdit(true);
     setSaveMsg(''); setTestMsg(''); setTestTo('');
+    try {
+      const res = await fetch(`/api/admin/email-templates/${t.key}`);
+      const d = await res.json();
+      setEditing({ ...t, ...d, subject: d.subject || '', html_body: d.html_body || '' });
+    } catch (_) {
+      setEditing({ ...t, subject: t.subject || '', html_body: t.html_body || '' });
+    }
+    setLoadingEdit(false);
     setView('edit');
   }
   function openSend(t) {
@@ -2348,14 +2358,12 @@ function EmailsPanel() {
   async function saveTemplate() {
     setSaving(true); setSaveMsg('');
     try {
-      const body = { subject: editing.subject, html_body: editing.html_body };
-      if (editing.is_custom) {
-        Object.assign(body, {
-          name: editing.name, description: editing.description,
-          recipient: editing.recipient, trigger: editing.trigger,
-          schedule: editing.schedule, send_type: editing.send_type,
-        });
-      }
+      const body = {
+        subject: editing.subject, html_body: editing.html_body,
+        name: editing.name, description: editing.description,
+        recipient: editing.recipient, trigger: editing.trigger,
+        schedule: editing.schedule, send_type: editing.send_type,
+      };
       const res = await fetch(`/api/admin/email-templates/${editing.key}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
@@ -2419,49 +2427,56 @@ function EmailsPanel() {
   // ── Edit view ──────────────────────────────────────────────────────────────
   if (view === 'edit' && editing) return (
     <section style={s.panel}>
+      {previewTpl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setPreviewTpl(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, width: '90vw', maxWidth: 700, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{previewTpl.name}</div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>Subject: {previewTpl.subject || '(no subject)'}</div>
+              </div>
+              <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748B', lineHeight: 1 }} onClick={() => setPreviewTpl(null)}>✕</button>
+            </div>
+            <iframe srcDoc={previewTpl.html_body || '<p style="padding:24px;color:#94A3B8;font-family:sans-serif">No HTML body saved yet.</p>'} style={{ flex: 1, border: 'none', minHeight: 480 }} title="Email preview" sandbox="allow-same-origin" />
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <button style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={back}>← Back</button>
         <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>{editing.name}</h2>
         {(() => { const b = statusBadge(editing); return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, background: b.bg, color: b.color }}>{b.label}</span>; })()}
       </div>
 
-      {/* Metadata summary */}
-      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '14px 16px', marginBottom: 20 }}>
-        <MetaRow label="Recipient" value={editing.recipient} />
-        <MetaRow label="Trigger" value={editing.trigger_label} />
-        <MetaRow label="Schedule" value={editing.schedule} />
-        <MetaRow label="Send type" value={editing.send_type === 'manual' ? 'Manual' : 'Automated'} />
-        {editing.description && <MetaRow label="Description" value={editing.description} />}
+      {/* Editable metadata for all templates */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <div style={s.fieldGroup}><label style={s.label}>Name</label><input style={s.input} value={editing.name || ''} onChange={e => setEditing(p => ({ ...p, name: e.target.value }))} /></div>
+        <div style={s.fieldGroup}><label style={s.label}>Recipient</label><input style={s.input} value={editing.recipient || ''} onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))} placeholder="e.g. Account owner" /></div>
+      </div>
+      <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={editing.description || ''} onChange={e => setEditing(p => ({ ...p, description: e.target.value }))} /></div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Send type</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {['manual','automated'].map(v => <button key={v} type="button" style={pillStyle(editing.send_type === v)} onClick={() => setEditing(p => ({ ...p, send_type: v }))}>{v === 'manual' ? 'Manual' : 'Automated'}</button>)}
+          </div>
+        </div>
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Trigger</label>
+          <select style={s.select} value={editing.trigger || 'manual'} onChange={e => setEditing(p => ({ ...p, trigger: e.target.value, trigger_label: TRIGGER_OPTIONS_CLIENT.find(t => t.key === e.target.value)?.label || e.target.value }))}>
+            {TRIGGER_OPTIONS_CLIENT.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+          </select>
+        </div>
+        <div style={s.fieldGroup}><label style={s.label}>Schedule / timing</label><input style={s.input} value={editing.schedule || ''} onChange={e => setEditing(p => ({ ...p, schedule: e.target.value }))} placeholder="e.g. Immediate" /></div>
       </div>
 
-      {/* Editable metadata for custom emails */}
-      {editing.is_custom && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-            <div style={s.fieldGroup}><label style={s.label}>Name</label><input style={s.input} value={editing.name} onChange={e => setEditing(p => ({ ...p, name: e.target.value }))} /></div>
-            <div style={s.fieldGroup}><label style={s.label}>Recipient</label><input style={s.input} value={editing.recipient || ''} onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))} placeholder="e.g. Account owner" /></div>
-          </div>
-          <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={editing.description || ''} onChange={e => setEditing(p => ({ ...p, description: e.target.value }))} /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Send type</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {['manual','automated'].map(v => <button key={v} type="button" style={pillStyle(editing.send_type === v)} onClick={() => setEditing(p => ({ ...p, send_type: v }))}>{v === 'manual' ? 'Manual' : 'Automated'}</button>)}
-              </div>
-            </div>
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Trigger</label>
-              <select style={s.select} value={editing.trigger || 'manual'} onChange={e => setEditing(p => ({ ...p, trigger: e.target.value, trigger_label: TRIGGER_OPTIONS_CLIENT.find(t => t.key === e.target.value)?.label || e.target.value }))}>
-                {TRIGGER_OPTIONS_CLIENT.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
-              </select>
-            </div>
-            <div style={s.fieldGroup}><label style={s.label}>Schedule / timing</label><input style={s.input} value={editing.schedule || ''} onChange={e => setEditing(p => ({ ...p, schedule: e.target.value }))} placeholder="e.g. Immediate" /></div>
-          </div>
-        </>
-      )}
-
       <div style={s.fieldGroup}><label style={s.label}>Subject</label><input style={s.input} value={editing.subject} onChange={e => setEditing(p => ({ ...p, subject: e.target.value }))} /></div>
-      <div style={s.fieldGroup}><label style={s.label}>HTML Body</label><textarea style={{ ...s.textarea, minHeight: 340, fontFamily: 'monospace', fontSize: '0.82rem' }} value={editing.html_body} onChange={e => setEditing(p => ({ ...p, html_body: e.target.value }))} /></div>
+      <div style={s.fieldGroup}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <label style={{ ...s.label, marginBottom: 0 }}>HTML Body</label>
+          <button type="button" style={{ padding: '4px 12px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={() => setPreviewTpl({ ...editing })}>Preview</button>
+        </div>
+        <textarea style={{ ...s.textarea, minHeight: 340, fontFamily: 'monospace', fontSize: '0.82rem' }} value={editing.html_body} onChange={e => setEditing(p => ({ ...p, html_body: e.target.value }))} />
+      </div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 24 }}>
         <button style={s.btn} onClick={saveTemplate} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
         {saveMsg && <span style={{ fontSize: '0.85rem', color: saveMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{saveMsg}</span>}
@@ -2548,6 +2563,20 @@ function EmailsPanel() {
   // ── List view ──────────────────────────────────────────────────────────────
   return (
     <section style={s.panel}>
+      {previewTpl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setPreviewTpl(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, width: '90vw', maxWidth: 700, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{previewTpl.name}</div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>Subject: {previewTpl.subject || '(no subject)'}</div>
+              </div>
+              <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748B', lineHeight: 1 }} onClick={() => setPreviewTpl(null)}>✕</button>
+            </div>
+            <iframe srcDoc={previewTpl.html_body || '<p style="padding:24px;color:#94A3B8;font-family:sans-serif">No HTML body saved yet.</p>'} style={{ flex: 1, border: 'none', minHeight: 480 }} title="Email preview" sandbox="allow-same-origin" />
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <h2 style={{ ...s.panelTitle, marginBottom: 4 }}>Emails</h2>
@@ -2583,7 +2612,10 @@ function EmailsPanel() {
                   </td>
                   <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button style={s.sendLinkBtn} onClick={() => openEdit(t)}>Edit</button>
+                      <button style={s.sendLinkBtn} onClick={() => openEdit(t)} disabled={loadingEdit}>{loadingEdit ? '…' : 'Edit'}</button>
+                      {(t.subject || t.html_body) && (
+                        <button style={{ padding: '4px 10px', background: '#F8FAFC', color: '#475569', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }} onClick={() => setPreviewTpl(t)}>Preview</button>
+                      )}
                       {t.send_type === 'manual' && (t.subject || t.html_body) && (
                         <button style={{ ...s.sendProfileBtn, background: '#EFF6FF', color: '#1D4ED8' }} onClick={() => openSend(t)}>Send</button>
                       )}
