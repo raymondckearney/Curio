@@ -2278,29 +2278,90 @@ function MirrorTokensPanel() {
 
 // ─── Emails Panel ─────────────────────────────────────────────────────────────
 
+const TRIGGER_OPTIONS_CLIENT = [
+  { key: 'stripe_purchase',     label: 'Stripe purchase completed' },
+  { key: 'assessment_complete', label: 'Assessment completed' },
+  { key: 'account_created',     label: 'Account created / signup' },
+  { key: 'renewal_complete',    label: 'Renewal payment completed' },
+  { key: 'cron_30_day_expiry',  label: 'Cron — 30 days before expiry' },
+  { key: 'cron_expiry_day',     label: 'Cron — expiry day' },
+  { key: 'cron_daily',          label: 'Cron — daily (custom condition)' },
+  { key: 'manual',              label: 'Manual only' },
+];
+
+function statusBadge(t) {
+  if (t.is_custom) return { label: 'Custom', bg: '#EFF6FF', color: '#1D4ED8' };
+  if (t.customized) return { label: 'Customized', bg: '#D1FAE5', color: '#065F46' };
+  return { label: 'Default', bg: '#F1F5F9', color: '#64748B' };
+}
+
+function MetaRow({ label, value }) {
+  if (!value) return null;
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: '0.85rem' }}>
+      <span style={{ color: '#94A3B8', minWidth: 90 }}>{label}</span>
+      <span style={{ color: '#0F172A', fontWeight: 500 }}>{value}</span>
+    </div>
+  );
+}
+
 function EmailsPanel() {
   const [templates, setTemplates] = useState([]);
-  const [editing, setEditing] = useState(null); // { key, name, subject, html_body }
+  const [view, setView] = useState('list'); // 'list' | 'edit' | 'new' | 'send'
+  const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [testTo, setTestTo] = useState('');
   const [testMsg, setTestMsg] = useState('');
   const [saveMsg, setSaveMsg] = useState('');
+  const [sendTo, setSendTo] = useState('');
+  const [sendMsg, setSendMsg] = useState('');
+  const [sending, setSending] = useState(false);
 
-  useEffect(() => {
+  // New email form state
+  const [newName, setNewName] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newRecipient, setNewRecipient] = useState('');
+  const [newSendType, setNewSendType] = useState('manual');
+  const [newTrigger, setNewTrigger] = useState('manual');
+  const [newSchedule, setNewSchedule] = useState('');
+  const [newSubject, setNewSubject] = useState('');
+  const [newBody, setNewBody] = useState('');
+  const [newSaving, setNewSaving] = useState(false);
+  const [newMsg, setNewMsg] = useState('');
+
+  function reload() {
     fetch('/api/admin/email-templates').then(r => r.json()).then(d => setTemplates(d.templates || []));
-  }, []);
+  }
+  useEffect(reload, []);
+
+  function openEdit(t) {
+    setEditing({ ...t, subject: t.subject || '', html_body: t.html_body || '' });
+    setSaveMsg(''); setTestMsg(''); setTestTo('');
+    setView('edit');
+  }
+  function openSend(t) {
+    setEditing(t); setSendTo(''); setSendMsg('');
+    setView('send');
+  }
+  function back() { setView('list'); setEditing(null); setSaveMsg(''); setTestMsg(''); setSendMsg(''); }
 
   async function saveTemplate() {
     setSaving(true); setSaveMsg('');
     try {
+      const body = { subject: editing.subject, html_body: editing.html_body };
+      if (editing.is_custom) {
+        Object.assign(body, {
+          name: editing.name, description: editing.description,
+          recipient: editing.recipient, trigger: editing.trigger,
+          schedule: editing.schedule, send_type: editing.send_type,
+        });
+      }
       const res = await fetch(`/api/admin/email-templates/${editing.key}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: editing.subject, html_body: editing.html_body }),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error((await res.json()).error);
-      setSaveMsg('Saved');
-      setTemplates(prev => prev.map(t => t.key === editing.key ? { ...t, customized: true, subject: editing.subject, html_body: editing.html_body } : t));
+      setSaveMsg('Saved ✓');
+      reload();
     } catch (e) { setSaveMsg(`Error: ${e.message}`); }
     finally { setSaving(false); }
   }
@@ -2310,62 +2371,230 @@ function EmailsPanel() {
     setTestMsg('Sending…');
     try {
       const res = await fetch(`/api/admin/email-templates/${editing.key}/test`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: testTo }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: testTo }),
       });
       const d = await res.json();
       setTestMsg(res.ok ? 'Sent ✓' : `Error: ${d.error}`);
     } catch (e) { setTestMsg(`Error: ${e.message}`); }
   }
 
-  if (editing) return (
+  async function manualSend() {
+    if (!sendTo) return;
+    setSending(true); setSendMsg('');
+    try {
+      const res = await fetch(`/api/admin/email-templates/${editing.key}/send`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: sendTo.split(',').map(s => s.trim()).filter(Boolean) }),
+      });
+      const d = await res.json();
+      setSendMsg(res.ok ? `Sent to ${d.sent_to.join(', ')} ✓` : `Error: ${d.error}`);
+    } catch (e) { setSendMsg(`Error: ${e.message}`); }
+    finally { setSending(false); }
+  }
+
+  async function createEmail() {
+    if (!newName || !newSubject || !newBody) { setNewMsg('Name, subject, and body are required.'); return; }
+    setNewSaving(true); setNewMsg('');
+    try {
+      const res = await fetch('/api/admin/email-templates', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName, description: newDesc, recipient: newRecipient,
+          send_type: newSendType, trigger: newTrigger,
+          schedule: newSchedule || (newSendType === 'manual' ? 'Manual' : ''),
+          subject: newSubject, html_body: newBody,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setNewMsg('Created ✓');
+      reload();
+      setTimeout(() => { setView('list'); setNewName(''); setNewDesc(''); setNewRecipient(''); setNewSendType('manual'); setNewTrigger('manual'); setNewSchedule(''); setNewSubject(''); setNewBody(''); setNewMsg(''); }, 800);
+    } catch (e) { setNewMsg(`Error: ${e.message}`); }
+    finally { setNewSaving(false); }
+  }
+
+  const pillStyle = active => ({ padding: '5px 12px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: active ? 600 : 500, cursor: 'pointer', background: active ? '#0F172A' : '#F1F5F9', color: active ? '#fff' : '#64748B' });
+
+  // ── Edit view ──────────────────────────────────────────────────────────────
+  if (view === 'edit' && editing) return (
     <section style={s.panel}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button style={{ ...s.btn, background: 'transparent', color: '#64748B', padding: '6px 12px' }} onClick={() => { setEditing(null); setSaveMsg(''); setTestMsg(''); }}>← Back</button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={back}>← Back</button>
         <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>{editing.name}</h2>
+        {(() => { const b = statusBadge(editing); return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, background: b.bg, color: b.color }}>{b.label}</span>; })()}
       </div>
-      <div style={s.fieldGroup}><label style={s.label}>Subject</label><input style={s.input} value={editing.subject || ''} onChange={e => setEditing(prev => ({ ...prev, subject: e.target.value }))} /></div>
-      <div style={s.fieldGroup}><label style={s.label}>HTML Body</label><textarea style={{ ...s.textarea, minHeight: 320, fontFamily: 'monospace', fontSize: '0.82rem' }} value={editing.html_body || ''} onChange={e => setEditing(prev => ({ ...prev, html_body: e.target.value }))} /></div>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 20 }}>
-        <button style={s.btn} onClick={saveTemplate} disabled={saving}>{saving ? 'Saving…' : 'Save Template'}</button>
+
+      {/* Metadata summary */}
+      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '14px 16px', marginBottom: 20 }}>
+        <MetaRow label="Recipient" value={editing.recipient} />
+        <MetaRow label="Trigger" value={editing.trigger_label} />
+        <MetaRow label="Schedule" value={editing.schedule} />
+        <MetaRow label="Send type" value={editing.send_type === 'manual' ? 'Manual' : 'Automated'} />
+        {editing.description && <MetaRow label="Description" value={editing.description} />}
+      </div>
+
+      {/* Editable metadata for custom emails */}
+      {editing.is_custom && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+            <div style={s.fieldGroup}><label style={s.label}>Name</label><input style={s.input} value={editing.name} onChange={e => setEditing(p => ({ ...p, name: e.target.value }))} /></div>
+            <div style={s.fieldGroup}><label style={s.label}>Recipient</label><input style={s.input} value={editing.recipient || ''} onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))} placeholder="e.g. Account owner" /></div>
+          </div>
+          <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={editing.description || ''} onChange={e => setEditing(p => ({ ...p, description: e.target.value }))} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+            <div style={s.fieldGroup}>
+              <label style={s.label}>Send type</label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {['manual','automated'].map(v => <button key={v} type="button" style={pillStyle(editing.send_type === v)} onClick={() => setEditing(p => ({ ...p, send_type: v }))}>{v === 'manual' ? 'Manual' : 'Automated'}</button>)}
+              </div>
+            </div>
+            <div style={s.fieldGroup}>
+              <label style={s.label}>Trigger</label>
+              <select style={s.select} value={editing.trigger || 'manual'} onChange={e => setEditing(p => ({ ...p, trigger: e.target.value, trigger_label: TRIGGER_OPTIONS_CLIENT.find(t => t.key === e.target.value)?.label || e.target.value }))}>
+                {TRIGGER_OPTIONS_CLIENT.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+              </select>
+            </div>
+            <div style={s.fieldGroup}><label style={s.label}>Schedule / timing</label><input style={s.input} value={editing.schedule || ''} onChange={e => setEditing(p => ({ ...p, schedule: e.target.value }))} placeholder="e.g. Immediate" /></div>
+          </div>
+        </>
+      )}
+
+      <div style={s.fieldGroup}><label style={s.label}>Subject</label><input style={s.input} value={editing.subject} onChange={e => setEditing(p => ({ ...p, subject: e.target.value }))} /></div>
+      <div style={s.fieldGroup}><label style={s.label}>HTML Body</label><textarea style={{ ...s.textarea, minHeight: 340, fontFamily: 'monospace', fontSize: '0.82rem' }} value={editing.html_body} onChange={e => setEditing(p => ({ ...p, html_body: e.target.value }))} /></div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 24 }}>
+        <button style={s.btn} onClick={saveTemplate} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
         {saveMsg && <span style={{ fontSize: '0.85rem', color: saveMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{saveMsg}</span>}
       </div>
-      <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: 20 }}>
-        <p style={{ ...s.label, marginBottom: 8 }}>Send Test Email</p>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <input style={{ ...s.input, maxWidth: 260, margin: 0 }} type="email" placeholder="test@example.com" value={testTo} onChange={e => setTestTo(e.target.value)} />
-          <button style={{ ...s.btn, padding: '8px 16px' }} onClick={sendTest}>Send Test</button>
-          {testMsg && <span style={{ fontSize: '0.85rem', color: testMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{testMsg}</span>}
+
+      <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div>
+          <p style={{ ...s.label, marginBottom: 8 }}>Send Test Email <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 400 }}>(uses saved body, adds [TEST] prefix)</span></p>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input style={{ ...s.input, maxWidth: 260, margin: 0 }} type="email" placeholder="test@example.com" value={testTo} onChange={e => setTestTo(e.target.value)} />
+            <button style={{ ...s.btn, padding: '8px 16px' }} onClick={sendTest}>Send Test</button>
+            {testMsg && <span style={{ fontSize: '0.85rem', color: testMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{testMsg}</span>}
+          </div>
         </div>
+        {editing.send_type === 'manual' && (
+          <div>
+            <p style={{ ...s.label, marginBottom: 8 }}>Send Now <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 400 }}>(comma-separated addresses)</span></p>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input style={{ ...s.input, maxWidth: 360, margin: 0 }} type="text" placeholder="alice@co.com, bob@co.com" value={sendTo} onChange={e => setSendTo(e.target.value)} />
+              <button style={{ ...s.btn, padding: '8px 16px', background: '#1D4ED8' }} onClick={manualSend} disabled={sending}>{sending ? 'Sending…' : 'Send'}</button>
+              {sendMsg && <span style={{ fontSize: '0.85rem', color: sendMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{sendMsg}</span>}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
 
+  // ── Send view (from list) ──────────────────────────────────────────────────
+  if (view === 'send' && editing) return (
+    <section style={s.panel}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={back}>← Back</button>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Send — {editing.name}</h2>
+      </div>
+      <p style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: 20 }}>Enter recipient email addresses (comma-separated) and click Send. The saved template body will be used.</p>
+      <div style={s.fieldGroup}><label style={s.label}>To (comma-separated)</label><input style={s.input} type="text" placeholder="alice@co.com, bob@co.com" value={sendTo} onChange={e => setSendTo(e.target.value)} /></div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <button style={{ ...s.btn, background: '#1D4ED8' }} onClick={manualSend} disabled={sending}>{sending ? 'Sending…' : 'Send Email'}</button>
+        {sendMsg && <span style={{ fontSize: '0.85rem', color: sendMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{sendMsg}</span>}
+      </div>
+    </section>
+  );
+
+  // ── New email view ─────────────────────────────────────────────────────────
+  if (view === 'new') return (
+    <section style={s.panel}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={() => setView('list')}>← Back</button>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>New Email</h2>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <div style={s.fieldGroup}><label style={s.label}>Name *</label><input style={s.input} value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Welcome Back Email" /></div>
+        <div style={s.fieldGroup}><label style={s.label}>Recipient</label><input style={s.input} value={newRecipient} onChange={e => setNewRecipient(e.target.value)} placeholder="e.g. Account owner" /></div>
+      </div>
+      <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="What this email does and when it's used" /></div>
+      <div style={s.fieldGroup}>
+        <label style={s.label}>Send type</label>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['manual','automated'].map(v => <button key={v} type="button" style={pillStyle(newSendType === v)} onClick={() => { setNewSendType(v); if (v === 'manual') setNewTrigger('manual'); }}>{v === 'manual' ? 'Manual' : 'Automated'}</button>)}
+        </div>
+        <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#94A3B8' }}>{newSendType === 'manual' ? 'You send this email yourself from the admin UI.' : 'Fires automatically when a trigger event occurs. Note: new event triggers beyond the list below require a one-time code addition.'}</p>
+      </div>
+      {newSendType === 'automated' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <div style={s.fieldGroup}>
+            <label style={s.label}>Trigger</label>
+            <select style={s.select} value={newTrigger} onChange={e => setNewTrigger(e.target.value)}>
+              {TRIGGER_OPTIONS_CLIENT.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </div>
+          <div style={s.fieldGroup}><label style={s.label}>Schedule / timing</label><input style={s.input} value={newSchedule} onChange={e => setNewSchedule(e.target.value)} placeholder="e.g. Immediate, Daily 12:00 UTC" /></div>
+        </div>
+      )}
+      <div style={s.fieldGroup}><label style={s.label}>Subject *</label><input style={s.input} value={newSubject} onChange={e => setNewSubject(e.target.value)} /></div>
+      <div style={s.fieldGroup}><label style={s.label}>HTML Body *</label><textarea style={{ ...s.textarea, minHeight: 300, fontFamily: 'monospace', fontSize: '0.82rem' }} value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Full HTML email body. Use {{variable}} for dynamic values." /></div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <button style={s.btn} onClick={createEmail} disabled={newSaving}>{newSaving ? 'Creating…' : 'Create Email'}</button>
+        {newMsg && <span style={{ fontSize: '0.85rem', color: newMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{newMsg}</span>}
+      </div>
+    </section>
+  );
+
+  // ── List view ──────────────────────────────────────────────────────────────
   return (
     <section style={s.panel}>
-      <h2 style={s.panelTitle}>Email Templates</h2>
-      <p style={{ color: '#64748B', fontSize: '0.875rem', marginBottom: 20 }}>Edit and manage transactional email templates. Changes are stored in the database and override the defaults.</p>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr>{['Template', 'Status', 'Last Updated', ''].map(h => <th key={h} style={{ ...s.th, textAlign: 'left' }}>{h}</th>)}</tr></thead>
-        <tbody>
-          {templates.map(t => (
-            <tr key={t.key} style={s.tr}>
-              <td style={s.td}>
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0F172A' }}>{t.name}</div>
-                <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: 2 }}>{t.description}</div>
-              </td>
-              <td style={s.td}>
-                <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, background: t.customized ? '#D1FAE5' : '#F1F5F9', color: t.customized ? '#065F46' : '#64748B' }}>
-                  {t.customized ? 'Customized' : 'Default'}
-                </span>
-              </td>
-              <td style={s.td}><span style={{ fontSize: '0.82rem', color: '#94A3B8' }}>{t.updated_at ? new Date(t.updated_at).toLocaleDateString() : '—'}</span></td>
-              <td style={s.td}><button style={s.sendLinkBtn} onClick={() => setEditing({ key: t.key, name: t.name, subject: t.subject || '', html_body: t.html_body || '' })}>Edit</button></td>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <h2 style={{ ...s.panelTitle, marginBottom: 4 }}>Emails</h2>
+          <p style={{ color: '#64748B', fontSize: '0.875rem', margin: 0 }}>All transactional emails. Edit content, view recipients and triggers, or send manual emails without leaving the admin.</p>
+        </div>
+        <button style={s.btn} onClick={() => setView('new')}>+ New Email</button>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Email', 'Recipient', 'Trigger', 'Schedule', 'Status', ''].map(h => (
+                <th key={h} style={{ ...s.th, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {templates.map(t => {
+              const badge = statusBadge(t);
+              return (
+                <tr key={t.key} style={s.tr}>
+                  <td style={s.td}>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F172A' }}>{t.name}</div>
+                    {t.description && <div style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: 2 }}>{t.description}</div>}
+                  </td>
+                  <td style={{ ...s.td, fontSize: '0.82rem', color: '#475569', maxWidth: 160 }}>{t.recipient || '—'}</td>
+                  <td style={{ ...s.td, fontSize: '0.82rem', color: '#475569', maxWidth: 180 }}>{t.trigger_label || '—'}</td>
+                  <td style={{ ...s.td, fontSize: '0.82rem', color: '#475569', whiteSpace: 'nowrap' }}>{t.schedule || '—'}</td>
+                  <td style={s.td}>
+                    <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.73rem', fontWeight: 600, background: badge.bg, color: badge.color, whiteSpace: 'nowrap' }}>
+                      {badge.label}
+                    </span>
+                  </td>
+                  <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button style={s.sendLinkBtn} onClick={() => openEdit(t)}>Edit</button>
+                      {t.send_type === 'manual' && (t.subject || t.html_body) && (
+                        <button style={{ ...s.sendProfileBtn, background: '#EFF6FF', color: '#1D4ED8' }} onClick={() => openSend(t)}>Send</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
