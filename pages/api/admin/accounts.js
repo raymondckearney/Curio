@@ -22,14 +22,28 @@ export default async function handler(req, res) {
         const [users, licenses, tokens] = await Promise.all([
           dbQuery('client_users', { account_id: `eq.${acc.id}`, select: 'id,email,name,role,last_login_at,provider', order: 'created_at.asc' }),
           dbQuery('account_licenses', { account_id: `eq.${acc.id}`, select: '*' }),
-          dbQuery('tokens', { account_id: `eq.${acc.id}`, select: 'engagement_id', order: 'created_at.asc' }),
+          dbQuery('tokens', { account_id: `eq.${acc.id}`, select: 'token,engagement_id', order: 'created_at.asc' }),
         ]);
         const primaryEmail = (users[0] || {}).email;
         const purchases = primaryEmail ? (purchasesByEmail[primaryEmail] || []) : [];
-        // An account's tokens may span more than one engagement (e.g. more
-        // added later under a different label); show all distinct ones.
         const engagementIds = [...new Set(tokens.map(t => t.engagement_id).filter(Boolean))];
-        return { ...acc, users, licenses, purchases, engagementIds };
+
+        // Fetch the most recent assessment linked to this account's tokens
+        let assessmentProfile = null;
+        const tokenIds = tokens.map(t => t.token).filter(Boolean);
+        if (tokenIds.length) {
+          const assessments = await dbQuery('assessments', {
+            token: `in.(${tokenIds.join(',')})`,
+            order: 'submitted_at.desc',
+            limit: '1',
+            select: 'type',
+          }).catch(() => []);
+          if (assessments.length && assessments[0].type) {
+            assessmentProfile = assessments[0].type.toUpperCase().replace(/_/g, '-');
+          }
+        }
+
+        return { ...acc, users, licenses, purchases, engagementIds, assessmentProfile };
       }));
 
       return res.status(200).json({ accounts: enriched });

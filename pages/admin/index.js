@@ -67,6 +67,7 @@ const NAV = [
   ]},
   { section: 'MANAGE', items: [
     { id: 'accounts',     label: 'Accounts' },
+    { id: 'emails',       label: 'Emails' },
   ]},
   { section: 'LANGUAGE TOOLS', items: [
     { id: 'detection-feedback', label: 'Detection Feedback' },
@@ -199,14 +200,39 @@ function ToolAccessField({ grantedTools, setGrantedTools }) {
 
 // ─── Generate Panel ───────────────────────────────────────────────────────────
 
+function DurationField({ durationMode, setDurationMode, customExpiresAt, setCustomExpiresAt }) {
+  const pillStyle = (active) => ({ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: active ? 600 : 500, cursor: 'pointer', background: active ? '#0F172A' : '#F1F5F9', color: active ? '#fff' : '#64748B', transition: 'all 0.15s' });
+  return (
+    <div style={s.fieldGroup}>
+      <label style={s.label}>Access Duration</label>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        {[{ id: '1mo', label: '1 Month' }, { id: '1yr', label: '1 Year' }, { id: '2yr', label: '2 Years' }, { id: 'custom', label: 'Custom' }].map(opt => (
+          <button key={opt.id} type="button" style={pillStyle(durationMode === opt.id)} onClick={() => setDurationMode(opt.id)}>{opt.label}</button>
+        ))}
+        {durationMode === 'custom' && (
+          <input type="date" style={{ ...s.input, maxWidth: 180, margin: 0 }} value={customExpiresAt} onChange={e => setCustomExpiresAt(e.target.value)} />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function GeneratePanel({ prefillEngId }) {
   const [batchMode, setBatchMode] = useState('enterprise'); // 'individual' | 'enterprise'
   const [mode, setMode] = useState('named'); // 'named' | 'anonymous' (enterprise only)
   const [purpose, setPurpose] = useState('assessment');
   const [grantedTools, setGrantedTools] = useState(['assessment_tokens']);
   const [engagementId, setEngagementId] = useState(prefillEngId || '');
-  const [expiresAt, setExpiresAt] = useState('');
+  const [durationMode, setDurationMode] = useState('1yr');
+  const [customExpiresAt, setCustomExpiresAt] = useState('');
   const [participantText, setParticipantText] = useState('');
+
+  function resolvedExpiresAt() {
+    if (durationMode === '1mo') return new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    if (durationMode === '1yr') return new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
+    if (durationMode === '2yr') return new Date(Date.now() + 730 * 86400000).toISOString().slice(0, 10);
+    return customExpiresAt || undefined;
+  }
   const [anonCount, setAnonCount] = useState('');
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
@@ -231,7 +257,7 @@ function GeneratePanel({ prefillEngId }) {
     try {
       const autoEngId = `individual-${Date.now()}`;
       const participants = [{ name: indivName.trim() || '', email: indivEmail.trim() || '' }];
-      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: autoEngId, expires_at: expiresAt || undefined }) });
+      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: autoEngId, expires_at: resolvedExpiresAt() }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setIndivResult(data.tokens[0]);
@@ -258,7 +284,7 @@ function GeneratePanel({ prefillEngId }) {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: engagementId.trim(), expires_at: expiresAt || undefined }) });
+      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: engagementId.trim(), expires_at: resolvedExpiresAt() }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setResults(data.tokens);
@@ -292,7 +318,7 @@ function GeneratePanel({ prefillEngId }) {
             <div style={s.fieldGroup}><label style={s.label}>Name (optional)</label><input style={s.input} value={indivName} onChange={e => setIndivName(e.target.value)} placeholder="Alex Smith" /></div>
             <div style={s.fieldGroup}><label style={s.label}>Email (optional)</label><input style={s.input} type="email" value={indivEmail} onChange={e => setIndivEmail(e.target.value)} placeholder="alex@example.com" /></div>
           </div>
-          <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={{ ...s.input, maxWidth: 200 }} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
+          <DurationField durationMode={durationMode} setDurationMode={setDurationMode} customExpiresAt={customExpiresAt} setCustomExpiresAt={setCustomExpiresAt} />
           {error && <p style={s.error}>{error}</p>}
           <button style={s.btn} onClick={generateIndividual} disabled={loading}>{loading ? 'Generating…' : 'Generate Link'}</button>
           {indivResult && (
@@ -322,7 +348,7 @@ function GeneratePanel({ prefillEngId }) {
           <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">Job Description Analyzer</option><option value="career">Career Guidance</option></select></div>
           <ToolAccessField grantedTools={grantedTools} setGrantedTools={setGrantedTools} />
           <div style={s.fieldGroup}><label style={s.label}>Engagement ID</label><input style={s.input} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2026-q1" /></div>
-          <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={s.input} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
+          <DurationField durationMode={durationMode} setDurationMode={setDurationMode} customExpiresAt={customExpiresAt} setCustomExpiresAt={setCustomExpiresAt} />
           {mode === 'named' ? (
             <div style={s.fieldGroup}>
               <label style={s.label}>Participants — one per line: <code style={s.code}>Name, email, Company, Role</code></label>
@@ -1411,6 +1437,25 @@ function EditPanel({ account, onClose, onSave }) {
   const [addTokenMsg, setAddTokenMsg] = useState(null);
   const [users, setUsers] = useState(account.users || []);
   const [roleChanging, setRoleChanging] = useState(null);
+  const [profileChanging, setProfileChanging] = useState(false);
+  const [profileMsg, setProfileMsg] = useState('');
+  const [selectedProfile, setSelectedProfile] = useState(account.assessmentProfile || '');
+
+  async function updateProfile() {
+    if (!selectedProfile) return;
+    setProfileChanging(true); setProfileMsg('');
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/update-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newProfile: selectedProfile }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed');
+      setProfileMsg(`Updated to ${d.newProfile}${d.tertiaryChanged ? ' (licenses swapped)' : ''}`);
+    } catch (e) { setProfileMsg(`Error: ${e.message}`); }
+    finally { setProfileChanging(false); }
+  }
 
   async function loadTokens() {
     setTokenLoading(true); setTokenExpanded(true);
@@ -1532,6 +1577,28 @@ function EditPanel({ account, onClose, onSave }) {
           ))}
         </div>
       )}
+
+      {/* MindPrint™ Profile */}
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>MindPrint™ Profile</p>
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
+          {account.assessmentProfile ? (
+            <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: '#0F172A' }}>Current: <strong>{account.assessmentProfile}</strong></p>
+          ) : (
+            <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: '#94A3B8' }}>No profile on record.</p>
+          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select style={{ ...s.select, maxWidth: 200, margin: 0 }} value={selectedProfile} onChange={e => setSelectedProfile(e.target.value)}>
+              <option value="">— Select profile —</option>
+              {PROFILES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <button style={{ ...s.btn, padding: '8px 14px' }} onClick={updateProfile} disabled={profileChanging || !selectedProfile}>
+              {profileChanging ? 'Updating…' : 'Update Profile'}
+            </button>
+            {profileMsg && <span style={{ fontSize: '0.82rem', color: profileMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{profileMsg}</span>}
+          </div>
+        </div>
+      </div>
 
       {/* Token Pool */}
       <div style={{ marginBottom: 16 }}>
@@ -2209,6 +2276,100 @@ function MirrorTokensPanel() {
   );
 }
 
+// ─── Emails Panel ─────────────────────────────────────────────────────────────
+
+function EmailsPanel() {
+  const [templates, setTemplates] = useState([]);
+  const [editing, setEditing] = useState(null); // { key, name, subject, html_body }
+  const [saving, setSaving] = useState(false);
+  const [testTo, setTestTo] = useState('');
+  const [testMsg, setTestMsg] = useState('');
+  const [saveMsg, setSaveMsg] = useState('');
+
+  useEffect(() => {
+    fetch('/api/admin/email-templates').then(r => r.json()).then(d => setTemplates(d.templates || []));
+  }, []);
+
+  async function saveTemplate() {
+    setSaving(true); setSaveMsg('');
+    try {
+      const res = await fetch(`/api/admin/email-templates/${editing.key}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: editing.subject, html_body: editing.html_body }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setSaveMsg('Saved');
+      setTemplates(prev => prev.map(t => t.key === editing.key ? { ...t, customized: true, subject: editing.subject, html_body: editing.html_body } : t));
+    } catch (e) { setSaveMsg(`Error: ${e.message}`); }
+    finally { setSaving(false); }
+  }
+
+  async function sendTest() {
+    if (!testTo) return;
+    setTestMsg('Sending…');
+    try {
+      const res = await fetch(`/api/admin/email-templates/${editing.key}/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: testTo }),
+      });
+      const d = await res.json();
+      setTestMsg(res.ok ? 'Sent ✓' : `Error: ${d.error}`);
+    } catch (e) { setTestMsg(`Error: ${e.message}`); }
+  }
+
+  if (editing) return (
+    <section style={s.panel}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <button style={{ ...s.btn, background: 'transparent', color: '#64748B', padding: '6px 12px' }} onClick={() => { setEditing(null); setSaveMsg(''); setTestMsg(''); }}>← Back</button>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>{editing.name}</h2>
+      </div>
+      <div style={s.fieldGroup}><label style={s.label}>Subject</label><input style={s.input} value={editing.subject || ''} onChange={e => setEditing(prev => ({ ...prev, subject: e.target.value }))} /></div>
+      <div style={s.fieldGroup}><label style={s.label}>HTML Body</label><textarea style={{ ...s.textarea, minHeight: 320, fontFamily: 'monospace', fontSize: '0.82rem' }} value={editing.html_body || ''} onChange={e => setEditing(prev => ({ ...prev, html_body: e.target.value }))} /></div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 20 }}>
+        <button style={s.btn} onClick={saveTemplate} disabled={saving}>{saving ? 'Saving…' : 'Save Template'}</button>
+        {saveMsg && <span style={{ fontSize: '0.85rem', color: saveMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{saveMsg}</span>}
+      </div>
+      <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: 20 }}>
+        <p style={{ ...s.label, marginBottom: 8 }}>Send Test Email</p>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input style={{ ...s.input, maxWidth: 260, margin: 0 }} type="email" placeholder="test@example.com" value={testTo} onChange={e => setTestTo(e.target.value)} />
+          <button style={{ ...s.btn, padding: '8px 16px' }} onClick={sendTest}>Send Test</button>
+          {testMsg && <span style={{ fontSize: '0.85rem', color: testMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{testMsg}</span>}
+        </div>
+      </div>
+    </section>
+  );
+
+  return (
+    <section style={s.panel}>
+      <h2 style={s.panelTitle}>Email Templates</h2>
+      <p style={{ color: '#64748B', fontSize: '0.875rem', marginBottom: 20 }}>Edit and manage transactional email templates. Changes are stored in the database and override the defaults.</p>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead><tr>{['Template', 'Status', 'Last Updated', ''].map(h => <th key={h} style={{ ...s.th, textAlign: 'left' }}>{h}</th>)}</tr></thead>
+        <tbody>
+          {templates.map(t => (
+            <tr key={t.key} style={s.tr}>
+              <td style={s.td}>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0F172A' }}>{t.name}</div>
+                <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: 2 }}>{t.description}</div>
+              </td>
+              <td style={s.td}>
+                <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, background: t.customized ? '#D1FAE5' : '#F1F5F9', color: t.customized ? '#065F46' : '#64748B' }}>
+                  {t.customized ? 'Customized' : 'Default'}
+                </span>
+              </td>
+              <td style={s.td}><span style={{ fontSize: '0.82rem', color: '#94A3B8' }}>{t.updated_at ? new Date(t.updated_at).toLocaleDateString() : '—'}</span></td>
+              <td style={s.td}><button style={s.sendLinkBtn} onClick={() => setEditing({ key: t.key, name: t.name, subject: t.subject || '', html_body: t.html_body || '' })}>Edit</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
@@ -2254,6 +2415,7 @@ export default function AdminDashboard() {
           {active === 'engagements' && <EngagementsPanel onGenerateMore={handleGenerateMore} />}
           {active === 'career' && <CareerReportsSection />}
           {active === 'accounts' && <AccountsSection />}
+          {active === 'emails' && <EmailsPanel />}
           {active === 'detection-feedback' && <DetectionFeedbackPanel />}
           {active === 'mirror-tokens' && <MirrorTokensPanel />}
           {active === 'settings' && (

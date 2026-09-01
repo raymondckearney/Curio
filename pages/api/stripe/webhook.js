@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { Resend } from 'resend';
-import { dbInsert, dbPatch } from '../../../lib/supabase';
+import { dbInsert, dbPatch, dbGet, dbQuery } from '../../../lib/supabase';
 
 // Disable Next.js body parsing — Stripe needs the raw body for signature verification
 export const config = { api: { bodyParser: false } };
@@ -34,10 +34,15 @@ export default async function handler(req, res) {
   }
 
   const session = event.data.object;
+
+  if (session.metadata?.purpose === 'renewal') {
+    return handleRenewal(session, res);
+  }
+
   const { buyer_name: name, buyer_email: email, product } = session.metadata || {};
   const amountPaid = (session.amount_total || 0) / 100;
   const engagementId = `self-serve-${Date.now()}`;
-  const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
   const baseUrl = 'https://choosecurio.com';
 
   // ── Step 1: Determine tier and tools to grant ─────────────────────────────
@@ -197,6 +202,47 @@ export default async function handler(req, res) {
   }
 
   return res.status(200).json({ received: true });
+}
+
+async function handleRenewal(session, res) {
+  const { account_id, buyer_name, buyer_email } = session.metadata || {};
+  if (!account_id) return res.status(400).json({ error: 'Missing account_id in renewal metadata' });
+
+  try {
+    const licenses = await dbGet('account_licenses', { account_id });
+    const newExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+    await Promise.all(licenses.map(l => {
+      const base = l.expires_at ? new Date(l.expires_at) : new Date();
+      const extended = new Date(Math.max(base.getTime(), Date.now()) + 365 * 24 * 60 * 60 * 1000).toISOString();
+      return dbPatch('account_licenses', { id: l.id }, { expires_at: extended });
+    }));
+
+    if (process.env.RESEND_API_KEY && buyer_email) {
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const newExpiryDate = new Date(newExpiry).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      resend.emails.send({
+        from: 'Curio <hello@choosecurio.com>',
+        to: buyer_email,
+        subject: 'Your Curio access has been renewed',
+        html: `<!DOCTYPE html><html><body style="font-family:Helvetica,Arial,sans-serif;background:#F8FAFC;margin:0;padding:0">
+<div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+  <div style="background:#0F172A;padding:24px 32px"><span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span></div>
+  <div style="padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
+    <p style="margin:0 0 16px;color:#0F172A;font-size:15px">Hi ${buyer_name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#0F172A;font-size:15px">Your Curio access has been renewed. Your new expiry date is <strong>${newExpiryDate}</strong>.</p>
+    <a href="https://choosecurio.com/portal/dashboard" style="display:inline-block;padding:12px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px">Go to Dashboard →</a>
+  </div>
+</div></body></html>`,
+      }).catch(err => console.error('[renewal] confirmation email failed:', err));
+    }
+
+    return res.status(200).json({ received: true, renewed: true });
+  } catch (err) {
+    console.error('[handleRenewal]', err);
+    return res.status(500).json({ error: err.message });
+  }
 }
 
 async function createNotionPipelineEntry({ name, email, product, amountPaid, engagementId }) {
