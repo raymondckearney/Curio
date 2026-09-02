@@ -173,7 +173,7 @@ export default function Manual() {
               <span className="section-path">/admin → Engagements</span>
               <span className="badge badge-admin">Admin</span>
             </div>
-            <Card title="Cohort Overview">Lists all engagement IDs that have tokens. Click any engagement to expand a cohort view showing completion rate, profile type breakdown across the group, and a per-participant status table. A "Generate More" button pre-fills the Tokens tab with that engagement ID to top up the pool.</Card>
+            <Card title="Cohort Overview">Lists all engagement IDs that have tokens. Click any engagement to expand a cohort view showing completion rate, profile type breakdown across the group, and a per-participant status table with an Expires column showing each token's expiration date. A "Generate More" button pre-fills the Tokens tab with that engagement ID to top up the pool.</Card>
           </section>
 
           <section className="section" id="admin-career">
@@ -191,7 +191,7 @@ export default function Manual() {
               <span className="section-path">/admin → Accounts</span>
               <span className="badge badge-admin">Admin</span>
             </div>
-            <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, and last login. Filterable by type, tier, and name/email search.</Card>
+            <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, last login, and an Expiry column showing the soonest upcoming license expiration date (shown in red if already past due, "No expiry" if none set). Filterable by type, tier, and name/email search.</Card>
             <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, extra Resources collections beyond the free default) at creation time.</Card>
             <Card title="Edit Account">
               Click <strong>Edit</strong> on any account to expand a panel with five sections:
@@ -199,7 +199,7 @@ export default function Manual() {
                 <li><strong>Tier & Licenses</strong> — change tier, add or remove licenses with quantity and expiry.</li>
                 <li><strong>Users & Roles</strong> — see all portal users on the account with their current role. Toggle any user between Owner and Member instantly.</li>
                 <li><strong>MindPrint™ Profile</strong> — shows the account's current assessed profile. Use the dropdown and "Update Profile" button to manually correct it. If the new profile has a different tertiary orientation, the companion and library licenses are automatically swapped to match.</li>
-                <li><strong>Token Pool</strong> — click "Show ▼" to see Total / Available / Sent / Completed counts, a scrollable token table, and a green <strong>Add Tokens</strong> form. Enter a quantity and optional engagement label to release tokens to that account.</li>
+                <li><strong>Token Pool</strong> — click "Show ▼" to see Total / Available / Sent / Completed counts, a scrollable token table (including each token's Expires date, shown in red once past due), and a green <strong>Add Tokens</strong> form. Enter a quantity and optional engagement label to release tokens to that account.</li>
                 <li><strong>Purchase History</strong> — Stripe purchase records linked to this account.</li>
               </ul>
             </Card>
