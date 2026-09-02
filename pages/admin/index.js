@@ -2401,6 +2401,44 @@ const BLOCK_TYPE_META = [
   { type: 'html',       label: 'Custom HTML',   icon: '</>' },
 ];
 
+const RECIPIENT_OPTIONS_MAP = {
+  stripe_purchase:   ['{{buyer_email}}', 'hello@choosecurio.com', 'raymondckearney@gmail.com'],
+  renewal_complete:  ['{{buyer_email}}', 'hello@choosecurio.com'],
+  self_serve_signup: ['{{email}}', 'hello@choosecurio.com'],
+  admin_invite:      ['{{email}}', 'hello@choosecurio.com'],
+  assessment_complete: ['{{email}}', 'hello@choosecurio.com', 'raymondckearney@gmail.com'],
+  cron_30_day_expiry:  ['{{email}}', 'hello@choosecurio.com'],
+  cron_expiry_day:     ['{{email}}', 'hello@choosecurio.com'],
+  cron_daily:          ['hello@choosecurio.com', 'raymondckearney@gmail.com'],
+  manual:              ['hello@choosecurio.com', 'raymondckearney@gmail.com'],
+};
+
+const SCHEDULE_OPTIONS = [
+  { value: 'Immediate',           label: 'Immediate — sends the moment the trigger fires' },
+  { value: 'Daily cron, 12:00 UTC', label: 'Daily at 12:00 UTC — runs once per day via cron job' },
+  { value: 'Manual',              label: 'Manual only — sent from the admin panel' },
+];
+
+const VARIABLE_DESCRIPTIONS = {
+  name:          { desc: "The person's full name",                        source: 'Account or token record' },
+  email:         { desc: "Recipient's email address",                     source: 'Primary email of the account or user' },
+  buyer_email:   { desc: "Stripe buyer's email",                         source: 'Stripe checkout.session.completed event' },
+  loginUrl:      { desc: 'Portal login page link',                       source: 'https://choosecurio.com/portal/login' },
+  inviteUrl:     { desc: 'One-time password setup link (7-day expiry)',   source: 'Generated at invite creation' },
+  licenseList:   { desc: 'HTML list of licenses granted',                source: 'Licenses selected on the admin invite form' },
+  assessmentUrl: { desc: 'One-time assessment link',                      source: 'Generated at Stripe purchase' },
+  includedNote:  { desc: 'Styled callout describing included tools',      source: 'Auto-generated based on product purchased' },
+  productLabel:  { desc: 'Product name',                                 source: '"Assessment" or "Assessment + AI Tools"' },
+  amountPaid:    { desc: 'Payment amount (e.g. $299.00)',                 source: 'Stripe checkout session total' },
+  engagementId:  { desc: 'Unique engagement ID',                         source: 'Auto-generated at purchase' },
+  grantedTools:  { desc: 'Comma-separated granted tool keys',            source: 'Determined by product purchased' },
+  time:          { desc: 'Timestamp of the event',                       source: 'Current time in Eastern Time' },
+  newExpiryDate: { desc: 'New expiry date after renewal',                source: 'Current date + 1 year' },
+  expiryDate:    { desc: 'License expiry date',                          source: 'account_licenses table' },
+  renewalUrl:    { desc: 'Dashboard / renewal page link',                source: 'https://choosecurio.com/portal/dashboard' },
+  profileUrl:    { desc: "User's MindPrint profile link",                source: 'Generated when assessment completes' },
+};
+
 function BlockFields({ block, onChange, availableVars }) {
   const iStyle = { width: '100%', border: '1px solid #E2E8F0', borderRadius: 6, padding: '7px 10px', fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", boxSizing: 'border-box' };
   const lStyle = { fontSize: '0.75rem', color: '#64748B', display: 'block', marginBottom: 4 };
@@ -2510,49 +2548,39 @@ function BlockFields({ block, onChange, availableVars }) {
   }
 }
 
-function BlockEditor({ value, onChange, availableVars, editorKey }) {
-  const isBlocks = tryParseBlocks(value) !== null;
-  const [mode, setMode] = useState(isBlocks ? 'visual' : 'html');
-  const [blocks, setBlocks] = useState(() => tryParseBlocks(value) || [{ type: 'html', content: value || '' }]);
+function InlineEmailEditor({ value, onChange, availableVars }) {
+  const [blocks, setBlocks] = useState(() => tryParseBlocks(value) || [{ type: 'paragraph', content: value || '' }]);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [editingIdx, setEditingIdx] = useState(null); // which block has popover open
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [htmlMode, setHtmlMode] = useState(false);
+  const [htmlValue, setHtmlValue] = useState(value || '');
 
   function updateBlocks(newBlocks) {
     setBlocks(newBlocks);
     onChange(serializeBlocks(newBlocks));
   }
-
-  function switchToHtml() {
-    const compiled = wrapEmailHtml(compileBlocksToBodyHtml(blocks));
-    onChange(compiled);
-    setMode('html');
+  function updateBlock(i, newBlock) {
+    const n = [...blocks]; n[i] = newBlock; updateBlocks(n);
   }
 
-  function switchToVisual() {
-    const parsed = tryParseBlocks(value);
-    if (parsed) {
-      setBlocks(parsed);
-    } else {
-      const newBlocks = [{ type: 'html', content: value || '' }];
-      setBlocks(newBlocks);
-      onChange(serializeBlocks(newBlocks));
-    }
-    setMode('visual');
-  }
+  const btnSm = { padding: '5px 12px', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.78rem', cursor: 'pointer', background: '#F8FAFC', color: '#475569', fontFamily: "'DM Sans',sans-serif" };
 
-  const btnSm = { padding: '5px 12px', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.78rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: '#F8FAFC', color: '#475569' };
-  const moveBtn = { ...btnSm, padding: '3px 8px', fontSize: '0.8rem' };
-
-  if (mode === 'html') {
+  if (htmlMode) {
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>HTML Body</label>
-          <button style={btnSm} onClick={switchToVisual}>← Visual Editor</button>
+          <button style={btnSm} onClick={() => {
+            const parsed = tryParseBlocks(htmlValue);
+            if (parsed) { setBlocks(parsed); } else { setBlocks([{ type: 'html', content: htmlValue }]); onChange(serializeBlocks([{ type: 'html', content: htmlValue }])); }
+            setHtmlMode(false);
+          }}>← Visual Editor</button>
         </div>
-        <textarea value={value || ''} onChange={e => onChange(e.target.value)}
+        <textarea value={htmlValue} onChange={e => { setHtmlValue(e.target.value); onChange(e.target.value); }}
           style={{ width: '100%', minHeight: 340, border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 12px', fontFamily: 'monospace', fontSize: '0.82rem', resize: 'vertical', boxSizing: 'border-box' }} />
         {availableVars && availableVars.length > 0 && (
-          <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#94A3B8' }}>Available variables: {availableVars.map(v => `{{${v}}}`).join('  ')}</p>
+          <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#94A3B8' }}>Variables: {availableVars.map(v => `{{${v}}}`).join('  ')}</p>
         )}
       </div>
     );
@@ -2560,56 +2588,217 @@ function BlockEditor({ value, onChange, availableVars, editorKey }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Email Content</label>
-        <button style={btnSm} onClick={switchToHtml}>Edit HTML</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Email Preview — click text to edit</span>
+        <button style={btnSm} onClick={() => { setHtmlValue(value || ''); setHtmlMode(true); }}>Edit HTML</button>
       </div>
 
-      {blocks.length === 0 && (
-        <div style={{ border: '2px dashed #E2E8F0', borderRadius: 8, padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '0.875rem', marginBottom: 12 }}>
-          No blocks yet — add one below
-        </div>
-      )}
+      {/* Email shell */}
+      <div style={{ background: '#F1F5F9', padding: '20px 16px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+        <div style={{ maxWidth: 540, margin: '0 auto', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.1)' }}>
+          {/* Dark header */}
+          <div style={{ background: '#0F172A', padding: '20px 28px' }}>
+            <span style={{ fontFamily: 'Georgia,serif', fontSize: 26, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px' }}>Curio<span style={{ color: '#059669' }}>.</span></span>
+          </div>
+          {/* White card */}
+          <div style={{ background: '#fff', padding: '28px 28px 20px', borderRadius: '0 0 12px 12px' }}
+            onClick={() => { if (editingIdx !== null) setEditingIdx(null); }}>
 
-      {blocks.map((block, i) => (
-        <div key={i} style={{ border: '1px solid #E2E8F0', borderRadius: 8, marginBottom: 8, overflow: 'hidden' }}>
-          <div style={{ background: '#F8FAFC', padding: '7px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {BLOCK_TYPE_META.find(bt => bt.type === block.type)?.icon} {BLOCK_TYPE_META.find(bt => bt.type === block.type)?.label || block.type}
-            </span>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button disabled={i === 0} onClick={() => { const n = [...blocks]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; updateBlocks(n); }} style={{ ...moveBtn, opacity: i === 0 ? 0.3 : 1 }}>↑</button>
-              <button disabled={i === blocks.length - 1} onClick={() => { const n = [...blocks]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; updateBlocks(n); }} style={{ ...moveBtn, opacity: i === blocks.length - 1 ? 0.3 : 1 }}>↓</button>
-              <button onClick={() => updateBlocks(blocks.filter((_, j) => j !== i))} style={{ ...moveBtn, color: '#DC2626', borderColor: '#FEE2E2' }}>✕</button>
+            {blocks.length === 0 && (
+              <div style={{ border: '2px dashed #E2E8F0', borderRadius: 8, padding: 24, textAlign: 'center', color: '#94A3B8', fontSize: '0.875rem' }}>
+                No blocks yet — click "+ Add Block" below
+              </div>
+            )}
+
+            {blocks.map((block, i) => (
+              <div key={i} style={{ position: 'relative', marginBottom: 0 }}
+                onMouseEnter={() => setHoveredIdx(i)}
+                onMouseLeave={() => setHoveredIdx(null)}>
+
+                {/* Block controls overlay */}
+                {hoveredIdx === i && (
+                  <div style={{ position: 'absolute', top: 2, right: 2, zIndex: 100, display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,0.96)', border: '1px solid #E2E8F0', borderRadius: 6, padding: '2px 4px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', pointerEvents: 'auto' }}
+                    onClick={e => e.stopPropagation()}>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 2 }}>
+                      {BLOCK_TYPE_META.find(bt => bt.type === block.type)?.label || block.type}
+                    </span>
+                    <button disabled={i === 0} onClick={() => { const n=[...blocks]; [n[i-1],n[i]]=[n[i],n[i-1]]; updateBlocks(n); }} style={{ background: 'none', border: 'none', cursor: i===0?'default':'pointer', color: i===0?'#CBD5E1':'#475569', fontSize: '0.75rem', padding: '1px 4px', lineHeight: 1 }}>↑</button>
+                    <button disabled={i === blocks.length-1} onClick={() => { const n=[...blocks]; [n[i],n[i+1]]=[n[i+1],n[i]]; updateBlocks(n); }} style={{ background: 'none', border: 'none', cursor: i===blocks.length-1?'default':'pointer', color: i===blocks.length-1?'#CBD5E1':'#475569', fontSize: '0.75rem', padding: '1px 4px', lineHeight: 1 }}>↓</button>
+                    <button onClick={() => updateBlocks(blocks.filter((_,j)=>j!==i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: '0.75rem', padding: '1px 4px', lineHeight: 1 }}>✕</button>
+                  </div>
+                )}
+
+                {/* Block render */}
+                <InlineBlock block={block} index={i} isEditing={editingIdx === i}
+                  onOpenEdit={e => { e.stopPropagation(); setEditingIdx(i); }}
+                  onCloseEdit={() => setEditingIdx(null)}
+                  onChange={nb => { updateBlock(i, nb); }}
+                  availableVars={availableVars} />
+              </div>
+            ))}
+
+            {/* Add block */}
+            <div style={{ position: 'relative', marginTop: 16 }}>
+              <button onClick={() => setShowAddMenu(v => !v)}
+                style={{ width: '100%', padding: '8px', background: 'none', border: '2px dashed #CBD5E1', borderRadius: 8, cursor: 'pointer', color: '#94A3B8', fontSize: '0.85rem', fontFamily: "'DM Sans',sans-serif" }}>
+                + Add Block
+              </button>
+              {showAddMenu && (
+                <div style={{ position: 'absolute', bottom: '110%', left: 0, right: 0, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', zIndex: 300, padding: 10 }}
+                  onClick={e => e.stopPropagation()}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                    {BLOCK_TYPE_META.map(bt => (
+                      <button key={bt.type} onClick={() => { updateBlocks([...blocks, defaultBlockData(bt.type)]); setShowAddMenu(false); }}
+                        style={{ textAlign: 'left', padding: '8px 12px', background: 'none', border: '1px solid #E2E8F0', borderRadius: 6, cursor: 'pointer', fontSize: '0.83rem', color: '#0F172A', fontFamily: "'DM Sans',sans-serif" }}>
+                        <span style={{ marginRight: 6 }}>{bt.icon}</span>{bt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <div style={{ padding: 12 }}>
-            <BlockFields block={block} onChange={newBlock => { const n = [...blocks]; n[i] = newBlock; updateBlocks(n); }} availableVars={availableVars} />
-          </div>
         </div>
-      ))}
-
-      <div style={{ position: 'relative' }}>
-        <button onClick={() => setShowAddMenu(v => !v)}
-          style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', borderRadius: 8, padding: '8px 18px', fontSize: '0.85rem', cursor: 'pointer', color: '#475569', fontFamily: "'DM Sans', sans-serif", width: '100%' }}>
-          + Add Block
-        </button>
-        {showAddMenu && (
-          <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 200, padding: 8, marginBottom: 4 }}
-            onClick={() => setShowAddMenu(false)}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-              {BLOCK_TYPE_META.map(bt => (
-                <button key={bt.type} onClick={() => updateBlocks([...blocks, defaultBlockData(bt.type)])}
-                  style={{ textAlign: 'left', padding: '8px 12px', background: 'none', border: '1px solid #E2E8F0', borderRadius: 6, cursor: 'pointer', fontSize: '0.83rem', color: '#0F172A', fontFamily: "'DM Sans', sans-serif" }}>
-                  <span style={{ marginRight: 6 }}>{bt.icon}</span>{bt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
+}
+
+function InlineBlock({ block, isEditing, onOpenEdit, onCloseEdit, onChange, availableVars }) {
+  const iStyle = { width: '100%', border: '1px solid #E2E8F0', borderRadius: 6, padding: '7px 10px', fontSize: '0.875rem', fontFamily: "'DM Sans',sans-serif", boxSizing: 'border-box' };
+  const lStyle = { fontSize: '0.75rem', color: '#64748B', display: 'block', marginBottom: 4 };
+
+  // Popover for non-inline editable blocks
+  function Popover({ children }) {
+    return (
+      <div style={{ position: 'absolute', top: '105%', left: 0, right: 0, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, boxShadow: '0 6px 24px rgba(0,0,0,0.13)', zIndex: 200, padding: 16 }}
+        onClick={e => e.stopPropagation()}>
+        {children}
+        <div style={{ marginTop: 10, textAlign: 'right' }}>
+          <button onClick={onCloseEdit} style={{ padding: '5px 14px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer' }}>Done</button>
+        </div>
+      </div>
+    );
+  }
+
+  switch (block.type) {
+    case 'paragraph': {
+      // contentEditable inline paragraph
+      const ref = React.useRef(null);
+      React.useEffect(() => {
+        if (ref.current && ref.current.innerText !== block.content) {
+          ref.current.innerText = block.content || '';
+        }
+      }, []); // only on mount
+      return (
+        <div ref={ref} contentEditable suppressContentEditableWarning
+          onBlur={e => onChange({ ...block, content: e.currentTarget.innerText })}
+          style={{ margin: '0 0 16px', lineHeight: 1.7, color: '#0F172A', fontSize: 15, outline: 'none', cursor: 'text', minHeight: 24,
+            borderBottom: '1px dashed transparent', transition: 'border-color 0.15s' }}
+          onFocus={e => { e.currentTarget.style.borderBottomColor = '#059669'; }}
+          title="Click to edit"
+        />
+      );
+    }
+
+    case 'button':
+      return (
+        <div style={{ position: 'relative', marginBottom: 20 }}>
+          <table cellPadding="0" cellSpacing="0" border="0"><tbody><tr><td style={{ borderRadius: 8, background: block.color || '#059669' }}>
+            <a onClick={onOpenEdit} style={{ display: 'inline-block', padding: '13px 28px', background: block.color || '#059669', color: '#fff', textDecoration: 'none', borderRadius: 8, fontWeight: 700, fontSize: 15, fontFamily: 'Helvetica,Arial,sans-serif', cursor: 'pointer' }}>
+              {block.text || 'Click Here'}
+            </a>
+          </td></tr></tbody></table>
+          <span onClick={onOpenEdit} style={{ marginLeft: 10, fontSize: '0.75rem', color: '#059669', cursor: 'pointer', textDecoration: 'underline' }}>Edit button</span>
+          {isEditing && (
+            <Popover>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'end' }}>
+                <div><label style={lStyle}>Button text</label><input value={block.text || ''} onChange={e => onChange({ ...block, text: e.target.value })} style={iStyle} /></div>
+                <div><label style={lStyle}>URL</label><input value={block.url || ''} onChange={e => onChange({ ...block, url: e.target.value })} style={iStyle} placeholder="https://... or {{loginUrl}}" /></div>
+                <div><label style={lStyle}>Color</label><input type="color" value={block.color || '#059669'} onChange={e => onChange({ ...block, color: e.target.value })} style={{ width: 40, height: 36, border: '1px solid #E2E8F0', borderRadius: 6, padding: 2, cursor: 'pointer' }} /></div>
+              </div>
+            </Popover>
+          )}
+        </div>
+      );
+
+    case 'callout': {
+      const titleRef = React.useRef(null);
+      const bodyRef = React.useRef(null);
+      React.useEffect(() => {
+        if (titleRef.current) titleRef.current.innerText = block.title || '';
+        if (bodyRef.current) bodyRef.current.innerText = block.content || '';
+      }, []);
+      return (
+        <div style={{ background: block.bg || '#F0FDF4', border: `1px solid ${block.border || '#BBF7D0'}`, borderRadius: 8, padding: '14px 18px', marginBottom: 20, position: 'relative' }}>
+          {(block.title !== undefined) && (
+            <div ref={titleRef} contentEditable suppressContentEditableWarning
+              onBlur={e => onChange({ ...block, title: e.currentTarget.innerText })}
+              style={{ fontWeight: 600, color: block.textColor || '#065F46', fontSize: '0.9rem', marginBottom: 4, outline: 'none', cursor: 'text' }} />
+          )}
+          <div ref={bodyRef} contentEditable suppressContentEditableWarning
+            onBlur={e => onChange({ ...block, content: e.currentTarget.innerText })}
+            style={{ color: block.textColor || '#065F46', fontSize: '0.875rem', lineHeight: 1.6, outline: 'none', cursor: 'text', minHeight: 20 }} />
+          <span onClick={onOpenEdit} style={{ position: 'absolute', bottom: 6, right: 10, fontSize: '0.7rem', color: '#059669', cursor: 'pointer', textDecoration: 'underline' }}>Edit colors</span>
+          {isEditing && (
+            <Popover>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}><label style={{ ...lStyle, marginBottom: 0 }}>Background</label><input type="color" value={block.bg || '#F0FDF4'} onChange={e => onChange({ ...block, bg: e.target.value })} style={{ width: 32, height: 28, border: '1px solid #E2E8F0', borderRadius: 4, padding: 1, cursor: 'pointer' }} /></div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}><label style={{ ...lStyle, marginBottom: 0 }}>Border</label><input type="color" value={block.border || '#BBF7D0'} onChange={e => onChange({ ...block, border: e.target.value })} style={{ width: 32, height: 28, border: '1px solid #E2E8F0', borderRadius: 4, padding: 1, cursor: 'pointer' }} /></div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}><label style={{ ...lStyle, marginBottom: 0 }}>Text</label><input type="color" value={block.textColor || '#065F46'} onChange={e => onChange({ ...block, textColor: e.target.value })} style={{ width: 32, height: 28, border: '1px solid #E2E8F0', borderRadius: 4, padding: 1, cursor: 'pointer' }} /></div>
+              </div>
+            </Popover>
+          )}
+        </div>
+      );
+    }
+
+    case 'data_table':
+      return (
+        <div style={{ position: 'relative', marginBottom: 20 }}>
+          <table cellPadding="0" cellSpacing="0" border="0" style={{ width: '100%' }}><tbody>
+            {(block.rows || []).map((r, ri) => (
+              <tr key={ri}><td style={{ padding: '6px 0', color: '#64748B', fontSize: 14, width: 140 }}>{r.label}</td><td style={{ padding: '6px 0', color: '#0F172A', fontSize: 14, fontWeight: 600 }}>{r.value}</td></tr>
+            ))}
+          </tbody></table>
+          <span onClick={onOpenEdit} style={{ fontSize: '0.72rem', color: '#059669', cursor: 'pointer', textDecoration: 'underline' }}>Edit table rows</span>
+          {isEditing && (
+            <Popover>
+              {(block.rows || []).map((row, ri) => (
+                <div key={ri} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                  <input value={row.label} onChange={e => { const rows=[...block.rows]; rows[ri]={...rows[ri],label:e.target.value}; onChange({...block,rows}); }} style={iStyle} placeholder="Label" />
+                  <input value={row.value} onChange={e => { const rows=[...block.rows]; rows[ri]={...rows[ri],value:e.target.value}; onChange({...block,rows}); }} style={iStyle} placeholder="Value or {{variable}}" />
+                  <button onClick={() => onChange({...block,rows:block.rows.filter((_,j)=>j!==ri)})} style={{ background:'none',border:'1px solid #E2E8F0',borderRadius:6,padding:'6px 10px',cursor:'pointer',color:'#64748B' }}>×</button>
+                </div>
+              ))}
+              <button onClick={() => onChange({...block,rows:[...(block.rows||[]),{label:'',value:''}]})} style={{ background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:6,padding:'5px 12px',fontSize:'0.8rem',cursor:'pointer',color:'#475569' }}>+ Add Row</button>
+            </Popover>
+          )}
+        </div>
+      );
+
+    case 'divider':
+      return <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '20px 0' }} />;
+
+    case 'footer':
+      return <p style={{ margin: '20px 0 0', color: '#64748B', fontSize: 14 }}>Questions? Reply to this email or contact <span style={{ color: '#059669' }}>hello@choosecurio.com</span>.</p>;
+
+    case 'html': {
+      const ref = React.useRef(null);
+      React.useEffect(() => { if (ref.current) ref.current.value = block.content || ''; }, []);
+      return (
+        <div style={{ marginBottom: 12 }}>
+          <textarea ref={ref} defaultValue={block.content || ''}
+            onBlur={e => onChange({ ...block, content: e.target.value })}
+            style={{ ...iStyle, minHeight: 80, fontFamily: 'monospace', fontSize: '0.8rem', resize: 'vertical' }}
+            placeholder="Custom HTML" />
+        </div>
+      );
+    }
+
+    default:
+      return <div style={{ color: '#94A3B8', fontSize: '0.85rem', marginBottom: 12 }}>Unknown block: {block.type}</div>;
+  }
 }
 
 function MetaRow({ label, value }) {
@@ -2769,23 +2958,31 @@ function EmailsPanel() {
       </div>
 
       {/* Editable metadata for all templates */}
-      {(() => {
-        const vars = triggerVars[editing.trigger] || [];
-        const varHint = vars.length ? <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Available: {vars.map(v => `{{${v}}}`).join(', ')}</p> : null;
-        return (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-              <div style={s.fieldGroup}><label style={s.label}>Name</label><input style={s.input} value={editing.name || ''} onChange={e => setEditing(p => ({ ...p, name: e.target.value }))} /></div>
-              <div style={s.fieldGroup}>
-                <label style={s.label}>Recipient</label>
-                <input style={s.input} value={editing.recipient || ''} onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))} placeholder="email address or {{variable}}" />
-                {varHint}
-              </div>
-            </div>
-          </>
-        );
-      })()}
+      {/* Name + Recipient */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <div style={s.fieldGroup}><label style={s.label}>Name</label><input style={s.input} value={editing.name || ''} onChange={e => setEditing(p => ({ ...p, name: e.target.value }))} /></div>
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Recipient</label>
+          <select style={s.select} value={editing.recipient || ''}
+            onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))}>
+            <option value="">— choose recipient —</option>
+            {(RECIPIENT_OPTIONS_MAP[editing.trigger] || ['{{email}}', 'hello@choosecurio.com']).map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+            <option value="__custom__">Other (type below)</option>
+          </select>
+          {editing.recipient === '__custom__' && (
+            <input style={{ ...s.input, marginTop: 6 }} placeholder="e.g. custom@example.com or {{variable}}"
+              onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))} />
+          )}
+          <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#94A3B8', lineHeight: 1.5 }}>
+            Who receives this email. Use <code style={{ background: '#F1F5F9', borderRadius: 3, padding: '1px 4px' }}>{'{{email}}'}</code> for the account holder or <code style={{ background: '#F1F5F9', borderRadius: 3, padding: '1px 4px' }}>{'{{buyer_email}}'}</code> for Stripe buyers.
+          </p>
+        </div>
+      </div>
+
       <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={editing.description || ''} onChange={e => setEditing(p => ({ ...p, description: e.target.value }))} /></div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
         <div style={s.fieldGroup}>
           <label style={s.label}>Send type</label>
@@ -2799,16 +2996,54 @@ function EmailsPanel() {
             {TRIGGER_OPTIONS_CLIENT.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
           </select>
         </div>
-        <div style={s.fieldGroup}><label style={s.label}>Schedule / timing</label><input style={s.input} value={editing.schedule || ''} onChange={e => setEditing(p => ({ ...p, schedule: e.target.value }))} placeholder="e.g. Immediate" /></div>
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Schedule / timing</label>
+          <select style={s.select} value={editing.schedule || ''}
+            onChange={e => setEditing(p => ({ ...p, schedule: e.target.value }))}>
+            <option value="">— choose —</option>
+            {SCHEDULE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
       </div>
 
       <div style={s.fieldGroup}><label style={s.label}>Subject</label><input style={s.input} value={editing.subject} onChange={e => setEditing(p => ({ ...p, subject: e.target.value }))} /></div>
+
+      {/* Variable reference panel */}
+      {(triggerVars[editing.trigger] || []).length > 0 && (
+        <details style={{ marginBottom: 16, border: '1px solid #E2E8F0', borderRadius: 8, overflow: 'hidden' }}>
+          <summary style={{ padding: '8px 14px', background: '#F8FAFC', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, color: '#475569', userSelect: 'none', listStyle: 'none' }}>
+            📎 Available variables for this trigger — click to expand
+          </summary>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <thead>
+              <tr style={{ background: '#F1F5F9' }}>
+                <th style={{ padding: '6px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600, width: 140 }}>Variable</th>
+                <th style={{ padding: '6px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600 }}>What it is</th>
+                <th style={{ padding: '6px 14px', textAlign: 'left', color: '#64748B', fontWeight: 600 }}>Where it comes from</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(triggerVars[editing.trigger] || []).map((v, idx) => {
+                const info = VARIABLE_DESCRIPTIONS[v] || { desc: '—', source: '—' };
+                return (
+                  <tr key={v} style={{ borderTop: '1px solid #E2E8F0', background: idx % 2 === 0 ? '#fff' : '#F8FAFC' }}>
+                    <td style={{ padding: '6px 14px' }}><code style={{ background: '#EFF6FF', color: '#1D4ED8', borderRadius: 3, padding: '2px 6px', fontFamily: 'monospace', fontSize: '0.78rem' }}>{`{{${v}}}`}</code></td>
+                    <td style={{ padding: '6px 14px', color: '#0F172A' }}>{info.desc}</td>
+                    <td style={{ padding: '6px 14px', color: '#64748B' }}>{info.source}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </details>
+      )}
+
       <div style={s.fieldGroup}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span />
-          <button type="button" style={{ padding: '4px 12px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={() => setPreviewTpl({ ...editing })}>Preview</button>
+          <label style={s.label}>Email Body</label>
+          <button type="button" style={{ padding: '4px 12px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={() => setPreviewTpl({ ...editing })}>Full Preview</button>
         </div>
-        <BlockEditor
+        <InlineEmailEditor
           key={editing.key}
           value={editing.html_body || ''}
           onChange={v => setEditing(p => ({ ...p, html_body: v }))}
@@ -2868,7 +3103,15 @@ function EmailsPanel() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
         <div style={s.fieldGroup}><label style={s.label}>Name *</label><input style={s.input} value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Welcome Back Email" /></div>
-        <div style={s.fieldGroup}><label style={s.label}>Recipient</label><input style={s.input} value={newRecipient} onChange={e => setNewRecipient(e.target.value)} placeholder="e.g. Account owner" /></div>
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Recipient</label>
+          <select style={s.select} value={newRecipient} onChange={e => setNewRecipient(e.target.value)}>
+            <option value="">— choose recipient —</option>
+            {(RECIPIENT_OPTIONS_MAP[newTrigger] || ['{{email}}', 'hello@choosecurio.com']).map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
       </div>
       <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="What this email does and when it's used" /></div>
       <div style={s.fieldGroup}>
@@ -2876,7 +3119,7 @@ function EmailsPanel() {
         <div style={{ display: 'flex', gap: 6 }}>
           {['manual','automated'].map(v => <button key={v} type="button" style={pillStyle(newSendType === v)} onClick={() => { setNewSendType(v); if (v === 'manual') setNewTrigger('manual'); }}>{v === 'manual' ? 'Manual' : 'Automated'}</button>)}
         </div>
-        <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#94A3B8' }}>{newSendType === 'manual' ? 'You send this email yourself from the admin UI.' : 'Fires automatically when a trigger event occurs. Note: new event triggers beyond the list below require a one-time code addition.'}</p>
+        <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#94A3B8' }}>{newSendType === 'manual' ? 'You send this email yourself from the admin UI.' : 'Fires automatically when a trigger event occurs.'}</p>
       </div>
       {newSendType === 'automated' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
@@ -2886,12 +3129,18 @@ function EmailsPanel() {
               {TRIGGER_OPTIONS_CLIENT.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
             </select>
           </div>
-          <div style={s.fieldGroup}><label style={s.label}>Schedule / timing</label><input style={s.input} value={newSchedule} onChange={e => setNewSchedule(e.target.value)} placeholder="e.g. Immediate, Daily 12:00 UTC" /></div>
+          <div style={s.fieldGroup}>
+            <label style={s.label}>Schedule / timing</label>
+            <select style={s.select} value={newSchedule} onChange={e => setNewSchedule(e.target.value)}>
+              <option value="">— choose —</option>
+              {SCHEDULE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
         </div>
       )}
       <div style={s.fieldGroup}><label style={s.label}>Subject *</label><input style={s.input} value={newSubject} onChange={e => setNewSubject(e.target.value)} /></div>
       <div style={s.fieldGroup}>
-        <BlockEditor
+        <InlineEmailEditor
           key={'new-' + newTrigger}
           value={newBody}
           onChange={v => setNewBody(v)}
