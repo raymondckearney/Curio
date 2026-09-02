@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     const tokens = await dbQuery('tokens', {
       account_id: `eq.${accountId}`,
       order: 'created_at.desc',
-      select: 'token,name,email,role,engagement_id,used,used_at,link_sent_at,created_at,purpose',
+      select: 'token,name,email,role,engagement_id,used,used_at,link_sent_at,created_at,purpose,expires_at',
     });
 
     const summary = {

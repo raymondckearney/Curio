@@ -929,7 +929,7 @@ function CohortPanel({ engagementId, onGenerateMore }) {
       {loading && <p style={{ fontSize: '0.85rem', color: '#94A3B8' }}>Loading…</p>}
       {tokens && (
         <table style={{ ...s.table, fontSize: '0.82rem' }}>
-          <thead><tr>{['Name','Email','Status','Profile','Completed At',''].map(h => <th key={h} style={{ ...s.th, fontSize: '0.75rem' }}>{h}</th>)}</tr></thead>
+          <thead><tr>{['Name','Email','Status','Profile','Completed At','Expires',''].map(h => <th key={h} style={{ ...s.th, fontSize: '0.75rem' }}>{h}</th>)}</tr></thead>
           <tbody>
             {tokens.map((t, i) => {
               const profileRaw = typeof t.result_payload === 'object' ? t.result_payload?.type : t.result_payload;
@@ -943,6 +943,9 @@ function CohortPanel({ engagementId, onGenerateMore }) {
                   <td style={s.td}><span style={t.used ? s.badgeUsed : s.badgePending}>{t.used ? 'Completed' : 'Pending'}</span></td>
                   <td style={s.td}>{profile ? <span style={profileBadgeStyle(profile)}>{profile}</span> : '—'}</td>
                   <td style={{ ...s.td, color: '#64748B', fontSize: '0.78rem' }}>{t.used_at ? new Date(t.used_at).toLocaleString() : '—'}</td>
+                  <td style={{ ...s.td, fontSize: '0.78rem', color: t.expires_at && new Date(t.expires_at) < new Date() ? '#DC2626' : '#64748B' }}>
+                    {t.expires_at ? new Date(t.expires_at).toLocaleDateString() : '—'}
+                  </td>
                   <td style={s.td}>
                     {canSend && (alreadySent ? <span style={s.sentBadge}>Sent ✓</span> : (
                       <button style={{ ...s.btn, padding: '3px 10px', fontSize: '0.75rem' }} onClick={() => sendProfile(t)} disabled={sendingProfile === t.token}>
@@ -1674,7 +1677,7 @@ function EditPanel({ account, onClose, onSave }) {
               <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                   <thead style={{ position: 'sticky', top: 0, background: '#F8FAFC' }}>
-                    <tr>{['Name', 'Email', 'Engagement', 'Status', 'Sent', 'Completed'].map(h => <th key={h} style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid #E2E8F0', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>)}</tr>
+                    <tr>{['Name', 'Email', 'Engagement', 'Status', 'Sent', 'Completed', 'Expires'].map(h => <th key={h} style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid #E2E8F0', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
                     {tokenData.tokens.map((t, i) => (
@@ -1689,6 +1692,7 @@ function EditPanel({ account, onClose, onSave }) {
                         </td>
                         <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.link_sent_at ? new Date(t.link_sent_at).toLocaleDateString() : '—'}</td>
                         <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.used_at ? new Date(t.used_at).toLocaleDateString() : '—'}</td>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: t.expires_at && new Date(t.expires_at) < new Date() ? '#DC2626' : '#64748B' }}>{t.expires_at ? new Date(t.expires_at).toLocaleDateString() : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1844,6 +1848,7 @@ function AccountsSection() {
                   <FilterTH label="Status" kind="select" value={statusFilter} onChange={setStatusFilter} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} width={100} />
                   <th style={s.th}>Last Login</th>
                   <th style={s.th}>Created</th>
+                  <th style={s.th}>Expiry</th>
                   <th style={s.th}>Actions</th>
                 </tr>
               </thead>
@@ -1857,6 +1862,9 @@ function AccountsSection() {
                   const status = acc.status || 'active';
                   const type = accountType(acc);
                   const engagementLabel = (acc.engagementIds || []).join(', ') || '—';
+                  const licenseExpiries = (acc.licenses || []).map(l => l.expires_at).filter(Boolean).sort();
+                  const soonestExpiry = licenseExpiries[0] || null;
+                  const isExpired = soonestExpiry && new Date(soonestExpiry) < new Date();
                   const mainRow = (
                     <tr key={acc.id} style={i % 2 === 0 ? s.trEven : {}}>
                       <td style={{ ...s.td, fontSize: '0.82rem', color: '#64748B' }}>{engagementLabel}</td>
@@ -1869,6 +1877,7 @@ function AccountsSection() {
                       <td style={s.td}><span style={status === 'active' ? s.badgeActive : s.badgeRevoked}>{status}</span></td>
                       <td style={{ ...s.td, fontSize: '0.82rem', color: '#64748B' }}>{lastLogin}</td>
                       <td style={{ ...s.td, fontSize: '0.82rem', color: '#64748B' }}>{created}</td>
+                      <td style={{ ...s.td, fontSize: '0.82rem', color: isExpired ? '#DC2626' : '#64748B' }}>{soonestExpiry ? new Date(soonestExpiry).toLocaleDateString() : 'No expiry'}</td>
                       <td style={s.td}>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <button style={s.actionBtn} onClick={() => setEditId(editId === acc.id ? null : acc.id)}>{editId === acc.id ? 'Close' : 'Edit'}</button>
@@ -1880,9 +1889,9 @@ function AccountsSection() {
                     </tr>
                   );
                   if (editId !== acc.id) return [mainRow];
-                  return [mainRow, <tr key={`${acc.id}-edit`}><td colSpan={11} style={{ padding: 0 }}><EditPanel account={acc} onClose={() => setEditId(null)} onSave={() => { load(); setEditId(null); }} /></td></tr>];
+                  return [mainRow, <tr key={`${acc.id}-edit`}><td colSpan={12} style={{ padding: 0 }}><EditPanel account={acc} onClose={() => setEditId(null)} onSave={() => { load(); setEditId(null); }} /></td></tr>];
                 })}
-                {filtered.length === 0 && <tr><td colSpan={11} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>No accounts match your filter.</td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={12} style={{ ...s.td, color: '#94A3B8', textAlign: 'center', padding: '24px 12px' }}>No accounts match your filter.</td></tr>}
               </tbody>
             </table>
           </div>
