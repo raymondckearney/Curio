@@ -1,6 +1,5 @@
 import { dbQuery } from '../../../lib/supabase';
-import { Resend } from 'resend';
-import { getEmailTemplate, renderTemplate } from '../../../lib/emailTemplates';
+import { dispatchEmailsForTrigger } from '../../../lib/emailTemplates';
 
 export default async function handler(req, res) {
   const authHeader = req.headers.authorization || '';
@@ -8,8 +7,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ ok: false, error: 'Unauthorized' });
   }
 
-  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-  if (!resend) return res.status(500).json({ ok: false, error: 'RESEND_API_KEY not set' });
+  if (!process.env.RESEND_API_KEY) return res.status(500).json({ ok: false, error: 'RESEND_API_KEY not set' });
 
   const now = new Date();
   const in29 = new Date(now.getTime() + 29 * 86400000).toISOString();
@@ -44,13 +42,7 @@ export default async function handler(req, res) {
       const expiryDate = new Date(license.expires_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       const renewalUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://choosecurio.com'}/portal/dashboard`;
 
-      const tpl30 = await getEmailTemplate('renewal_reminder_30');
-      await resend.emails.send({
-        from: 'Curio <hello@choosecurio.com>',
-        to: primaryUser.email,
-        subject: tpl30.subject,
-        html: renderTemplate(tpl30.html_body, { name: primaryUser.name || 'there', expiryDate, renewalUrl }),
-      }).catch(err => console.error('[renewal-reminders] 30-day email failed:', err));
+      await dispatchEmailsForTrigger('cron_30_day_expiry', { name: primaryUser.name || 'there', email: primaryUser.email, expiryDate, renewalUrl });
       sent30++;
     }
 
@@ -74,13 +66,7 @@ export default async function handler(req, res) {
 
       const renewalUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://choosecurio.com'}/portal/dashboard`;
 
-      const tplExp = await getEmailTemplate('renewal_reminder_expired');
-      await resend.emails.send({
-        from: 'Curio <hello@choosecurio.com>',
-        to: primaryUser.email,
-        subject: tplExp.subject,
-        html: renderTemplate(tplExp.html_body, { name: primaryUser.name || 'there', renewalUrl }),
-      }).catch(err => console.error('[renewal-reminders] expired email failed:', err));
+      await dispatchEmailsForTrigger('cron_expiry_day', { name: primaryUser.name || 'there', email: primaryUser.email, renewalUrl });
       sentExpired++;
     }
 

@@ -2346,6 +2346,7 @@ function EmailsPanel() {
   const [sending, setSending] = useState(false);
   const [previewTpl, setPreviewTpl] = useState(null); // template to show in preview modal
   const [loadingEdit, setLoadingEdit] = useState(false);
+  const [triggerVars, setTriggerVars] = useState({});
 
   // New email form state
   const [newName, setNewName] = useState('');
@@ -2360,7 +2361,10 @@ function EmailsPanel() {
   const [newMsg, setNewMsg] = useState('');
 
   function reload() {
-    fetch('/api/admin/email-templates').then(r => r.json()).then(d => setTemplates(d.templates || []));
+    fetch('/api/admin/email-templates').then(r => r.json()).then(d => {
+      setTemplates(d.templates || []);
+      if (d.triggerVariables) setTriggerVars(d.triggerVariables);
+    });
   }
   useEffect(reload, []);
 
@@ -2476,10 +2480,22 @@ function EmailsPanel() {
       </div>
 
       {/* Editable metadata for all templates */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-        <div style={s.fieldGroup}><label style={s.label}>Name</label><input style={s.input} value={editing.name || ''} onChange={e => setEditing(p => ({ ...p, name: e.target.value }))} /></div>
-        <div style={s.fieldGroup}><label style={s.label}>Recipient</label><input style={s.input} value={editing.recipient || ''} onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))} placeholder="e.g. Account owner" /></div>
-      </div>
+      {(() => {
+        const vars = triggerVars[editing.trigger] || [];
+        const varHint = vars.length ? <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Available: {vars.map(v => `{{${v}}}`).join(', ')}</p> : null;
+        return (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <div style={s.fieldGroup}><label style={s.label}>Name</label><input style={s.input} value={editing.name || ''} onChange={e => setEditing(p => ({ ...p, name: e.target.value }))} /></div>
+              <div style={s.fieldGroup}>
+                <label style={s.label}>Recipient</label>
+                <input style={s.input} value={editing.recipient || ''} onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))} placeholder="email address or {{variable}}" />
+                {varHint}
+              </div>
+            </div>
+          </>
+        );
+      })()}
       <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={editing.description || ''} onChange={e => setEditing(p => ({ ...p, description: e.target.value }))} /></div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
         <div style={s.fieldGroup}>
@@ -2504,6 +2520,7 @@ function EmailsPanel() {
           <button type="button" style={{ padding: '4px 12px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={() => setPreviewTpl({ ...editing })}>Preview</button>
         </div>
         <textarea style={{ ...s.textarea, minHeight: 340, fontFamily: 'monospace', fontSize: '0.82rem' }} value={editing.html_body} onChange={e => setEditing(p => ({ ...p, html_body: e.target.value }))} />
+        {(() => { const vars = triggerVars[editing.trigger] || []; return vars.length ? <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Available variables: {vars.map(v => `{{${v}}}`).join(', ')}</p> : null; })()}
       </div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 24 }}>
         <button style={s.btn} onClick={saveTemplate} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
@@ -2580,7 +2597,11 @@ function EmailsPanel() {
         </div>
       )}
       <div style={s.fieldGroup}><label style={s.label}>Subject *</label><input style={s.input} value={newSubject} onChange={e => setNewSubject(e.target.value)} /></div>
-      <div style={s.fieldGroup}><label style={s.label}>HTML Body *</label><textarea style={{ ...s.textarea, minHeight: 300, fontFamily: 'monospace', fontSize: '0.82rem' }} value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Full HTML email body. Use {{variable}} for dynamic values." /></div>
+      <div style={s.fieldGroup}>
+        <label style={s.label}>HTML Body *</label>
+        <textarea style={{ ...s.textarea, minHeight: 300, fontFamily: 'monospace', fontSize: '0.82rem' }} value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Full HTML email body. Use {{variable}} for dynamic values." />
+        {(() => { const vars = triggerVars[newTrigger] || []; return vars.length ? <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Available variables: {vars.map(v => `{{${v}}}`).join(', ')}</p> : null; })()}
+      </div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <button style={s.btn} onClick={createEmail} disabled={newSaving}>{newSaving ? 'Creating…' : 'Create Email'}</button>
         {newMsg && <span style={{ fontSize: '0.85rem', color: newMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{newMsg}</span>}

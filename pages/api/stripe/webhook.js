@@ -1,7 +1,6 @@
 import Stripe from 'stripe';
-import { Resend } from 'resend';
 import { dbInsert, dbPatch, dbGet, dbQuery } from '../../../lib/supabase';
-import { getEmailTemplate, renderTemplate } from '../../../lib/emailTemplates';
+import { dispatchEmailsForTrigger } from '../../../lib/emailTemplates';
 
 // Disable Next.js body parsing — Stripe needs the raw body for signature verification
 export const config = { api: { bodyParser: false } };
@@ -93,41 +92,22 @@ export default async function handler(req, res) {
     console.error('[stripe/webhook] purchase record failed:', err);
   }
 
-  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-
-  // ── Step 4: Buyer confirmation email ─────────────────────────────────────
-  if (resend && email) {
-    const includedNote = isCombo
-      ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px"><p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">AI Tools included with your purchase</p><p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment and created your account, you'll have access to the Role Alignment Analyzer, Job Description Analyzer, Career Guidance, and your profile-matched AI Companion.</p></div>`
-      : `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px"><p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">Library &amp; Insights included</p><p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment, you'll have access to your tertiary support library and a curated feed of insights in your dashboard.</p></div>`;
-    const tpl = await getEmailTemplate('buyer_confirmation');
-    const html = renderTemplate(tpl.html_body, { name: name || 'there', assessmentUrl, includedNote });
-    resend.emails.send({
-      from: 'Curio <hello@choosecurio.com>',
-      to: email,
-      subject: tpl.subject,
-      html,
-    }).catch(err => console.error('[stripe/webhook] buyer email failed:', err));
-  }
-
-  // ── Step 5: Internal notification email ───────────────────────────────────
-  if (resend) {
-    const productLabel = isCombo ? 'Assessment + AI Tools' : 'Assessment';
-    const internalTpl = await getEmailTemplate('internal_purchase');
-    const internalHtml = renderTemplate(internalTpl.html_body, {
-      name: name || '—', email: email || '—', productLabel,
-      amountPaid: `$${amountPaid.toFixed(2)}`, engagementId,
-      grantedTools: grantedTools.join(', '), assessmentUrl,
-      time: `${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET`,
-    });
-    const internalSubject = renderTemplate(internalTpl.subject, { productLabel, name: name || '—' });
-    resend.emails.send({
-      from: 'Curio <hello@choosecurio.com>',
-      to: 'hello@choosecurio.com',
-      subject: internalSubject,
-      html: internalHtml,
-    }).catch(err => console.error('[stripe/webhook] notification email failed:', err));
-  }
+  // ── Step 4 & 5: Buyer confirmation + internal notification ──────────────
+  const includedNote = isCombo
+    ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px"><p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">AI Tools included with your purchase</p><p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment and created your account, you'll have access to the Role Alignment Analyzer, Job Description Analyzer, Career Guidance, and your profile-matched AI Companion.</p></div>`
+    : `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px"><p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">Library &amp; Insights included</p><p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment, you'll have access to your tertiary support library and a curated feed of insights in your dashboard.</p></div>`;
+  const productLabel = isCombo ? 'Assessment + AI Tools' : 'Assessment';
+  dispatchEmailsForTrigger('stripe_purchase', {
+    name: name || 'there',
+    buyer_email: email || '',
+    productLabel,
+    amountPaid: `$${amountPaid.toFixed(2)}`,
+    engagementId,
+    grantedTools: grantedTools.join(', '),
+    assessmentUrl,
+    time: `${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET`,
+    includedNote,
+  });
 
   // ── Step 6: Notion Pipeline entry ─────────────────────────────────────────
   if (process.env.NOTION_API_KEY) {
@@ -153,17 +133,9 @@ async function handleRenewal(session, res) {
     }));
 
     if (process.env.RESEND_API_KEY && buyer_email) {
-      const { Resend } = await import('resend');
-      const { getEmailTemplate: getTpl, renderTemplate: render } = await import('../../../lib/emailTemplates');
-      const resend = new Resend(process.env.RESEND_API_KEY);
+      const { dispatchEmailsForTrigger: dispatch } = await import('../../../lib/emailTemplates');
       const newExpiryDate = new Date(newExpiry).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      const tpl = await getTpl('renewal_confirmation');
-      resend.emails.send({
-        from: 'Curio <hello@choosecurio.com>',
-        to: buyer_email,
-        subject: tpl.subject,
-        html: render(tpl.html_body, { name: buyer_name || 'there', newExpiryDate }),
-      }).catch(err => console.error('[renewal] confirmation email failed:', err));
+      dispatch('renewal_complete', { name: buyer_name || 'there', buyer_email, newExpiryDate });
     }
 
     return res.status(200).json({ received: true, renewed: true });
