@@ -67,6 +67,7 @@ const NAV = [
   ]},
   { section: 'MANAGE', items: [
     { id: 'accounts',     label: 'Accounts' },
+    { id: 'emails',       label: 'Emails' },
   ]},
   { section: 'LANGUAGE TOOLS', items: [
     { id: 'detection-feedback', label: 'Detection Feedback' },
@@ -199,14 +200,39 @@ function ToolAccessField({ grantedTools, setGrantedTools }) {
 
 // ─── Generate Panel ───────────────────────────────────────────────────────────
 
+function DurationField({ durationMode, setDurationMode, customExpiresAt, setCustomExpiresAt }) {
+  const pillStyle = (active) => ({ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: active ? 600 : 500, cursor: 'pointer', background: active ? '#0F172A' : '#F1F5F9', color: active ? '#fff' : '#64748B', transition: 'all 0.15s' });
+  return (
+    <div style={s.fieldGroup}>
+      <label style={s.label}>Access Duration</label>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        {[{ id: '1mo', label: '1 Month' }, { id: '1yr', label: '1 Year' }, { id: '2yr', label: '2 Years' }, { id: 'custom', label: 'Custom' }].map(opt => (
+          <button key={opt.id} type="button" style={pillStyle(durationMode === opt.id)} onClick={() => setDurationMode(opt.id)}>{opt.label}</button>
+        ))}
+        {durationMode === 'custom' && (
+          <input type="date" style={{ ...s.input, maxWidth: 180, margin: 0 }} value={customExpiresAt} onChange={e => setCustomExpiresAt(e.target.value)} />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function GeneratePanel({ prefillEngId }) {
   const [batchMode, setBatchMode] = useState('enterprise'); // 'individual' | 'enterprise'
   const [mode, setMode] = useState('named'); // 'named' | 'anonymous' (enterprise only)
   const [purpose, setPurpose] = useState('assessment');
   const [grantedTools, setGrantedTools] = useState(['assessment_tokens']);
   const [engagementId, setEngagementId] = useState(prefillEngId || '');
-  const [expiresAt, setExpiresAt] = useState('');
+  const [durationMode, setDurationMode] = useState('1yr');
+  const [customExpiresAt, setCustomExpiresAt] = useState('');
   const [participantText, setParticipantText] = useState('');
+
+  function resolvedExpiresAt() {
+    if (durationMode === '1mo') return new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    if (durationMode === '1yr') return new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
+    if (durationMode === '2yr') return new Date(Date.now() + 730 * 86400000).toISOString().slice(0, 10);
+    return customExpiresAt || undefined;
+  }
   const [anonCount, setAnonCount] = useState('');
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
@@ -231,7 +257,7 @@ function GeneratePanel({ prefillEngId }) {
     try {
       const autoEngId = `individual-${Date.now()}`;
       const participants = [{ name: indivName.trim() || '', email: indivEmail.trim() || '' }];
-      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: autoEngId, expires_at: expiresAt || undefined }) });
+      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: autoEngId, expires_at: resolvedExpiresAt() }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setIndivResult(data.tokens[0]);
@@ -258,7 +284,7 @@ function GeneratePanel({ prefillEngId }) {
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: engagementId.trim(), expires_at: expiresAt || undefined }) });
+      const res = await fetch('/api/tokens/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants, purpose, granted_tools: grantedTools, engagement_id: engagementId.trim(), expires_at: resolvedExpiresAt() }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setResults(data.tokens);
@@ -292,7 +318,7 @@ function GeneratePanel({ prefillEngId }) {
             <div style={s.fieldGroup}><label style={s.label}>Name (optional)</label><input style={s.input} value={indivName} onChange={e => setIndivName(e.target.value)} placeholder="Alex Smith" /></div>
             <div style={s.fieldGroup}><label style={s.label}>Email (optional)</label><input style={s.input} type="email" value={indivEmail} onChange={e => setIndivEmail(e.target.value)} placeholder="alex@example.com" /></div>
           </div>
-          <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={{ ...s.input, maxWidth: 200 }} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
+          <DurationField durationMode={durationMode} setDurationMode={setDurationMode} customExpiresAt={customExpiresAt} setCustomExpiresAt={setCustomExpiresAt} />
           {error && <p style={s.error}>{error}</p>}
           <button style={s.btn} onClick={generateIndividual} disabled={loading}>{loading ? 'Generating…' : 'Generate Link'}</button>
           {indivResult && (
@@ -322,7 +348,7 @@ function GeneratePanel({ prefillEngId }) {
           <div style={s.fieldGroup}><label style={s.label}>Purpose</label><select style={s.select} value={purpose} onChange={e => setPurpose(e.target.value)}><option value="assessment">Assessment</option><option value="fit">Role Analyzer</option><option value="jd">Job Description Analyzer</option><option value="career">Career Guidance</option></select></div>
           <ToolAccessField grantedTools={grantedTools} setGrantedTools={setGrantedTools} />
           <div style={s.fieldGroup}><label style={s.label}>Engagement ID</label><input style={s.input} value={engagementId} onChange={e => setEngagementId(e.target.value)} placeholder="e.g. acme-2026-q1" /></div>
-          <div style={s.fieldGroup}><label style={s.label}>Expiry Date (optional)</label><input style={s.input} type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
+          <DurationField durationMode={durationMode} setDurationMode={setDurationMode} customExpiresAt={customExpiresAt} setCustomExpiresAt={setCustomExpiresAt} />
           {mode === 'named' ? (
             <div style={s.fieldGroup}>
               <label style={s.label}>Participants — one per line: <code style={s.code}>Name, email, Company, Role</code></label>
@@ -1412,6 +1438,25 @@ function EditPanel({ account, onClose, onSave }) {
   const [addTokenMsg, setAddTokenMsg] = useState(null);
   const [users, setUsers] = useState(account.users || []);
   const [roleChanging, setRoleChanging] = useState(null);
+  const [profileChanging, setProfileChanging] = useState(false);
+  const [profileMsg, setProfileMsg] = useState('');
+  const [selectedProfile, setSelectedProfile] = useState(account.assessmentProfile || '');
+
+  async function updateProfile() {
+    if (!selectedProfile) return;
+    setProfileChanging(true); setProfileMsg('');
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/update-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newProfile: selectedProfile }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed');
+      setProfileMsg(`Updated to ${d.newProfile}${d.tertiaryChanged ? ' (licenses swapped)' : ''}`);
+    } catch (e) { setProfileMsg(`Error: ${e.message}`); }
+    finally { setProfileChanging(false); }
+  }
 
   async function loadTokens() {
     setTokenLoading(true); setTokenExpanded(true);
@@ -1533,6 +1578,28 @@ function EditPanel({ account, onClose, onSave }) {
           ))}
         </div>
       )}
+
+      {/* MindPrint™ Profile */}
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>MindPrint™ Profile</p>
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
+          {account.assessmentProfile ? (
+            <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: '#0F172A' }}>Current: <strong>{account.assessmentProfile}</strong></p>
+          ) : (
+            <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: '#94A3B8' }}>No profile on record.</p>
+          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select style={{ ...s.select, maxWidth: 200, margin: 0 }} value={selectedProfile} onChange={e => setSelectedProfile(e.target.value)}>
+              <option value="">— Select profile —</option>
+              {PROFILES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <button style={{ ...s.btn, padding: '8px 14px' }} onClick={updateProfile} disabled={profileChanging || !selectedProfile}>
+              {profileChanging ? 'Updating…' : 'Update Profile'}
+            </button>
+            {profileMsg && <span style={{ fontSize: '0.82rem', color: profileMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{profileMsg}</span>}
+          </div>
+        </div>
+      </div>
 
       {/* Token Pool */}
       <div style={{ marginBottom: 16 }}>
@@ -2213,6 +2280,359 @@ function MirrorTokensPanel() {
   );
 }
 
+// ─── Emails Panel ─────────────────────────────────────────────────────────────
+
+const TRIGGER_OPTIONS_CLIENT = [
+  { key: 'stripe_purchase',     label: 'Stripe purchase completed' },
+  { key: 'assessment_complete', label: 'Assessment completed' },
+  { key: 'account_created',     label: 'Account created / signup' },
+  { key: 'renewal_complete',    label: 'Renewal payment completed' },
+  { key: 'cron_30_day_expiry',  label: 'Cron — 30 days before expiry' },
+  { key: 'cron_expiry_day',     label: 'Cron — expiry day' },
+  { key: 'cron_daily',          label: 'Cron — daily (custom condition)' },
+  { key: 'manual',              label: 'Manual only' },
+];
+
+function statusBadge(t) {
+  if (t.is_custom) return { label: 'Custom', bg: '#EFF6FF', color: '#1D4ED8' };
+  if (t.customized) return { label: 'Customized', bg: '#D1FAE5', color: '#065F46' };
+  return { label: 'Default', bg: '#F1F5F9', color: '#64748B' };
+}
+
+function MetaRow({ label, value }) {
+  if (!value) return null;
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: '0.85rem' }}>
+      <span style={{ color: '#94A3B8', minWidth: 90 }}>{label}</span>
+      <span style={{ color: '#0F172A', fontWeight: 500 }}>{value}</span>
+    </div>
+  );
+}
+
+function EmailsPanel() {
+  const [templates, setTemplates] = useState([]);
+  const [view, setView] = useState('list'); // 'list' | 'edit' | 'new' | 'send'
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [testTo, setTestTo] = useState('');
+  const [testMsg, setTestMsg] = useState('');
+  const [saveMsg, setSaveMsg] = useState('');
+  const [sendTo, setSendTo] = useState('');
+  const [sendMsg, setSendMsg] = useState('');
+  const [sending, setSending] = useState(false);
+  const [previewTpl, setPreviewTpl] = useState(null); // template to show in preview modal
+  const [loadingEdit, setLoadingEdit] = useState(false);
+
+  // New email form state
+  const [newName, setNewName] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newRecipient, setNewRecipient] = useState('');
+  const [newSendType, setNewSendType] = useState('manual');
+  const [newTrigger, setNewTrigger] = useState('manual');
+  const [newSchedule, setNewSchedule] = useState('');
+  const [newSubject, setNewSubject] = useState('');
+  const [newBody, setNewBody] = useState('');
+  const [newSaving, setNewSaving] = useState(false);
+  const [newMsg, setNewMsg] = useState('');
+
+  function reload() {
+    fetch('/api/admin/email-templates').then(r => r.json()).then(d => setTemplates(d.templates || []));
+  }
+  useEffect(reload, []);
+
+  async function openEdit(t) {
+    setLoadingEdit(true);
+    setSaveMsg(''); setTestMsg(''); setTestTo('');
+    try {
+      const res = await fetch(`/api/admin/email-templates/${t.key}`);
+      const d = await res.json();
+      setEditing({ ...t, ...d, subject: d.subject || '', html_body: d.html_body || '' });
+    } catch (_) {
+      setEditing({ ...t, subject: t.subject || '', html_body: t.html_body || '' });
+    }
+    setLoadingEdit(false);
+    setView('edit');
+  }
+  function openSend(t) {
+    setEditing(t); setSendTo(''); setSendMsg('');
+    setView('send');
+  }
+  function back() { setView('list'); setEditing(null); setSaveMsg(''); setTestMsg(''); setSendMsg(''); }
+
+  async function saveTemplate() {
+    setSaving(true); setSaveMsg('');
+    try {
+      const body = {
+        subject: editing.subject, html_body: editing.html_body,
+        name: editing.name, description: editing.description,
+        recipient: editing.recipient, trigger: editing.trigger,
+        schedule: editing.schedule, send_type: editing.send_type,
+      };
+      const res = await fetch(`/api/admin/email-templates/${editing.key}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setSaveMsg('Saved ✓');
+      reload();
+    } catch (e) { setSaveMsg(`Error: ${e.message}`); }
+    finally { setSaving(false); }
+  }
+
+  async function sendTest() {
+    if (!testTo) return;
+    setTestMsg('Sending…');
+    try {
+      const res = await fetch(`/api/admin/email-templates/${editing.key}/test`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: testTo }),
+      });
+      const d = await res.json();
+      setTestMsg(res.ok ? 'Sent ✓' : `Error: ${d.error}`);
+    } catch (e) { setTestMsg(`Error: ${e.message}`); }
+  }
+
+  async function manualSend() {
+    if (!sendTo) return;
+    setSending(true); setSendMsg('');
+    try {
+      const res = await fetch(`/api/admin/email-templates/${editing.key}/send`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: sendTo.split(',').map(s => s.trim()).filter(Boolean) }),
+      });
+      const d = await res.json();
+      setSendMsg(res.ok ? `Sent to ${d.sent_to.join(', ')} ✓` : `Error: ${d.error}`);
+    } catch (e) { setSendMsg(`Error: ${e.message}`); }
+    finally { setSending(false); }
+  }
+
+  async function createEmail() {
+    if (!newName || !newSubject || !newBody) { setNewMsg('Name, subject, and body are required.'); return; }
+    setNewSaving(true); setNewMsg('');
+    try {
+      const res = await fetch('/api/admin/email-templates', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName, description: newDesc, recipient: newRecipient,
+          send_type: newSendType, trigger: newTrigger,
+          schedule: newSchedule || (newSendType === 'manual' ? 'Manual' : ''),
+          subject: newSubject, html_body: newBody,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setNewMsg('Created ✓');
+      reload();
+      setTimeout(() => { setView('list'); setNewName(''); setNewDesc(''); setNewRecipient(''); setNewSendType('manual'); setNewTrigger('manual'); setNewSchedule(''); setNewSubject(''); setNewBody(''); setNewMsg(''); }, 800);
+    } catch (e) { setNewMsg(`Error: ${e.message}`); }
+    finally { setNewSaving(false); }
+  }
+
+  const pillStyle = active => ({ padding: '5px 12px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: active ? 600 : 500, cursor: 'pointer', background: active ? '#0F172A' : '#F1F5F9', color: active ? '#fff' : '#64748B' });
+
+  // ── Edit view ──────────────────────────────────────────────────────────────
+  if (view === 'edit' && editing) return (
+    <section style={s.panel}>
+      {previewTpl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setPreviewTpl(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, width: '90vw', maxWidth: 700, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{previewTpl.name}</div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>Subject: {previewTpl.subject || '(no subject)'}</div>
+              </div>
+              <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748B', lineHeight: 1 }} onClick={() => setPreviewTpl(null)}>✕</button>
+            </div>
+            <iframe srcDoc={previewTpl.html_body || '<p style="padding:24px;color:#94A3B8;font-family:sans-serif">No HTML body saved yet.</p>'} style={{ flex: 1, border: 'none', minHeight: 480 }} title="Email preview" sandbox="allow-same-origin" />
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={back}>← Back</button>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>{editing.name}</h2>
+        {(() => { const b = statusBadge(editing); return <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, background: b.bg, color: b.color }}>{b.label}</span>; })()}
+      </div>
+
+      {/* Editable metadata for all templates */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <div style={s.fieldGroup}><label style={s.label}>Name</label><input style={s.input} value={editing.name || ''} onChange={e => setEditing(p => ({ ...p, name: e.target.value }))} /></div>
+        <div style={s.fieldGroup}><label style={s.label}>Recipient</label><input style={s.input} value={editing.recipient || ''} onChange={e => setEditing(p => ({ ...p, recipient: e.target.value }))} placeholder="e.g. Account owner" /></div>
+      </div>
+      <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={editing.description || ''} onChange={e => setEditing(p => ({ ...p, description: e.target.value }))} /></div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Send type</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {['manual','automated'].map(v => <button key={v} type="button" style={pillStyle(editing.send_type === v)} onClick={() => setEditing(p => ({ ...p, send_type: v }))}>{v === 'manual' ? 'Manual' : 'Automated'}</button>)}
+          </div>
+        </div>
+        <div style={s.fieldGroup}>
+          <label style={s.label}>Trigger</label>
+          <select style={s.select} value={editing.trigger || 'manual'} onChange={e => setEditing(p => ({ ...p, trigger: e.target.value, trigger_label: TRIGGER_OPTIONS_CLIENT.find(t => t.key === e.target.value)?.label || e.target.value }))}>
+            {TRIGGER_OPTIONS_CLIENT.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+          </select>
+        </div>
+        <div style={s.fieldGroup}><label style={s.label}>Schedule / timing</label><input style={s.input} value={editing.schedule || ''} onChange={e => setEditing(p => ({ ...p, schedule: e.target.value }))} placeholder="e.g. Immediate" /></div>
+      </div>
+
+      <div style={s.fieldGroup}><label style={s.label}>Subject</label><input style={s.input} value={editing.subject} onChange={e => setEditing(p => ({ ...p, subject: e.target.value }))} /></div>
+      <div style={s.fieldGroup}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <label style={{ ...s.label, marginBottom: 0 }}>HTML Body</label>
+          <button type="button" style={{ padding: '4px 12px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={() => setPreviewTpl({ ...editing })}>Preview</button>
+        </div>
+        <textarea style={{ ...s.textarea, minHeight: 340, fontFamily: 'monospace', fontSize: '0.82rem' }} value={editing.html_body} onChange={e => setEditing(p => ({ ...p, html_body: e.target.value }))} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 24 }}>
+        <button style={s.btn} onClick={saveTemplate} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+        {saveMsg && <span style={{ fontSize: '0.85rem', color: saveMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{saveMsg}</span>}
+      </div>
+
+      <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div>
+          <p style={{ ...s.label, marginBottom: 8 }}>Send Test Email <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 400 }}>(uses saved body, adds [TEST] prefix)</span></p>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input style={{ ...s.input, maxWidth: 260, margin: 0 }} type="email" placeholder="test@example.com" value={testTo} onChange={e => setTestTo(e.target.value)} />
+            <button style={{ ...s.btn, padding: '8px 16px' }} onClick={sendTest}>Send Test</button>
+            {testMsg && <span style={{ fontSize: '0.85rem', color: testMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{testMsg}</span>}
+          </div>
+        </div>
+        {editing.send_type === 'manual' && (
+          <div>
+            <p style={{ ...s.label, marginBottom: 8 }}>Send Now <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 400 }}>(comma-separated addresses)</span></p>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input style={{ ...s.input, maxWidth: 360, margin: 0 }} type="text" placeholder="alice@co.com, bob@co.com" value={sendTo} onChange={e => setSendTo(e.target.value)} />
+              <button style={{ ...s.btn, padding: '8px 16px', background: '#1D4ED8' }} onClick={manualSend} disabled={sending}>{sending ? 'Sending…' : 'Send'}</button>
+              {sendMsg && <span style={{ fontSize: '0.85rem', color: sendMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{sendMsg}</span>}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+
+  // ── Send view (from list) ──────────────────────────────────────────────────
+  if (view === 'send' && editing) return (
+    <section style={s.panel}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={back}>← Back</button>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>Send — {editing.name}</h2>
+      </div>
+      <p style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: 20 }}>Enter recipient email addresses (comma-separated) and click Send. The saved template body will be used.</p>
+      <div style={s.fieldGroup}><label style={s.label}>To (comma-separated)</label><input style={s.input} type="text" placeholder="alice@co.com, bob@co.com" value={sendTo} onChange={e => setSendTo(e.target.value)} /></div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <button style={{ ...s.btn, background: '#1D4ED8' }} onClick={manualSend} disabled={sending}>{sending ? 'Sending…' : 'Send Email'}</button>
+        {sendMsg && <span style={{ fontSize: '0.85rem', color: sendMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{sendMsg}</span>}
+      </div>
+    </section>
+  );
+
+  // ── New email view ─────────────────────────────────────────────────────────
+  if (view === 'new') return (
+    <section style={s.panel}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={() => setView('list')}>← Back</button>
+        <h2 style={{ ...s.panelTitle, marginBottom: 0 }}>New Email</h2>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <div style={s.fieldGroup}><label style={s.label}>Name *</label><input style={s.input} value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Welcome Back Email" /></div>
+        <div style={s.fieldGroup}><label style={s.label}>Recipient</label><input style={s.input} value={newRecipient} onChange={e => setNewRecipient(e.target.value)} placeholder="e.g. Account owner" /></div>
+      </div>
+      <div style={s.fieldGroup}><label style={s.label}>Description</label><input style={s.input} value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="What this email does and when it's used" /></div>
+      <div style={s.fieldGroup}>
+        <label style={s.label}>Send type</label>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['manual','automated'].map(v => <button key={v} type="button" style={pillStyle(newSendType === v)} onClick={() => { setNewSendType(v); if (v === 'manual') setNewTrigger('manual'); }}>{v === 'manual' ? 'Manual' : 'Automated'}</button>)}
+        </div>
+        <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#94A3B8' }}>{newSendType === 'manual' ? 'You send this email yourself from the admin UI.' : 'Fires automatically when a trigger event occurs. Note: new event triggers beyond the list below require a one-time code addition.'}</p>
+      </div>
+      {newSendType === 'automated' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <div style={s.fieldGroup}>
+            <label style={s.label}>Trigger</label>
+            <select style={s.select} value={newTrigger} onChange={e => setNewTrigger(e.target.value)}>
+              {TRIGGER_OPTIONS_CLIENT.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </div>
+          <div style={s.fieldGroup}><label style={s.label}>Schedule / timing</label><input style={s.input} value={newSchedule} onChange={e => setNewSchedule(e.target.value)} placeholder="e.g. Immediate, Daily 12:00 UTC" /></div>
+        </div>
+      )}
+      <div style={s.fieldGroup}><label style={s.label}>Subject *</label><input style={s.input} value={newSubject} onChange={e => setNewSubject(e.target.value)} /></div>
+      <div style={s.fieldGroup}><label style={s.label}>HTML Body *</label><textarea style={{ ...s.textarea, minHeight: 300, fontFamily: 'monospace', fontSize: '0.82rem' }} value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Full HTML email body. Use {{variable}} for dynamic values." /></div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <button style={s.btn} onClick={createEmail} disabled={newSaving}>{newSaving ? 'Creating…' : 'Create Email'}</button>
+        {newMsg && <span style={{ fontSize: '0.85rem', color: newMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{newMsg}</span>}
+      </div>
+    </section>
+  );
+
+  // ── List view ──────────────────────────────────────────────────────────────
+  return (
+    <section style={s.panel}>
+      {previewTpl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setPreviewTpl(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, width: '90vw', maxWidth: 700, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{previewTpl.name}</div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>Subject: {previewTpl.subject || '(no subject)'}</div>
+              </div>
+              <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748B', lineHeight: 1 }} onClick={() => setPreviewTpl(null)}>✕</button>
+            </div>
+            <iframe srcDoc={previewTpl.html_body || '<p style="padding:24px;color:#94A3B8;font-family:sans-serif">No HTML body saved yet.</p>'} style={{ flex: 1, border: 'none', minHeight: 480 }} title="Email preview" sandbox="allow-same-origin" />
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <h2 style={{ ...s.panelTitle, marginBottom: 4 }}>Emails</h2>
+          <p style={{ color: '#64748B', fontSize: '0.875rem', margin: 0 }}>All transactional emails. Edit content, view recipients and triggers, or send manual emails without leaving the admin.</p>
+        </div>
+        <button style={s.btn} onClick={() => setView('new')}>+ New Email</button>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Email', 'Recipient', 'Trigger', 'Schedule', 'Status', ''].map(h => (
+                <th key={h} style={{ ...s.th, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {templates.map(t => {
+              const badge = statusBadge(t);
+              return (
+                <tr key={t.key} style={s.tr}>
+                  <td style={s.td}>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0F172A' }}>{t.name}</div>
+                    {t.description && <div style={{ fontSize: '0.78rem', color: '#94A3B8', marginTop: 2 }}>{t.description}</div>}
+                  </td>
+                  <td style={{ ...s.td, fontSize: '0.82rem', color: '#475569', maxWidth: 160 }}>{t.recipient || '—'}</td>
+                  <td style={{ ...s.td, fontSize: '0.82rem', color: '#475569', maxWidth: 180 }}>{t.trigger_label || '—'}</td>
+                  <td style={{ ...s.td, fontSize: '0.82rem', color: '#475569', whiteSpace: 'nowrap' }}>{t.schedule || '—'}</td>
+                  <td style={s.td}>
+                    <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.73rem', fontWeight: 600, background: badge.bg, color: badge.color, whiteSpace: 'nowrap' }}>
+                      {badge.label}
+                    </span>
+                  </td>
+                  <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button style={s.sendLinkBtn} onClick={() => openEdit(t)} disabled={loadingEdit}>{loadingEdit ? '…' : 'Edit'}</button>
+                      <button style={{ padding: '4px 10px', background: '#F8FAFC', color: '#475569', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }} onClick={async () => { const res = await fetch(`/api/admin/email-templates/${t.key}`); const d = await res.json(); setPreviewTpl({ ...t, ...d }); }}>Preview</button>
+                      {t.send_type === 'manual' && (t.subject || t.html_body) && (
+                        <button style={{ ...s.sendProfileBtn, background: '#EFF6FF', color: '#1D4ED8' }} onClick={() => openSend(t)}>Send</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
@@ -2258,6 +2678,7 @@ export default function AdminDashboard() {
           {active === 'engagements' && <EngagementsPanel onGenerateMore={handleGenerateMore} />}
           {active === 'career' && <CareerReportsSection />}
           {active === 'accounts' && <AccountsSection />}
+          {active === 'emails' && <EmailsPanel />}
           {active === 'detection-feedback' && <DetectionFeedbackPanel />}
           {active === 'mirror-tokens' && <MirrorTokensPanel />}
           {active === 'settings' && (

@@ -151,7 +151,7 @@ export default function Manual() {
               <span className="section-path">/admin → Tokens</span>
               <span className="badge badge-admin">Admin</span>
             </div>
-            <Card title="Individual Access">Creates a single token for one person. Fields: name, email, purpose (assessment or career), tier (basic/premium), tool access, engagement ID, and optional expiry. The token URL is shown immediately with a "Send Link" button to email it directly from the admin.</Card>
+            <Card title="Individual Access">Creates a single token for one person. Fields: name, email, purpose (assessment or career), tier (basic/premium), tool access, engagement ID, and access duration. The duration selector offers four options: <strong>1 Month</strong>, <strong>1 Year</strong> (default), <strong>2 Years</strong>, or <strong>Custom</strong> (date picker). The token URL is shown immediately with a "Send Link" button to email it directly from the admin.</Card>
             <Card title="Tool access: Companion / Library — matches their profile">The tool access checklist includes two special options — <strong>Companion — matches their profile</strong> and <strong>Client Library — matches their profile</strong> — alongside the specific Companion and Resources-collection checkboxes. Check these instead of guessing a profile upfront: the participant hasn't taken the assessment yet at token-creation time, so there's nothing to pre-select. They're stored on the token as-is, then resolved into the real Companion or collection license (e.g. tertiary HOW → Precision Companion, Collection A) the moment the participant's assessment completes — in <code>pages/api/auth/signup.js</code> for a brand-new account, or <code>pages/api/portal/complete-assessment.js</code> if they're already logged in and retaking. The specific per-Companion/per-collection checkboxes remain for building demo accounts, where a profile is deliberately chosen ahead of time.</Card>
             <Card title="Enterprise Batch">Two modes: <strong>Named Participants</strong> — paste a list (Name, Email, Company, Role — one per line); <strong>Anonymous Batch</strong> — enter a count and generate N blank tokens for an engagement. Participants are assigned when the owner sends links from their portal.</Card>
             <Card title="Status Panel">Look up all tokens for an engagement ID. Shows each participant's name, email, status (sent / completed), and their MindPrint™ profile type once complete. Includes a "Send Link" panel to email individual tokens and a "Send Profile" button to email the completed results page.</Card>
@@ -194,15 +194,30 @@ export default function Manual() {
             <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, and last login. Filterable by type, tier, and name/email search.</Card>
             <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, extra Resources collections beyond the free default) at creation time.</Card>
             <Card title="Edit Account">
-              Click <strong>Edit</strong> on any account to expand a panel with four sections:
+              Click <strong>Edit</strong> on any account to expand a panel with five sections:
               <ul>
                 <li><strong>Tier & Licenses</strong> — change tier, add or remove licenses with quantity and expiry.</li>
                 <li><strong>Users & Roles</strong> — see all portal users on the account with their current role. Toggle any user between Owner and Member instantly.</li>
+                <li><strong>MindPrint™ Profile</strong> — shows the account's current assessed profile. Use the dropdown and "Update Profile" button to manually correct it. If the new profile has a different tertiary orientation, the companion and library licenses are automatically swapped to match.</li>
                 <li><strong>Token Pool</strong> — click "Show ▼" to see Total / Available / Sent / Completed counts, a scrollable token table, and a green <strong>Add Tokens</strong> form. Enter a quantity and optional engagement label to release tokens to that account.</li>
                 <li><strong>Purchase History</strong> — Stripe purchase records linked to this account.</li>
               </ul>
             </Card>
             <div className="info-block"><strong>To give an enterprise account their token allocation:</strong> Edit the account → Token Pool → enter quantity → click "Add Tokens". Those tokens immediately appear in the owner's Assessment Tokens page in the portal.</div>
+          </section>
+
+          <section className="section" id="admin-emails">
+            <div className="section-header">
+              <h2 className="section-title">Emails</h2>
+              <span className="section-path">/admin → Emails</span>
+              <span className="badge badge-admin">Admin</span>
+            </div>
+            <Card title="Email List">All transactional and custom emails in one table. Columns: <strong>Email</strong> (name + description), <strong>Recipient</strong> (who gets it), <strong>Trigger</strong> (what event fires it), <strong>Schedule</strong> (when/how often), <strong>Status</strong> (Default / Customized / Custom). Built-in emails show Default until their body is saved; custom emails you created always show Custom.</Card>
+            <Card title="Edit View">Click <strong>Edit</strong> on any row. Built-in emails show a read-only metadata summary (recipient, trigger, schedule, send type) above the subject and HTML body editor. Custom emails allow all fields to be edited — name, recipient, trigger, schedule, send type, subject, and body. Save with the <strong>Save</strong> button. Variables use double-braces: <code>{'{{name}}'}</code>, <code>{'{{renewalUrl}}'}</code>.</Card>
+            <Card title="Send Test Email">In the edit view, enter any address and click <strong>Send Test</strong>. Delivers immediately with a <strong>[TEST]</strong> prefix in the subject. Requires a saved custom body.</Card>
+            <Card title="Send Now (Manual Emails)">Manual emails show a <strong>Send Now</strong> field in the edit view and a <strong>Send</strong> button in the list. Enter one or more comma-separated email addresses and send immediately. Useful for announcements, follow-ups, or one-off outreach without leaving the admin panel.</Card>
+            <Card title="Create New Email">Click <strong>+ New Email</strong> to open the creation form. Fields: name, recipient description, description, send type (Manual or Automated), trigger (if automated), schedule/timing, subject, and HTML body. Automated emails fire when their trigger event occurs — currently supported triggers map to existing cron jobs and webhook events. A new trigger type (e.g. a new lifecycle event) requires a one-time code addition to wire it in, but once added it appears in the trigger dropdown for future emails.</Card>
+            <div className="info-block">All emails — built-in and custom — are stored in the <code>email_templates</code> Supabase table. Built-in emails fall back to the hardcoded defaults in <code>lib/emailTemplates.js</code> if no saved body exists. Custom emails are flagged <code>is_custom = true</code> and are fully DB-driven.</div>
           </section>
 
           <section className="section" id="admin-cleanup">
@@ -249,6 +264,28 @@ export default function Manual() {
             <Card title="isIndividual and the nav"><code>isIndividual</code> also reaches <code>components/PortalSidebar.js</code>, where it hides My Team / Assessment Tokens / Assessment Results / Analytics for members without an assessment-tied reason to see them. It never hides them for owners, even once the owner completes their own assessment (which is what flips <code>isIndividual</code> true) — an owner's need to manage their team's tokens, results, and analytics has nothing to do with whether they've personally taken the assessment.</Card>
             <Card title="My Team accordion">Assessment Tokens, Assessment Results, and Analytics render as an indented, collapsible group under <strong>My Team</strong> rather than three separate top-level tabs. Clicking the label navigates to My Team as normal; clicking the chevron toggles the group open or closed without navigating. It auto-opens when the active page is My Team or one of the three grouped pages. A member who can see Assessment Results but not My Team (no owner access) still gets it as its own top-level tab, unchanged from before this redesign — the nesting only happens when My Team itself is visible.</Card>
             <Card title="Your Communication Field Guide">A card just below the profile hero, shown to any user with a completed assessment, no extra license required. <strong>View Field Guide →</strong> opens a signed URL for the PDF matching the user's own profile (e.g. WHY-WHAT), fetched via <code>/api/portal/library-file?profile=&lt;type&gt;</code>.</Card>
+          </section>
+
+          <section className="section" id="portal-renewal">
+            <div className="section-header">
+              <h2 className="section-title">License Expiry &amp; Renewal</h2>
+              <span className="section-path">/portal/dashboard</span>
+            </div>
+            <Card title="Expiry Banners">The portal dashboard checks the earliest active license expiry for the account on every load. Two banners may appear at the top of the main content area:
+              <ul>
+                <li><strong>Amber banner</strong> — shown when the license expires within 30 days. Displays the exact expiry date and a "Renew Now →" button.</li>
+                <li><strong>Red banner</strong> — shown when all licenses have expired (no active licenses remain). Displays a "Renew Access →" button. Tool access is suspended until renewed.</li>
+              </ul>
+            </Card>
+            <Card title="Renewal Flow">Clicking either renewal button calls <code>/api/portal/renewal-checkout</code>, which creates a Stripe Checkout session for the account's current tier (basic or premium — same price as the original purchase). On payment success, the Stripe webhook extends all account_licenses <code>expires_at</code> values by one year from their current expiry date (not from today), so time is never lost. A renewal confirmation email is sent to the buyer.</Card>
+            <Card title="Automated Reminder Emails">A Vercel Cron job (<code>/api/cron/renewal-reminders</code>, runs daily at 12:00 UTC) sends two types of reminders:
+              <ul>
+                <li>30-day warning email to the primary account user when a license expires in 29–31 days.</li>
+                <li>Expiry notice email on the day the license expires (within the last 24 hours).</li>
+              </ul>
+              Emails are sent once per account, using the earliest expiry across all licenses.
+            </Card>
+            <Card title="Default Expiry">All newly created accounts (self-serve purchases and admin-generated tokens) are assigned a one-year expiry by default. The admin token generator offers 1 Month, 1 Year (default), 2 Years, or Custom.</Card>
           </section>
 
           <section className="section" id="portal-team">
