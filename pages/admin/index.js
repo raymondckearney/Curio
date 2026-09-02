@@ -2323,6 +2323,286 @@ function statusBadge(t) {
   return { label: 'Default', bg: '#F1F5F9', color: '#64748B' };
 }
 
+// ── Email block editor helpers ────────────────────────────────────────────────
+
+const BLOCKS_PREFIX = 'BLOCKS:';
+
+function serializeBlocks(blocks) { return BLOCKS_PREFIX + JSON.stringify(blocks); }
+
+function tryParseBlocks(value) {
+  if (value && value.startsWith(BLOCKS_PREFIX)) {
+    try { return JSON.parse(value.slice(BLOCKS_PREFIX.length)); } catch {}
+  }
+  return null;
+}
+
+const EMAIL_FOOTER_HTML = `<p style="margin:24px 0 0;color:#64748B;font-size:14px">Questions? Reply to this email or contact <a href="mailto:hello@choosecurio.com" style="color:#059669;text-decoration:none">hello@choosecurio.com</a>.</p>`;
+
+function compileBlocksToBodyHtml(blocks) {
+  return (blocks || []).map(b => {
+    switch (b.type) {
+      case 'paragraph':
+        return `<p style="margin:0 0 16px;line-height:1.7;color:#0F172A;font-size:15px">${(b.content || '').replace(/\n/g, '<br>')}</p>`;
+      case 'button':
+        return `<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px"><tr><td style="border-radius:8px;background:${b.color || '#059669'}"><a href="${b.url || '#'}" style="display:inline-block;padding:13px 28px;background:${b.color || '#059669'};color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;font-family:Helvetica,Arial,sans-serif">${b.text || 'Click Here'}</a></td></tr></table>`;
+      case 'callout':
+        return `<div style="background:${b.bg || '#F0FDF4'};border:1px solid ${b.border || '#BBF7D0'};border-radius:8px;padding:16px 20px;margin-bottom:24px">${b.title ? `<p style="margin:0 0 6px;font-weight:600;color:${b.textColor || '#065F46'};font-size:0.9rem">${b.title}</p>` : ''}<p style="margin:0;line-height:1.6;color:${b.textColor || '#065F46'};font-size:0.875rem">${b.content || ''}</p></div>`;
+      case 'data_table':
+        return `<table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-bottom:24px">${(b.rows || []).map(r => `<tr><td style="padding:6px 0;color:#64748B;font-size:14px;width:140px">${r.label}</td><td style="padding:6px 0;color:#0F172A;font-size:14px;font-weight:600">${r.value}</td></tr>`).join('')}</table>`;
+      case 'divider':
+        return `<hr style="border:none;border-top:1px solid #E2E8F0;margin:24px 0"/>`;
+      case 'footer':
+        return EMAIL_FOOTER_HTML;
+      case 'html':
+        return b.content || '';
+      default:
+        return '';
+    }
+  }).join('\n');
+}
+
+function wrapEmailHtml(bodyHtml) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F8FAFC;font-family:Helvetica,Arial,sans-serif"><div style="max-width:560px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)"><div style="background:#0F172A;padding:24px 32px"><span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.5px">Curio<span style="color:#059669">.</span></span></div><div style="background:#fff;padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">${bodyHtml}</div></div></body></html>`;
+}
+
+function getPreviewHtml(htmlBody) {
+  const blocks = tryParseBlocks(htmlBody);
+  if (blocks) return wrapEmailHtml(compileBlocksToBodyHtml(blocks));
+  return htmlBody || '';
+}
+
+function defaultBlockData(type) {
+  if (type === 'paragraph') return { type, content: 'Enter your text here.' };
+  if (type === 'button') return { type, text: 'Click Here →', url: '', color: '#059669' };
+  if (type === 'callout') return { type, title: '', content: 'Enter callout text here.', bg: '#F0FDF4', border: '#BBF7D0', textColor: '#065F46' };
+  if (type === 'data_table') return { type, rows: [{ label: 'Label', value: '{{variable}}' }] };
+  if (type === 'divider') return { type };
+  if (type === 'footer') return { type };
+  if (type === 'html') return { type, content: '' };
+  return { type };
+}
+
+const BLOCK_TYPE_META = [
+  { type: 'paragraph',  label: 'Paragraph',    icon: '¶' },
+  { type: 'button',     label: 'Button',        icon: '⬭' },
+  { type: 'callout',    label: 'Callout Box',   icon: '▣' },
+  { type: 'data_table', label: 'Data Table',    icon: '⊞' },
+  { type: 'divider',    label: 'Divider',       icon: '—' },
+  { type: 'footer',     label: 'Footer',        icon: '≡' },
+  { type: 'html',       label: 'Custom HTML',   icon: '</>' },
+];
+
+function BlockFields({ block, onChange, availableVars }) {
+  const iStyle = { width: '100%', border: '1px solid #E2E8F0', borderRadius: 6, padding: '7px 10px', fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", boxSizing: 'border-box' };
+  const lStyle = { fontSize: '0.75rem', color: '#64748B', display: 'block', marginBottom: 4 };
+  const varHint = availableVars && availableVars.length > 0 ? (
+    <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#94A3B8', lineHeight: 1.5 }}>
+      Available: {availableVars.map(v => `{{${v}}}`).join('  ')}
+    </p>
+  ) : null;
+
+  switch (block.type) {
+    case 'paragraph':
+      return (
+        <div>
+          <textarea value={block.content || ''} onChange={e => onChange({ ...block, content: e.target.value })}
+            style={{ ...iStyle, minHeight: 80, resize: 'vertical' }}
+            placeholder="Paragraph text. Use {{variable}} for dynamic content." />
+          {varHint}
+        </div>
+      );
+
+    case 'button':
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'end' }}>
+          <div>
+            <label style={lStyle}>Button text</label>
+            <input value={block.text || ''} onChange={e => onChange({ ...block, text: e.target.value })} style={iStyle} placeholder="Click Here →" />
+          </div>
+          <div>
+            <label style={lStyle}>URL or {'{{variable}}'}</label>
+            <input value={block.url || ''} onChange={e => onChange({ ...block, url: e.target.value })} style={iStyle} placeholder="https://... or {{loginUrl}}" />
+          </div>
+          <div>
+            <label style={lStyle}>Color</label>
+            <input type="color" value={block.color || '#059669'} onChange={e => onChange({ ...block, color: e.target.value })}
+              style={{ width: 40, height: 36, border: '1px solid #E2E8F0', borderRadius: 6, padding: 2, cursor: 'pointer' }} />
+          </div>
+        </div>
+      );
+
+    case 'callout':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div>
+            <label style={lStyle}>Title (optional)</label>
+            <input value={block.title || ''} onChange={e => onChange({ ...block, title: e.target.value })} style={iStyle} placeholder="Bold heading inside the callout box" />
+          </div>
+          <div>
+            <label style={lStyle}>Body text</label>
+            <textarea value={block.content || ''} onChange={e => onChange({ ...block, content: e.target.value })}
+              style={{ ...iStyle, minHeight: 64, resize: 'vertical' }} placeholder="Callout body text" />
+          </div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <label style={{ ...lStyle, marginBottom: 0 }}>Background</label>
+              <input type="color" value={block.bg || '#F0FDF4'} onChange={e => onChange({ ...block, bg: e.target.value })} style={{ width: 32, height: 28, border: '1px solid #E2E8F0', borderRadius: 4, padding: 1, cursor: 'pointer' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <label style={{ ...lStyle, marginBottom: 0 }}>Border</label>
+              <input type="color" value={block.border || '#BBF7D0'} onChange={e => onChange({ ...block, border: e.target.value })} style={{ width: 32, height: 28, border: '1px solid #E2E8F0', borderRadius: 4, padding: 1, cursor: 'pointer' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <label style={{ ...lStyle, marginBottom: 0 }}>Text</label>
+              <input type="color" value={block.textColor || '#065F46'} onChange={e => onChange({ ...block, textColor: e.target.value })} style={{ width: 32, height: 28, border: '1px solid #E2E8F0', borderRadius: 4, padding: 1, cursor: 'pointer' }} />
+            </div>
+          </div>
+          {varHint}
+        </div>
+      );
+
+    case 'data_table':
+      return (
+        <div>
+          {(block.rows || []).map((row, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+              <input value={row.label} onChange={e => { const rows = [...block.rows]; rows[i] = { ...rows[i], label: e.target.value }; onChange({ ...block, rows }); }} style={iStyle} placeholder="Label (e.g. Name)" />
+              <input value={row.value} onChange={e => { const rows = [...block.rows]; rows[i] = { ...rows[i], value: e.target.value }; onChange({ ...block, rows }); }} style={iStyle} placeholder="Value or {{variable}}" />
+              <button onClick={() => onChange({ ...block, rows: block.rows.filter((_, j) => j !== i) })}
+                style={{ background: 'none', border: '1px solid #E2E8F0', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: '#64748B', fontSize: '0.85rem' }}>×</button>
+            </div>
+          ))}
+          <button onClick={() => onChange({ ...block, rows: [...(block.rows || []), { label: '', value: '' }] })}
+            style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '5px 12px', fontSize: '0.8rem', cursor: 'pointer', color: '#475569', marginTop: 4 }}>
+            + Add Row
+          </button>
+          {varHint}
+        </div>
+      );
+
+    case 'divider':
+      return <div style={{ height: 1, background: '#E2E8F0', borderRadius: 1, margin: '4px 0' }} />;
+
+    case 'footer':
+      return <p style={{ margin: 0, fontSize: '0.82rem', color: '#94A3B8', fontStyle: 'italic' }}>Questions? Reply to this email or contact hello@choosecurio.com.</p>;
+
+    case 'html':
+      return (
+        <div>
+          <textarea value={block.content || ''} onChange={e => onChange({ ...block, content: e.target.value })}
+            style={{ ...iStyle, minHeight: 100, fontFamily: 'monospace', fontSize: '0.8rem', resize: 'vertical' }}
+            placeholder="Raw HTML — for advanced layouts not covered by other block types" />
+          {varHint}
+        </div>
+      );
+
+    default:
+      return <div style={{ color: '#94A3B8', fontSize: '0.85rem' }}>Unknown block type: {block.type}</div>;
+  }
+}
+
+function BlockEditor({ value, onChange, availableVars, editorKey }) {
+  const isBlocks = tryParseBlocks(value) !== null;
+  const [mode, setMode] = useState(isBlocks ? 'visual' : 'html');
+  const [blocks, setBlocks] = useState(() => tryParseBlocks(value) || [{ type: 'html', content: value || '' }]);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+
+  function updateBlocks(newBlocks) {
+    setBlocks(newBlocks);
+    onChange(serializeBlocks(newBlocks));
+  }
+
+  function switchToHtml() {
+    const compiled = wrapEmailHtml(compileBlocksToBodyHtml(blocks));
+    onChange(compiled);
+    setMode('html');
+  }
+
+  function switchToVisual() {
+    const parsed = tryParseBlocks(value);
+    if (parsed) {
+      setBlocks(parsed);
+    } else {
+      const newBlocks = [{ type: 'html', content: value || '' }];
+      setBlocks(newBlocks);
+      onChange(serializeBlocks(newBlocks));
+    }
+    setMode('visual');
+  }
+
+  const btnSm = { padding: '5px 12px', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.78rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: '#F8FAFC', color: '#475569' };
+  const moveBtn = { ...btnSm, padding: '3px 8px', fontSize: '0.8rem' };
+
+  if (mode === 'html') {
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>HTML Body</label>
+          <button style={btnSm} onClick={switchToVisual}>← Visual Editor</button>
+        </div>
+        <textarea value={value || ''} onChange={e => onChange(e.target.value)}
+          style={{ width: '100%', minHeight: 340, border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 12px', fontFamily: 'monospace', fontSize: '0.82rem', resize: 'vertical', boxSizing: 'border-box' }} />
+        {availableVars && availableVars.length > 0 && (
+          <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#94A3B8' }}>Available variables: {availableVars.map(v => `{{${v}}}`).join('  ')}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Email Content</label>
+        <button style={btnSm} onClick={switchToHtml}>Edit HTML</button>
+      </div>
+
+      {blocks.length === 0 && (
+        <div style={{ border: '2px dashed #E2E8F0', borderRadius: 8, padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '0.875rem', marginBottom: 12 }}>
+          No blocks yet — add one below
+        </div>
+      )}
+
+      {blocks.map((block, i) => (
+        <div key={i} style={{ border: '1px solid #E2E8F0', borderRadius: 8, marginBottom: 8, overflow: 'hidden' }}>
+          <div style={{ background: '#F8FAFC', padding: '7px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {BLOCK_TYPE_META.find(bt => bt.type === block.type)?.icon} {BLOCK_TYPE_META.find(bt => bt.type === block.type)?.label || block.type}
+            </span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button disabled={i === 0} onClick={() => { const n = [...blocks]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; updateBlocks(n); }} style={{ ...moveBtn, opacity: i === 0 ? 0.3 : 1 }}>↑</button>
+              <button disabled={i === blocks.length - 1} onClick={() => { const n = [...blocks]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; updateBlocks(n); }} style={{ ...moveBtn, opacity: i === blocks.length - 1 ? 0.3 : 1 }}>↓</button>
+              <button onClick={() => updateBlocks(blocks.filter((_, j) => j !== i))} style={{ ...moveBtn, color: '#DC2626', borderColor: '#FEE2E2' }}>✕</button>
+            </div>
+          </div>
+          <div style={{ padding: 12 }}>
+            <BlockFields block={block} onChange={newBlock => { const n = [...blocks]; n[i] = newBlock; updateBlocks(n); }} availableVars={availableVars} />
+          </div>
+        </div>
+      ))}
+
+      <div style={{ position: 'relative' }}>
+        <button onClick={() => setShowAddMenu(v => !v)}
+          style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', borderRadius: 8, padding: '8px 18px', fontSize: '0.85rem', cursor: 'pointer', color: '#475569', fontFamily: "'DM Sans', sans-serif", width: '100%' }}>
+          + Add Block
+        </button>
+        {showAddMenu && (
+          <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 200, padding: 8, marginBottom: 4 }}
+            onClick={() => setShowAddMenu(false)}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+              {BLOCK_TYPE_META.map(bt => (
+                <button key={bt.type} onClick={() => updateBlocks([...blocks, defaultBlockData(bt.type)])}
+                  style={{ textAlign: 'left', padding: '8px 12px', background: 'none', border: '1px solid #E2E8F0', borderRadius: 6, cursor: 'pointer', fontSize: '0.83rem', color: '#0F172A', fontFamily: "'DM Sans', sans-serif" }}>
+                  <span style={{ marginRight: 6 }}>{bt.icon}</span>{bt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MetaRow({ label, value }) {
   if (!value) return null;
   return (
@@ -2469,7 +2749,7 @@ function EmailsPanel() {
               </div>
               <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748B', lineHeight: 1 }} onClick={() => setPreviewTpl(null)}>✕</button>
             </div>
-            <iframe srcDoc={previewTpl.html_body || '<p style="padding:24px;color:#94A3B8;font-family:sans-serif">No HTML body saved yet.</p>'} style={{ flex: 1, border: 'none', minHeight: 480 }} title="Email preview" sandbox="allow-same-origin" />
+            <iframe srcDoc={getPreviewHtml(previewTpl.html_body) || '<p style="padding:24px;color:#94A3B8;font-family:sans-serif">No HTML body saved yet.</p>'} style={{ flex: 1, border: 'none', minHeight: 480 }} title="Email preview" sandbox="allow-same-origin" />
           </div>
         </div>
       )}
@@ -2515,12 +2795,16 @@ function EmailsPanel() {
 
       <div style={s.fieldGroup}><label style={s.label}>Subject</label><input style={s.input} value={editing.subject} onChange={e => setEditing(p => ({ ...p, subject: e.target.value }))} /></div>
       <div style={s.fieldGroup}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <label style={{ ...s.label, marginBottom: 0 }}>HTML Body</label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span />
           <button type="button" style={{ padding: '4px 12px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }} onClick={() => setPreviewTpl({ ...editing })}>Preview</button>
         </div>
-        <textarea style={{ ...s.textarea, minHeight: 340, fontFamily: 'monospace', fontSize: '0.82rem' }} value={editing.html_body} onChange={e => setEditing(p => ({ ...p, html_body: e.target.value }))} />
-        {(() => { const vars = triggerVars[editing.trigger] || []; return vars.length ? <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Available variables: {vars.map(v => `{{${v}}}`).join(', ')}</p> : null; })()}
+        <BlockEditor
+          key={editing.key}
+          value={editing.html_body || ''}
+          onChange={v => setEditing(p => ({ ...p, html_body: v }))}
+          availableVars={triggerVars[editing.trigger] || []}
+        />
       </div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 24 }}>
         <button style={s.btn} onClick={saveTemplate} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
@@ -2598,9 +2882,12 @@ function EmailsPanel() {
       )}
       <div style={s.fieldGroup}><label style={s.label}>Subject *</label><input style={s.input} value={newSubject} onChange={e => setNewSubject(e.target.value)} /></div>
       <div style={s.fieldGroup}>
-        <label style={s.label}>HTML Body *</label>
-        <textarea style={{ ...s.textarea, minHeight: 300, fontFamily: 'monospace', fontSize: '0.82rem' }} value={newBody} onChange={e => setNewBody(e.target.value)} placeholder="Full HTML email body. Use {{variable}} for dynamic values." />
-        {(() => { const vars = triggerVars[newTrigger] || []; return vars.length ? <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94A3B8' }}>Available variables: {vars.map(v => `{{${v}}}`).join(', ')}</p> : null; })()}
+        <BlockEditor
+          key={'new-' + newTrigger}
+          value={newBody}
+          onChange={v => setNewBody(v)}
+          availableVars={triggerVars[newTrigger] || []}
+        />
       </div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <button style={s.btn} onClick={createEmail} disabled={newSaving}>{newSaving ? 'Creating…' : 'Create Email'}</button>
@@ -2622,7 +2909,7 @@ function EmailsPanel() {
               </div>
               <button style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748B', lineHeight: 1 }} onClick={() => setPreviewTpl(null)}>✕</button>
             </div>
-            <iframe srcDoc={previewTpl.html_body || '<p style="padding:24px;color:#94A3B8;font-family:sans-serif">No HTML body saved yet.</p>'} style={{ flex: 1, border: 'none', minHeight: 480 }} title="Email preview" sandbox="allow-same-origin" />
+            <iframe srcDoc={getPreviewHtml(previewTpl.html_body) || '<p style="padding:24px;color:#94A3B8;font-family:sans-serif">No HTML body saved yet.</p>'} style={{ flex: 1, border: 'none', minHeight: 480 }} title="Email preview" sandbox="allow-same-origin" />
           </div>
         </div>
       )}
