@@ -4,6 +4,7 @@ import { createSessionToken, sessionCookie } from '../../../lib/portalSession';
 import { syncContactToNotion } from '../../../lib/notionSync';
 import { tertiaryFromProfileSlug, resolveGrantedTools } from '../../../lib/tertiary';
 import { Resend } from 'resend';
+import { getEmailTemplate, renderTemplate } from '../../../lib/emailTemplates';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -224,6 +225,25 @@ export default async function handler(req, res) {
     }
   } catch (err) {
     console.error('[auth/signup] notification email failed:', err);
+  }
+
+  // Welcome email to new account holder (only for new accounts, not team members joining)
+  if (!teamAccountId) {
+    try {
+      if (process.env.RESEND_API_KEY) {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const tpl = await getEmailTemplate('new_account');
+        const loginUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://choosecurio.com'}/portal/login`;
+        resend.emails.send({
+          from: 'Curio <hello@choosecurio.com>',
+          to: normalEmail,
+          subject: tpl.subject,
+          html: renderTemplate(tpl.html_body, { name: name.trim(), loginUrl }),
+        }).catch(err => console.error('[auth/signup] welcome email failed:', err));
+      }
+    } catch (err) {
+      console.error('[auth/signup] welcome email failed:', err);
+    }
   }
 
   const sessionToken = createSessionToken(user.id, account.id, userRole);

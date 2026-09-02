@@ -17,9 +17,9 @@ export default async function handler(req, res) {
       const builtIn = EMAIL_TEMPLATE_REGISTRY.map(t => ({
         ...t,
         is_custom: false,
-        customized: !!byKey[t.key],
-        subject: byKey[t.key]?.subject || null,
-        html_body: byKey[t.key]?.html_body || null,
+        customized: !!byKey[t.key]?.html_body,
+        subject: byKey[t.key]?.subject || t.default_subject || null,
+        html_body: byKey[t.key]?.html_body || t.default_html_body || null,
         updated_at: byKey[t.key]?.updated_at || null,
       }));
 
