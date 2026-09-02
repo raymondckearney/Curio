@@ -1,10 +1,9 @@
 import crypto from 'crypto';
-import { Resend } from 'resend';
 import { getAdminSession } from '../../../../lib/adminSession';
 import { dbGet, dbInsert, dbPatch } from '../../../../lib/supabase';
 import { hashPassword } from '../../../../lib/password';
 import { syncContactToNotion } from '../../../../lib/notionSync';
-import { getEmailTemplate, renderTemplate } from '../../../../lib/emailTemplates';
+import { dispatchEmailsForTrigger } from '../../../../lib/emailTemplates';
 
 export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
@@ -26,15 +25,8 @@ export default async function handler(req, res) {
         await dbInsert('password_reset_tokens', { token: resetToken, user_id: existingUser.id, expires_at: expiresAt, used: false });
 
         if (process.env.RESEND_API_KEY) {
-          const resend = new Resend(process.env.RESEND_API_KEY);
           const setupUrl = `https://choosecurio.com/portal/reset-password?token=${resetToken}`;
-          const tpl = await getEmailTemplate('invite_account');
-          await resend.emails.send({
-            from: 'Curio <hello@choosecurio.com>',
-            to: normalEmail,
-            subject: `${tpl.subject} (resent)`,
-            html: renderTemplate(tpl.html_body, { name: existingUser.name || '', inviteUrl: setupUrl, licenseList: '' }),
-          });
+          await dispatchEmailsForTrigger('admin_invite', { name: existingUser.name || '', email: normalEmail, inviteUrl: setupUrl, licenseList: '' });
         }
         return res.status(200).json({ success: true, resent: true });
       }
@@ -89,18 +81,11 @@ export default async function handler(req, res) {
 
     // Send invite email
     if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
       const setPasswordUrl = `https://choosecurio.com/portal/reset-password?token=${token}`;
       const licenseList = licenses.length
         ? `<p style="font-size:0.9rem;color:#374151;margin:0 0 8px">Your account includes access to:</p><ul style="margin:0 0 20px;padding-left:20px;font-size:0.9rem;color:#374151;line-height:1.8">${licenses.map(l => `<li>${l.type.replace(/_/g, ' ')}</li>`).join('')}</ul>`
         : '';
-      const tpl = await getEmailTemplate('invite_account');
-      await resend.emails.send({
-        from: 'Curio <hello@choosecurio.com>',
-        to: normalEmail,
-        subject: tpl.subject,
-        html: renderTemplate(tpl.html_body, { name: name || '', inviteUrl: setPasswordUrl, licenseList }),
-      });
+      await dispatchEmailsForTrigger('admin_invite', { name: name || '', email: normalEmail, inviteUrl: setPasswordUrl, licenseList });
     }
 
     syncContactToNotion({ name: name || normalEmail, email: normalEmail, source: 'admin-invite' }).catch(() => {});

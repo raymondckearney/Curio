@@ -1,8 +1,7 @@
 import crypto from 'crypto';
-import { Resend } from 'resend';
 import { getAdminSession } from '../../../../../lib/adminSession';
 import { dbGet, dbInsert } from '../../../../../lib/supabase';
-import { getEmailTemplate, renderTemplate } from '../../../../../lib/emailTemplates';
+import { dispatchEmailsForTrigger } from '../../../../../lib/emailTemplates';
 
 export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
@@ -23,16 +22,8 @@ export default async function handler(req, res) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     await dbInsert('password_reset_tokens', { token, user_id: user.id, expires_at: expiresAt, used: false });
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
     const setPasswordUrl = `https://choosecurio.com/portal/reset-password?token=${token}`;
-
-    const tpl = await getEmailTemplate('invite_account');
-    await resend.emails.send({
-      from: 'Curio <hello@choosecurio.com>',
-      to: user.email,
-      subject: tpl.subject,
-      html: renderTemplate(tpl.html_body, { name: user.name || '', inviteUrl: setPasswordUrl, licenseList: '' }),
-    });
+    await dispatchEmailsForTrigger('admin_invite', { name: user.name || '', email: user.email, inviteUrl: setPasswordUrl, licenseList: '' });
 
     return res.status(200).json({ success: true });
   } catch (err) {

@@ -1,6 +1,6 @@
 import { getAdminSession } from '../../../lib/adminSession';
 import { dbQuery } from '../../../lib/supabase';
-import { EMAIL_TEMPLATE_REGISTRY, getCustomEmails, createCustomEmail, TRIGGER_OPTIONS } from '../../../lib/emailTemplates';
+import { EMAIL_TEMPLATE_REGISTRY, getCustomEmails, createCustomEmail, TRIGGER_OPTIONS, TRIGGER_VARIABLES } from '../../../lib/emailTemplates';
 
 export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
       const custom = customEmails.map(t => ({ ...t, is_custom: true, customized: true }));
 
-      return res.status(200).json({ templates: [...builtIn, ...custom], triggerOptions: TRIGGER_OPTIONS });
+      return res.status(200).json({ templates: [...builtIn, ...custom], triggerOptions: TRIGGER_OPTIONS, triggerVariables: TRIGGER_VARIABLES });
     } catch (err) {
       console.error('[admin/email-templates GET]', err);
       return res.status(500).json({ error: err.message });
