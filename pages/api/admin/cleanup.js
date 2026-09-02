@@ -3,6 +3,15 @@ import { getAdminSession } from '../../../lib/adminSession';
 
 async function deleteByEmail(email, log) {
   const normalEmail = email.toLowerCase().trim();
+
+  // Assessments are linked by a plain `token` string, not a real foreign
+  // key, so deleting a user/account/tokens below does not cascade to them
+  // on its own — they'd be left as orphaned rows nobody can see are
+  // connected to anything. Delete anything keyed directly by this email
+  // first, independent of whether a user/account is even found for it.
+  const directAssessments = await dbDelete('assessments', { email: normalEmail }).catch(() => []);
+  if (directAssessments.length) log.push(`  Deleted ${directAssessments.length} assessment row(s) for this email`);
+
   const users = await dbGet('client_users', { email: normalEmail });
   if (!users.length) { log.push(`No user found for email: ${normalEmail}`); return; }
 
@@ -15,6 +24,15 @@ async function deleteByEmail(email, log) {
     if (accountId) {
       const remaining = await dbGet('client_users', { account_id: accountId });
       if (!remaining.length) {
+        // Delete assessments tied to this account's tokens before the
+        // tokens themselves disappear (covers a team member's assessment
+        // submitted under a different personal email than the account
+        // holder's own, which the direct-email delete above would miss).
+        const accountTokens = await dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token' }).catch(() => []);
+        for (const t of accountTokens) {
+          const tokenAssessments = await dbDelete('assessments', { token: t.token }).catch(() => []);
+          if (tokenAssessments.length) log.push(`  Deleted ${tokenAssessments.length} assessment row(s) for token ${t.token}`);
+        }
         await dbDelete('account_licenses', { account_id: accountId }).catch(() => []);
         await dbDelete('tokens', { account_id: accountId }).catch(() => []);
         await dbDelete('client_accounts', { id: accountId }).catch(() => []);
