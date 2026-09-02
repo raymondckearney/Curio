@@ -1,5 +1,6 @@
 import { dbQuery } from '../../../lib/supabase';
 import { Resend } from 'resend';
+import { getEmailTemplate, renderTemplate } from '../../../lib/emailTemplates';
 
 export default async function handler(req, res) {
   const authHeader = req.headers.authorization || '';
@@ -43,20 +44,12 @@ export default async function handler(req, res) {
       const expiryDate = new Date(license.expires_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       const renewalUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://choosecurio.com'}/portal/dashboard`;
 
+      const tpl30 = await getEmailTemplate('renewal_reminder_30');
       await resend.emails.send({
         from: 'Curio <hello@choosecurio.com>',
         to: primaryUser.email,
-        subject: 'Your Curio access expires in 30 days',
-        html: `<!DOCTYPE html><html><body style="font-family:Helvetica,Arial,sans-serif;background:#F8FAFC;margin:0;padding:0">
-<div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-  <div style="background:#0F172A;padding:24px 32px"><span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span></div>
-  <div style="padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
-    <p style="margin:0 0 16px;color:#0F172A;font-size:15px">Hi ${primaryUser.name || 'there'},</p>
-    <p style="margin:0 0 16px;color:#0F172A;font-size:15px">Your Curio access is set to expire on <strong>${expiryDate}</strong>. Renew now to keep uninterrupted access to your MindPrint™ tools and resources.</p>
-    <a href="${renewalUrl}" style="display:inline-block;padding:12px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px">Renew Access →</a>
-    <p style="margin:24px 0 0;color:#64748B;font-size:14px">Questions? Reply to this email or contact <a href="mailto:hello@choosecurio.com" style="color:#059669">hello@choosecurio.com</a>.</p>
-  </div>
-</div></body></html>`,
+        subject: tpl30.subject,
+        html: renderTemplate(tpl30.html_body, { name: primaryUser.name || 'there', expiryDate, renewalUrl }),
       }).catch(err => console.error('[renewal-reminders] 30-day email failed:', err));
       sent30++;
     }
@@ -81,20 +74,12 @@ export default async function handler(req, res) {
 
       const renewalUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://choosecurio.com'}/portal/dashboard`;
 
+      const tplExp = await getEmailTemplate('renewal_reminder_expired');
       await resend.emails.send({
         from: 'Curio <hello@choosecurio.com>',
         to: primaryUser.email,
-        subject: 'Your Curio access has expired',
-        html: `<!DOCTYPE html><html><body style="font-family:Helvetica,Arial,sans-serif;background:#F8FAFC;margin:0;padding:0">
-<div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-  <div style="background:#0F172A;padding:24px 32px"><span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span></div>
-  <div style="padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
-    <p style="margin:0 0 16px;color:#0F172A;font-size:15px">Hi ${primaryUser.name || 'there'},</p>
-    <p style="margin:0 0 16px;color:#0F172A;font-size:15px">Your Curio access has expired. Renew to regain access to your MindPrint™ tools and resources.</p>
-    <a href="${renewalUrl}" style="display:inline-block;padding:12px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px">Renew Now →</a>
-    <p style="margin:24px 0 0;color:#64748B;font-size:14px">Questions? Reply to this email or contact <a href="mailto:hello@choosecurio.com" style="color:#059669">hello@choosecurio.com</a>.</p>
-  </div>
-</div></body></html>`,
+        subject: tplExp.subject,
+        html: renderTemplate(tplExp.html_body, { name: primaryUser.name || 'there', renewalUrl }),
       }).catch(err => console.error('[renewal-reminders] expired email failed:', err));
       sentExpired++;
     }

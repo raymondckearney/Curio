@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Resend } from 'resend';
 import { getAdminSession } from '../../../../../lib/adminSession';
 import { dbGet, dbInsert } from '../../../../../lib/supabase';
+import { getEmailTemplate, renderTemplate } from '../../../../../lib/emailTemplates';
 
 export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
@@ -25,25 +26,12 @@ export default async function handler(req, res) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const setPasswordUrl = `https://choosecurio.com/portal/reset-password?token=${token}`;
 
+    const tpl = await getEmailTemplate('invite_account');
     await resend.emails.send({
       from: 'Curio <hello@choosecurio.com>',
       to: user.email,
-      subject: "You've been invited to Curio",
-      html: `<!DOCTYPE html>
-<html><head></head>
-<body style="font-family:'DM Sans',Helvetica,Arial,sans-serif;background:#F8FAFC;margin:0;padding:0">
-  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-    <div style="background:#0F172A;padding:20px 32px">
-      <span style="font-family:'Caveat',cursive;font-size:1.6rem;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span>
-    </div>
-    <div style="padding:36px 32px">
-      <p style="font-size:1rem;color:#0F172A;font-weight:600;margin:0 0 12px">You're invited to Curio</p>
-      <p style="font-size:0.9rem;color:#374151;line-height:1.7;margin:0 0 24px">Ray Kearney has set up a Curio account for you. Click below to set your password and access your profile.</p>
-      <a href="${setPasswordUrl}" style="display:inline-block;padding:12px 28px;background:#059669;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.95rem">Set Your Password →</a>
-      <p style="font-size:0.8rem;color:#94A3B8;margin:24px 0 0;line-height:1.6">This link expires in 7 days.</p>
-    </div>
-  </div>
-</body></html>`,
+      subject: tpl.subject,
+      html: renderTemplate(tpl.html_body, { name: user.name || '', inviteUrl: setPasswordUrl, licenseList: '' }),
     });
 
     return res.status(200).json({ success: true });

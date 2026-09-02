@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { Resend } from 'resend';
 import { dbInsert, dbPatch, dbGet, dbQuery } from '../../../lib/supabase';
+import { getEmailTemplate, renderTemplate } from '../../../lib/emailTemplates';
 
 // Disable Next.js body parsing — Stripe needs the raw body for signature verification
 export const config = { api: { bodyParser: false } };
@@ -97,101 +98,34 @@ export default async function handler(req, res) {
   // ── Step 4: Buyer confirmation email ─────────────────────────────────────
   if (resend && email) {
     const includedNote = isCombo
-      ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px">
-          <p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">AI Tools included with your purchase</p>
-          <p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment and created your account, you'll have access to the Role Alignment Analyzer, Job Description Analyzer, Career Guidance, and your profile-matched AI Companion.</p>
-        </div>`
-      : `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px">
-          <p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">Library &amp; Insights included</p>
-          <p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment, you'll have access to your tertiary support library and a curated feed of insights in your dashboard.</p>
-        </div>`;
-
-    const emailHtml = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F8FAFC;font-family:Helvetica,Arial,sans-serif">
-<div style="max-width:560px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-  <div style="background:#0F172A;padding:24px 32px">
-    <span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.5px">Curio<span style="color:#059669">.</span></span>
-  </div>
-  <div style="background:#fff;padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
-    <p style="margin:0 0 16px;line-height:1.7;color:#0F172A;font-size:15px">Hi ${name || 'there'},</p>
-    <p style="margin:0 0 24px;line-height:1.7;color:#0F172A;font-size:15px">Thank you for your purchase. Your MindPrint™ Assessment link is ready below.</p>
-    <p style="font-weight:700;margin:0 0 12px;color:#0F172A;font-size:14px;text-transform:uppercase;letter-spacing:0.05em">MindPrint™ Assessment</p>
-    <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px">
-      <tr>
-        <td style="border-radius:8px;background:#059669">
-          <a href="${assessmentUrl}" style="display:inline-block;padding:13px 28px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;font-family:Helvetica,Arial,sans-serif">Start Assessment →</a>
-        </td>
-      </tr>
-    </table>
-    ${includedNote}
-    <p style="margin:0 0 14px;line-height:1.7;color:#64748B;font-size:14px">Your assessment link is unique to you and can only be used once. It takes approximately 7-10 minutes to complete.</p>
-    <p style="margin:0 0 28px;line-height:1.7;color:#64748B;font-size:14px">Once you've completed the assessment, your full MindPrint™ profile report will be delivered to this email address.</p>
-    <p style="margin:0;line-height:1.7;color:#0F172A;font-size:15px">Ray Kearney<br>Curio<br><a href="mailto:hello@choosecurio.com" style="color:#059669;text-decoration:none">hello@choosecurio.com</a></p>
-  </div>
-</div>
-</body></html>`;
-
+      ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px"><p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">AI Tools included with your purchase</p><p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment and created your account, you'll have access to the Role Alignment Analyzer, Job Description Analyzer, Career Guidance, and your profile-matched AI Companion.</p></div>`
+      : `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:16px 20px;margin-bottom:24px"><p style="margin:0 0 6px;font-weight:600;color:#065F46;font-size:0.9rem">Library &amp; Insights included</p><p style="margin:0;line-height:1.6;color:#047857;font-size:0.875rem">Once you've completed your assessment, you'll have access to your tertiary support library and a curated feed of insights in your dashboard.</p></div>`;
+    const tpl = await getEmailTemplate('buyer_confirmation');
+    const html = renderTemplate(tpl.html_body, { name: name || 'there', assessmentUrl, includedNote });
     resend.emails.send({
       from: 'Curio <hello@choosecurio.com>',
       to: email,
-      subject: 'Your MindPrint™ access is ready',
-      html: emailHtml,
+      subject: tpl.subject,
+      html,
     }).catch(err => console.error('[stripe/webhook] buyer email failed:', err));
   }
 
   // ── Step 5: Internal notification email ───────────────────────────────────
   if (resend) {
     const productLabel = isCombo ? 'Assessment + AI Tools' : 'Assessment';
-    const notifHtml = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#F8FAFC;font-family:Helvetica,Arial,sans-serif">
-<div style="max-width:560px;margin:32px auto;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-  <div style="background:#0F172A;padding:24px 32px">
-    <span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span>
-  </div>
-  <div style="background:#fff;padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
-    <p style="margin:0 0 20px;font-size:18px;font-weight:700;color:#0F172A">New Purchase</p>
-    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-bottom:24px">
-      <tr><td style="padding:6px 0;color:#64748B;font-size:14px;width:120px">Buyer</td><td style="padding:6px 0;color:#0F172A;font-size:14px;font-weight:600">${name}</td></tr>
-      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Email</td><td style="padding:6px 0;color:#0F172A;font-size:14px">${email}</td></tr>
-      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Product</td><td style="padding:6px 0;color:#0F172A;font-size:14px">${productLabel}</td></tr>
-      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Amount</td><td style="padding:6px 0;color:#0F172A;font-size:14px;font-weight:700">$${amountPaid.toFixed(2)}</td></tr>
-      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Engagement ID</td><td style="padding:6px 0;color:#0F172A;font-size:14px">${engagementId}</td></tr>
-      <tr><td style="padding:6px 0;color:#64748B;font-size:14px">Time</td><td style="padding:6px 0;color:#0F172A;font-size:14px">${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET</td></tr>
-    </table>
-    <p style="margin:0 0 12px;font-weight:700;color:#0F172A;font-size:14px">Token Generated</p>
-    <div style="margin-bottom:12px">
-      <p style="margin:0 0 4px;color:#64748B;font-size:13px;text-transform:uppercase;letter-spacing:0.05em">Assessment</p>
-      <p style="margin:0 0 8px;color:#475569;font-size:12px">Grants: ${grantedTools.join(', ')}</p>
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td style="border-radius:6px;background:#0F172A">
-            <a href="${assessmentUrl}" style="display:inline-block;padding:10px 20px;background:#0F172A;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;font-family:Helvetica,Arial,sans-serif">Assessment Link →</a>
-          </td>
-        </tr>
-      </table>
-    </div>
-    <div style="margin-top:24px;border-top:1px solid #E2E8F0;padding-top:20px">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td style="border-radius:6px;background:#059669">
-            <a href="https://choosecurio.com/admin/tokens" style="display:inline-block;padding:10px 20px;background:#059669;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;font-family:Helvetica,Arial,sans-serif">View in Admin →</a>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-</div>
-</body></html>`;
-
+    const internalTpl = await getEmailTemplate('internal_purchase');
+    const internalHtml = renderTemplate(internalTpl.html_body, {
+      name: name || '—', email: email || '—', productLabel,
+      amountPaid: `$${amountPaid.toFixed(2)}`, engagementId,
+      grantedTools: grantedTools.join(', '), assessmentUrl,
+      time: `${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })} ET`,
+    });
+    const internalSubject = renderTemplate(internalTpl.subject, { productLabel, name: name || '—' });
     resend.emails.send({
       from: 'Curio <hello@choosecurio.com>',
       to: 'hello@choosecurio.com',
-      subject: `New Purchase — ${productLabel} — ${name}`,
-      html: notifHtml,
+      subject: internalSubject,
+      html: internalHtml,
     }).catch(err => console.error('[stripe/webhook] notification email failed:', err));
   }
 
@@ -220,21 +154,15 @@ async function handleRenewal(session, res) {
 
     if (process.env.RESEND_API_KEY && buyer_email) {
       const { Resend } = await import('resend');
+      const { getEmailTemplate: getTpl, renderTemplate: render } = await import('../../../lib/emailTemplates');
       const resend = new Resend(process.env.RESEND_API_KEY);
       const newExpiryDate = new Date(newExpiry).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const tpl = await getTpl('renewal_confirmation');
       resend.emails.send({
         from: 'Curio <hello@choosecurio.com>',
         to: buyer_email,
-        subject: 'Your Curio access has been renewed',
-        html: `<!DOCTYPE html><html><body style="font-family:Helvetica,Arial,sans-serif;background:#F8FAFC;margin:0;padding:0">
-<div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-  <div style="background:#0F172A;padding:24px 32px"><span style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#fff">Curio<span style="color:#059669">.</span></span></div>
-  <div style="padding:32px;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 12px 12px">
-    <p style="margin:0 0 16px;color:#0F172A;font-size:15px">Hi ${buyer_name || 'there'},</p>
-    <p style="margin:0 0 16px;color:#0F172A;font-size:15px">Your Curio access has been renewed. Your new expiry date is <strong>${newExpiryDate}</strong>.</p>
-    <a href="https://choosecurio.com/portal/dashboard" style="display:inline-block;padding:12px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px">Go to Dashboard →</a>
-  </div>
-</div></body></html>`,
+        subject: tpl.subject,
+        html: render(tpl.html_body, { name: buyer_name || 'there', newExpiryDate }),
       }).catch(err => console.error('[renewal] confirmation email failed:', err));
     }
 
