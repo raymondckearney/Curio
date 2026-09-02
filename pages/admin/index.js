@@ -2613,9 +2613,7 @@ function EmailsPanel() {
                   <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button style={s.sendLinkBtn} onClick={() => openEdit(t)} disabled={loadingEdit}>{loadingEdit ? '…' : 'Edit'}</button>
-                      {(t.subject || t.html_body) && (
-                        <button style={{ padding: '4px 10px', background: '#F8FAFC', color: '#475569', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }} onClick={() => setPreviewTpl(t)}>Preview</button>
-                      )}
+                      <button style={{ padding: '4px 10px', background: '#F8FAFC', color: '#475569', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }} onClick={async () => { const res = await fetch(`/api/admin/email-templates/${t.key}`); const d = await res.json(); setPreviewTpl({ ...t, ...d }); }}>Preview</button>
                       {t.send_type === 'manual' && (t.subject || t.html_body) && (
                         <button style={{ ...s.sendProfileBtn, background: '#EFF6FF', color: '#1D4ED8' }} onClick={() => openSend(t)}>Send</button>
                       )}
