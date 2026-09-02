@@ -729,6 +729,7 @@ function AssessmentsPanel() {
   const [profileFilter, setProfileFilter] = useState('');
   const [sentProfiles, setSentProfiles] = useState(new Set());
   const [sendingProfile, setSendingProfile] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   async function load() {
     setError(''); setLoading(true);
@@ -739,6 +740,23 @@ function AssessmentsPanel() {
       setAssessments(data.assessments);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
+  }
+
+  async function deleteAssessment(a) {
+    const label = a.name || a.reg_name || a.email || a.reg_email || 'this assessment';
+    if (!window.confirm(`Delete ${label}? This permanently removes the assessment row and can't be undone.`)) return;
+    setDeletingId(a.id);
+    try {
+      const res = await fetch('/api/admin/assessments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: a.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+      setAssessments(prev => prev.filter(x => x.id !== a.id));
+    } catch (e) { alert(`Failed to delete: ${e.message}`); }
+    finally { setDeletingId(null); }
   }
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -849,7 +867,13 @@ function AssessmentsPanel() {
                             )
                           )}
                           {profileType && <button style={openFitPanel === key ? s.sendLinkBtnActive : s.sendLinkBtn} onClick={() => setOpenFitPanel(openFitPanel === key ? null : key)}>Run Role Fit</button>}
-                          {!profileType && '—'}
+                          <button
+                            style={{ ...s.btn, padding: '4px 10px', fontSize: '0.78rem', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', opacity: deletingId === a.id ? 0.6 : 1 }}
+                            onClick={() => deleteAssessment(a)}
+                            disabled={deletingId === a.id}
+                          >
+                            {deletingId === a.id ? 'Deleting…' : 'Delete'}
+                          </button>
                         </div>
                       </td>
                     </tr>
