@@ -28,6 +28,23 @@ export default async function handler(req, res) {
     if (tr.account_id !== session.accountId) {
       return res.status(403).json({ error: 'This token does not belong to your account.' });
     }
+
+    // Sharing an account_id isn't enough on its own: a token from the
+    // account's team pool also belongs to this account_id, but it's meant
+    // for a specific teammate, not whoever happens to be logged in. Only
+    // let this shortcut fire when the token isn't earmarked for someone
+    // else — if it's assigned to a different email, that person needs to
+    // go through their own /signup instead of silently attaching to
+    // whoever is currently logged in.
+    const assignedEmail = (tr.created_for_email || tr.email || '').toLowerCase().trim();
+    if (assignedEmail) {
+      const userRows = await dbGet('client_users', { id: session.userId });
+      const myEmail = (userRows[0]?.email || '').toLowerCase().trim();
+      if (assignedEmail !== myEmail) {
+        return res.status(403).json({ error: 'This token is assigned to a different team member.' });
+      }
+    }
+
     if (tr.used) return res.status(200).json({ ok: true, alreadyUsed: true });
 
     const grantedTier = tr.granted_tier || 'basic';

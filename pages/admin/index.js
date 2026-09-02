@@ -1407,6 +1407,7 @@ function EditPanel({ account, onClose, onSave }) {
   const [tokenLoading, setTokenLoading] = useState(false);
   const [addQty, setAddQty] = useState('');
   const [addEngId, setAddEngId] = useState('');
+  const [addGrantedTools, setAddGrantedTools] = useState(['assessment_tokens']);
   const [addingTokens, setAddingTokens] = useState(false);
   const [addTokenMsg, setAddTokenMsg] = useState(null);
   const [users, setUsers] = useState(account.users || []);
@@ -1429,11 +1430,11 @@ function EditPanel({ account, onClose, onSave }) {
       const res = await fetch(`/api/admin/accounts/${account.id}/generate-tokens`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: qty, engagement_id: addEngId.trim() || undefined }),
+        body: JSON.stringify({ quantity: qty, engagement_id: addEngId.trim() || undefined, granted_tools: addGrantedTools }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Failed');
-      setAddTokenMsg({ ok: true, text: `✓ Added ${d.created} token${d.created !== 1 ? 's' : ''} (engagement: ${d.engagement_id})` });
+      setAddTokenMsg({ ok: true, text: `✓ Added ${d.created} ${d.granted_tier} token${d.created !== 1 ? 's' : ''} (engagement: ${d.engagement_id})` });
       setAddQty(''); setAddEngId('');
       // Refresh token list
       const r2 = await fetch(`/api/admin/accounts/${account.id}/tokens`);
@@ -1544,16 +1545,19 @@ function EditPanel({ account, onClose, onSave }) {
         {tokenExpanded && (
           <>
             {/* Add tokens form */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12, padding: '10px 12px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#374151', marginBottom: 3 }}>Quantity *</label>
-                <input style={{ ...s.fieldInput, width: 80 }} type="number" min="1" max="500" value={addQty} onChange={e => setAddQty(e.target.value)} placeholder="e.g. 25" />
+            <div style={{ marginBottom: 12, padding: '10px 12px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#374151', marginBottom: 3 }}>Quantity *</label>
+                  <input style={{ ...s.fieldInput, width: 80 }} type="number" min="1" max="500" value={addQty} onChange={e => setAddQty(e.target.value)} placeholder="e.g. 25" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#374151', marginBottom: 3 }}>Engagement / Label <span style={{ fontWeight: 400, color: '#94A3B8' }}>(optional)</span></label>
+                  <input style={s.fieldInput} value={addEngId} onChange={e => setAddEngId(e.target.value)} placeholder="e.g. acme-q3-2025 (auto-generated if blank)" />
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#374151', marginBottom: 3 }}>Engagement / Label <span style={{ fontWeight: 400, color: '#94A3B8' }}>(optional)</span></label>
-                <input style={s.fieldInput} value={addEngId} onChange={e => setAddEngId(e.target.value)} placeholder="e.g. acme-q3-2025 (auto-generated if blank)" />
-              </div>
-              <button style={{ ...s.btnSmall, background: '#059669', color: '#fff', border: 'none', opacity: addingTokens ? 0.7 : 1 }} onClick={handleAddTokens} disabled={addingTokens}>
+              <ToolAccessField grantedTools={addGrantedTools} setGrantedTools={setAddGrantedTools} />
+              <button style={{ ...s.btnSmall, background: '#059669', color: '#fff', border: 'none', opacity: addingTokens ? 0.7 : 1, marginTop: 10 }} onClick={handleAddTokens} disabled={addingTokens}>
                 {addingTokens ? 'Adding…' : '+ Add Tokens'}
               </button>
             </div>
