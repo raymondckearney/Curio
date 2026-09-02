@@ -1,5 +1,5 @@
 import { getPortalSession } from '../../../lib/portalSession';
-import { dbGet, dbPatch, dbInsert } from '../../../lib/supabase';
+import { dbGet, dbPatch, dbInsert, dbQuery } from '../../../lib/supabase';
 import { tertiaryFromProfileSlug, resolveGrantedTools } from '../../../lib/tertiary';
 
 // Applies an assessment token's tier/license grant to the caller's own,
@@ -42,6 +42,23 @@ export default async function handler(req, res) {
       const myEmail = (userRows[0]?.email || '').toLowerCase().trim();
       if (assignedEmail !== myEmail) {
         return res.status(403).json({ error: 'This token is assigned to a different team member.' });
+      }
+    } else {
+      // No assigned identity at all — this is only unambiguous when it's
+      // the account's sole unused assessment token (a genuine personal
+      // token). If there's a whole pool of spare, unassigned tokens sitting
+      // on this account, we can't tell "my own" apart from "one meant for
+      // a teammate I haven't sent yet" — require signup instead of
+      // guessing whoever's logged in is the intended recipient.
+      const unusedAssessmentTokens = await dbQuery('tokens', {
+        account_id: `eq.${session.accountId}`,
+        purpose: 'eq.assessment',
+        used: 'eq.false',
+      }).catch(() => [tr]);
+      const isSoleToken = unusedAssessmentTokens.length <= 1
+        || (unusedAssessmentTokens.length === 1 && unusedAssessmentTokens[0].token === token);
+      if (!isSoleToken) {
+        return res.status(403).json({ error: 'This looks like a team token pool — please have the recipient create their own account.' });
       }
     }
 
