@@ -20,19 +20,16 @@ const NAV_ITEMS = [
 
 const TEAM_CHILD_KEYS = NAV_ITEMS.filter(i => i.groupKey === 'team').map(i => i.key);
 
-export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false }) {
+export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false, isTeamAccount = false }) {
   const licenseTypes = new Set(licenses.map(l => l.type));
   const isOwner = me?.user?.role === 'owner';
   const [teamOpen, setTeamOpen] = useState(active === 'team' || TEAM_CHILD_KEYS.includes(active));
 
   const visibleItems = NAV_ITEMS.filter(item => {
-    // isIndividual means "this specific user has completed their own
-    // assessment" (see pages/portal/dashboard.js), which is the right
-    // signal for that page's own My-Profile-vs-team-overview layout, but
-    // the wrong one for hiding an owner's management tabs — an owner
-    // taking their own assessment doesn't change whether their account has
-    // a team to manage. Only non-owner members get hidden by it.
-    if (item.enterpriseOnly && isIndividual && !isOwner) return false;
+    // enterpriseOnly tabs (My Team, tokens, results, analytics) are only
+    // shown on enterprise accounts. Self-serve buyers are owners of their
+    // own account but have no team to manage.
+    if (item.enterpriseOnly && !isTeamAccount) return false;
     if (item.ownerOnly && !isOwner) return false;
     if (item.alwaysShow) return true;
     if (item.licenseAny) return item.licenseAny.some(t => licenseTypes.has(t));

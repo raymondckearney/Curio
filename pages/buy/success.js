@@ -52,7 +52,7 @@ export default function BuySuccess() {
                 {assessmentUrl ? (
                   <div style={s.accountBox}>
                     <p style={s.accountTitle}>Start your assessment</p>
-                    <p style={s.accountDesc}>Takes about 15–20 minutes. You'll create your account and access your results at the end.</p>
+                    <p style={s.accountDesc}>Takes about 7–10 minutes. You'll create your account and access your results at the end.</p>
                     <a href={assessmentUrl} style={s.accountBtn}>Begin Assessment →</a>
                     <p style={s.accountSkip}>Already have an account? <a href="/portal/login" style={s.link}>Log in</a></p>
                   </div>

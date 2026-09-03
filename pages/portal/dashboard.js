@@ -77,6 +77,7 @@ export default function PortalDashboard() {
   const licenses = data?.licenses || [];
   const assessment = data?.myAssessment;
   const isIndividual = !!assessment;
+  const isTeamAccount = data?.tier === 'enterprise';
   const hasRoleAnalyzer = data?.hasRoleAnalyzer;
   const hasAssessment = data?.hasAssessment;
   const tertiary = data?.tertiary;
@@ -101,7 +102,7 @@ export default function PortalDashboard() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.layout}>
-        <PortalSidebar me={me} onLogout={logout} active="dashboard" licenses={licenses} isIndividual={isIndividual} />
+        <PortalSidebar me={me} onLogout={logout} active="dashboard" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
         <main style={s.main}>
 
           {/* License expiry banners */}
@@ -411,8 +412,8 @@ export default function PortalDashboard() {
 }
 
 // Keep PortalNav export for backward-compat during transition — sidebar pages import it
-export function PortalNav({ me, onLogout, active, licenses = [], isIndividual = false }) {
-  return <PortalSidebar me={me} onLogout={onLogout} active={active} licenses={licenses} isIndividual={isIndividual} />;
+export function PortalNav({ me, onLogout, active, licenses = [], isIndividual = false, isTeamAccount = false }) {
+  return <PortalSidebar me={me} onLogout={onLogout} active={active} licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />;
 }
 
 function StatCard({ label, value, sub, color }) {

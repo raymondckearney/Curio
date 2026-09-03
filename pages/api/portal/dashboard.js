@@ -108,6 +108,7 @@ export default async function handler(req, res) {
       licenseExpiresAt,
       isExpiringSoon,
       isExpired,
+      tier,
     });
   } catch (err) {
     console.error('[portal/dashboard]', err);

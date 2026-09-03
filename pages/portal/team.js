@@ -38,7 +38,7 @@ export default function PortalTeam() {
 
   useEffect(() => {
     load()
-      .then(({ me, dash, team }) => { setMe(me); setDash(dash); setData(team); })
+      .then(({ me, dash, team }) => { setMe(me); setDash(dash || null); setData(team); })
       .catch(() => router.replace('/portal/login'))
       .finally(() => setLoading(false));
   }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -102,7 +102,7 @@ export default function PortalTeam() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.page}>
-        <PortalNav me={me} onLogout={logout} active="team" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} />
+        <PortalNav me={me} onLogout={logout} active="team" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={dash?.tier === 'enterprise'} />
         <main style={s.main}>
         <div style={s.container}>
           <h1 style={s.pageTitle}>My Team</h1>

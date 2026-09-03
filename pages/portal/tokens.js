@@ -123,7 +123,7 @@ export default function PortalTokens() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.page}>
-        <PortalNav me={me} onLogout={logout} active="tokens" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} />
+        <PortalNav me={me} onLogout={logout} active="tokens" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={dash?.tier === 'enterprise'} />
         <main style={s.main}>
         <div style={s.container}>
           <h1 style={s.pageTitle}>Assessment Tokens</h1>
