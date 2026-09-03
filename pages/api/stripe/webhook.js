@@ -83,10 +83,7 @@ export default async function handler(req, res) {
       buyer_name: name,
       buyer_email: email,
       product,
-      amount: amountPaid,
       engagement_id: engagementId,
-      token_count: tokens.length,
-      created_at: new Date().toISOString(),
     };
     console.log('[stripe/webhook] inserting purchase:', JSON.stringify(purchasePayload));
     const inserted = await dbInsert('purchases', purchasePayload);
