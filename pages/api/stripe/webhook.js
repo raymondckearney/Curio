@@ -78,7 +78,7 @@ export default async function handler(req, res) {
 
   // ── Step 3: Store purchase record ─────────────────────────────────────────
   try {
-    await dbInsert('purchases', {
+    const purchasePayload = {
       stripe_session_id: session.id,
       buyer_name: name,
       buyer_email: email,
@@ -87,9 +87,13 @@ export default async function handler(req, res) {
       engagement_id: engagementId,
       token_count: tokens.length,
       created_at: new Date().toISOString(),
-    });
+    };
+    console.log('[stripe/webhook] inserting purchase:', JSON.stringify(purchasePayload));
+    const inserted = await dbInsert('purchases', purchasePayload);
+    console.log('[stripe/webhook] purchase inserted:', JSON.stringify(inserted));
   } catch (err) {
-    console.error('[stripe/webhook] purchase record failed:', err);
+    console.error('[stripe/webhook] purchase record failed — message:', err.message);
+    console.error('[stripe/webhook] purchase record failed — full error:', String(err));
   }
 
   // ── Step 4 & 5: Buyer confirmation + internal notification ──────────────
