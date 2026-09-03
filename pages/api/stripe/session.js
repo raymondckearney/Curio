@@ -11,20 +11,40 @@ export default async function handler(req, res) {
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
-    // Look up the assessment token created by the webhook for this purchase
+    // Look up the assessment token created by the webhook for this purchase.
+    // We look up by buyer email directly on the tokens table rather than going
+    // through the purchases table, because the token is inserted by the webhook
+    // before the purchase record and the success page loads almost immediately
+    // after Stripe redirects (before the webhook has time to complete).
     let assessmentUrl = null;
     try {
-      const purchases = await dbGet('purchases', { stripe_session_id: session_id }).catch(() => []);
-      if (purchases.length) {
-        const { engagement_id } = purchases[0];
-        const tokens = await dbQuery('tokens', {
-          engagement_id: `eq.${engagement_id}`,
+      const buyerEmail = (session.metadata?.buyer_email || session.customer_email || '').toLowerCase().trim();
+      if (buyerEmail) {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://choosecurio.com';
+
+        // Primary: find an unused assessment token matching the buyer's email
+        const emailTokens = await dbQuery('tokens', {
+          email: `eq.${buyerEmail}`,
           purpose: 'eq.assessment',
           used: 'eq.false',
+          order: 'created_at.desc',
+          limit: '1',
         }).catch(() => []);
-        if (tokens.length) {
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://choosecurio.com';
-          assessmentUrl = `${baseUrl}/go/${tokens[0].token}`;
+
+        if (emailTokens.length) {
+          assessmentUrl = `${baseUrl}/go/${emailTokens[0].token}`;
+        } else {
+          // Fallback: try via purchases → engagement_id (works once webhook completes)
+          const purchases = await dbGet('purchases', { stripe_session_id: session_id }).catch(() => []);
+          if (purchases.length) {
+            const engTokens = await dbQuery('tokens', {
+              engagement_id: `eq.${purchases[0].engagement_id}`,
+              purpose: 'eq.assessment',
+              used: 'eq.false',
+              limit: '1',
+            }).catch(() => []);
+            if (engTokens.length) assessmentUrl = `${baseUrl}/go/${engTokens[0].token}`;
+          }
         }
       }
     } catch (lookupErr) {
