@@ -16,8 +16,8 @@ export default function BuySuccess() {
       .catch(() => setLoading(false));
   }, [session_id]);
 
-  const name = session?.customer_name || session?.metadata?.buyer_name || '';
-  const email = session?.customer_email || session?.metadata?.buyer_email || '';
+  const name = session?.metadata?.buyer_name || session?.customer_name || '';
+  const email = session?.metadata?.buyer_email || session?.customer_email || '';
   const product = session?.metadata?.product;
   const isCombo = product === 'assessment_analyzer';
   const assessmentUrl = session?.assessmentUrl || null;
