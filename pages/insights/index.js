@@ -53,7 +53,7 @@ export default function InsightsPage({ posts }) {
               <p className="insights-empty">No posts yet — check back soon.</p>
             ) : (
               <div className="insights-grid">
-                {posts.map((post) => (
+                {posts.filter(post => post.slug?.current).map((post) => (
                   <Link key={post.slug.current} href={embed ? `/insights/${post.slug.current}?embed=1` : `/insights/${post.slug.current}`} className="insight-card">
                     <div className="insight-card-inner">
                       {post.categories && post.categories.length > 0 && (
