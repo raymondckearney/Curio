@@ -141,6 +141,7 @@ export default function Manual() {
             <Card title="Self-Serve Purchase Flow (choosecurio.com/buy)">
               When someone purchases directly via the public buy page, Stripe fires a webhook (<code>checkout.session.completed</code>) that generates an assessment token, stores a purchase record, and sends a confirmation email with the token link. The buyer then lands on <code>/buy/success</code>, where the primary call to action is <strong>"Begin Assessment →"</strong> — this links directly to their <code>/go/[token]</code> URL so they take the assessment immediately and create their account at the end (the same flow as all other token paths). If the token cannot be resolved in time, the page falls back to directing them to check their inbox for the emailed link. Account creation before assessment completion is no longer offered on this page, which prevents landing on an empty dashboard.
             </Card>
+          </section>
 
           <hr className="divider" />
 
