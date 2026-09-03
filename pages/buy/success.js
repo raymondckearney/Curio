@@ -20,8 +20,7 @@ export default function BuySuccess() {
   const email = session?.customer_email || session?.metadata?.buyer_email || '';
   const product = session?.metadata?.product;
   const isCombo = product === 'assessment_analyzer';
-
-  const signupUrl = `/signup?${new URLSearchParams({ name, email, session_id: session_id || '' })}`;
+  const assessmentUrl = session?.assessmentUrl || null;
 
   return (
     <>
@@ -43,18 +42,27 @@ export default function BuySuccess() {
                 <h1 style={s.title}>
                   You're all set{name ? `, ${name.split(' ')[0]}` : ''}.
                 </h1>
-                {isCombo ? (
-                  <p style={s.sub}>Your Assessment and Role Analyzer links have both been sent to <strong>{email}</strong>. Check your inbox — they should arrive within a minute.</p>
-                ) : (
-                  <p style={s.sub}>Your assessment link has been sent to <strong>{email}</strong>. Check your inbox — it should arrive within a minute.</p>
-                )}
+                <p style={s.sub}>
+                  {isCombo
+                    ? <>Your MindPrint™ Assessment is ready. Complete it now to unlock your Role Analyzer, AI Companion, and personalized dashboard.</>
+                    : <>Your MindPrint™ Assessment is ready. Complete it now to access your results and personalized library.</>
+                  }
+                </p>
 
-                <div style={s.accountBox}>
-                  <p style={s.accountTitle}>Save your results</p>
-                  <p style={s.accountDesc}>Create a free account to access your assessment results and Role Analyzer history anytime.</p>
-                  <a href={signupUrl} style={s.accountBtn}>Create your account →</a>
-                  <p style={s.accountSkip}>Already have one? <a href="/portal/login" style={s.link}>Log in</a></p>
-                </div>
+                {assessmentUrl ? (
+                  <div style={s.accountBox}>
+                    <p style={s.accountTitle}>Start your assessment</p>
+                    <p style={s.accountDesc}>Takes about 15–20 minutes. You'll create your account and access your results at the end.</p>
+                    <a href={assessmentUrl} style={s.accountBtn}>Begin Assessment →</a>
+                    <p style={s.accountSkip}>Already have an account? <a href="/portal/login" style={s.link}>Log in</a></p>
+                  </div>
+                ) : (
+                  <div style={s.accountBox}>
+                    <p style={s.accountTitle}>Check your inbox</p>
+                    <p style={s.accountDesc}>Your assessment link has been sent to <strong>{email}</strong>. Click it to begin — you'll create your account at the end.</p>
+                    <p style={s.accountSkip}>Already have an account? <a href="/portal/login" style={s.link}>Log in</a></p>
+                  </div>
+                )}
 
                 <p style={s.note}>Don't see your email? Check your spam folder or contact <a href="mailto:hello@choosecurio.com" style={s.link}>hello@choosecurio.com</a></p>
               </>
