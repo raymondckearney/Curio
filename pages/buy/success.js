@@ -10,10 +10,27 @@ export default function BuySuccess() {
 
   useEffect(() => {
     if (!session_id) return;
-    fetch(`/api/stripe/session?session_id=${session_id}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { setSession(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    let attempts = 0;
+    const maxAttempts = 8;
+    const delay = 1500; // ms between retries
+
+    async function poll() {
+      try {
+        const r = await fetch(`/api/stripe/session?session_id=${session_id}`);
+        const data = r.ok ? await r.json() : null;
+        setSession(data);
+        // If we don't have the token URL yet and have retries left, try again
+        if (!data?.assessmentUrl && attempts < maxAttempts) {
+          attempts++;
+          setTimeout(poll, delay);
+        } else {
+          setLoading(false);
+        }
+      } catch {
+        setLoading(false);
+      }
+    }
+    poll();
   }, [session_id]);
 
   const name = session?.metadata?.buyer_name || session?.customer_name || '';
