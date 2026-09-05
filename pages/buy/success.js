@@ -19,11 +19,15 @@ export default function BuySuccess() {
         const r = await fetch(`/api/stripe/session?session_id=${session_id}`);
         const data = r.ok ? await r.json() : null;
         setSession(data);
-        // If we don't have the token URL yet and have retries left, try again
-        if (!data?.assessmentUrl && attempts < maxAttempts) {
+        if (data?.assessmentUrl) {
+          // Token ready — show the button immediately
+          setLoading(false);
+        } else if (attempts < maxAttempts) {
+          // Keep spinner up, retry shortly
           attempts++;
           setTimeout(poll, delay);
         } else {
+          // All retries exhausted — fall back to inbox message
           setLoading(false);
         }
       } catch {
@@ -44,6 +48,7 @@ export default function BuySuccess() {
       <Head>
         <title>You're all set — Curio</title>
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </Head>
       <div style={s.page}>
         <header style={s.header}>
@@ -53,7 +58,10 @@ export default function BuySuccess() {
           <div style={s.card}>
             <div style={s.icon}>✓</div>
             {loading ? (
-              <p style={s.sub}>Loading your order…</p>
+              <div style={s.preparing}>
+                <div style={s.spinner} />
+                <p style={s.preparingText}>Preparing your assessment…</p>
+              </div>
             ) : (
               <>
                 <h1 style={s.title}>
@@ -107,5 +115,8 @@ const s = {
   accountBtn: { display: 'inline-block', padding: '11px 24px', background: '#059669', color: '#fff', textDecoration: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.95rem' },
   accountSkip: { fontSize: '0.8rem', color: '#6EE7B7', marginTop: 12, marginBottom: 0 },
   note: { fontSize: '0.85rem', color: '#94A3B8' },
+  preparing: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '24px 0' },
+  preparingText: { fontSize: '0.95rem', color: '#64748B', margin: 0 },
+  spinner: { width: 32, height: 32, borderRadius: '50%', border: '3px solid #E2E8F0', borderTopColor: '#059669', animation: 'spin 0.8s linear infinite' },
   link: { color: '#059669', textDecoration: 'none', fontWeight: 500 },
 };
