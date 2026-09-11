@@ -113,7 +113,7 @@ export default function PortalAnalytics() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={s.page}>
-        <PortalNav me={me} onLogout={logout} active="analytics" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={dash?.tier === 'enterprise'} />
+        <PortalNav me={me} onLogout={logout} active="analytics" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={!!dash?.isTeamAccount} />
         <main style={s.main}>
         <div style={s.container}>
           <div style={{ marginBottom: 24 }}>

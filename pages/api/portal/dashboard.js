@@ -43,6 +43,12 @@ export default async function handler(req, res) {
 
     const tokenCount = tokens.length;
     const usedTokens = tokens.filter(t => t.used).length;
+    // A self-serve buyer's account is provisioned with exactly one
+    // assessment token (their own). A team/enterprise pool always has more
+    // than one, whether or not any of them have been sent or used yet.
+    // `tier` ('basic' | 'premium') never holds an 'enterprise' value, so it
+    // cannot be used to gate the team-only nav items.
+    const isTeamAccount = tokenCount > 1;
 
     const tokenIds = tokens.map(t => t.token).filter(Boolean);
     let recentAssessments = [];
@@ -109,6 +115,7 @@ export default async function handler(req, res) {
       isExpiringSoon,
       isExpired,
       tier,
+      isTeamAccount,
     });
   } catch (err) {
     console.error('[portal/dashboard]', err);
