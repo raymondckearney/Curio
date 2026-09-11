@@ -197,10 +197,11 @@ export default function Manual() {
             <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, last login, and an Expiry column showing the soonest upcoming license expiration date (shown in red if already past due, "No expiry" if none set). Filterable by type, tier, and name/email search.</Card>
             <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, extra Resources collections beyond the free default) at creation time.</Card>
             <Card title="Edit Account">
-              Click <strong>Edit</strong> on any account to expand a panel with five sections:
+              Click <strong>Edit</strong> on any account to expand a panel with these sections:
               <ul>
                 <li><strong>Tier & Licenses</strong> — change tier, add or remove licenses with quantity and expiry.</li>
-                <li><strong>Users & Roles</strong> — see all portal users on the account with their current role. Toggle any user between Owner and Member instantly.</li>
+                <li><strong>Users & Roles</strong> — see all portal users on the account with their current role and team. Change a user's role with the Owner / Manager / Member dropdown, and their team with the adjacent team dropdown, instantly.</li>
+                <li><strong>Teams</strong> — create or delete sub-teams within an enterprise account. Deleting a team unassigns its members and tokens rather than deleting them. A Manager's visibility and actions in the portal are scoped to whichever team they're assigned to here, so a team must exist before assigning anyone the Manager role meaningfully.</li>
                 <li><strong>MindPrint™ Profile</strong> — shows the account's current assessed profile. Use the dropdown and "Update Profile" button to manually correct it. If the new profile has a different tertiary orientation, the companion and library licenses are automatically swapped to match.</li>
                 <li><strong>Token Pool</strong> — click "Show ▼" to see Total / Available / Sent / Completed counts, a scrollable token table (including each token's Expires date, shown in red once past due), and a green <strong>Add Tokens</strong> form. Enter a quantity and optional engagement label to release tokens to that account.</li>
                 <li><strong>Purchase History</strong> — Stripe purchase records linked to this account.</li>
@@ -300,6 +301,7 @@ export default function Manual() {
             <Card title="Token Pool Summary">Four stat tiles at the top: Total, Available, Sent, and Completed tokens for this account.</Card>
             <Card title="Invite a Team Member">Enter an email, optional name, and role (Member or Owner). A portal account is created and a "Set Up Your Account" email is sent with a 7-day setup link. The invited user sets their own password.</Card>
             <Card title="Team Table">All portal users on the account with: name, email, role, assessment status (No Token / Invited / Completed), MindPrint™ profile type, and join date. Owners can remove members (but not themselves) with a confirmation prompt.</Card>
+            <Card title="Manager role (foundation only)">A third role, <code>manager</code>, exists on <code>client_users</code> alongside owner and member, together with a <code>teams</code> table and a <code>team_id</code> column on both <code>client_users</code> and <code>tokens</code> (see admin Accounts → Edit Account → Teams). This is the data model for scoping a manager to their own team's profiles and tokens without seeing the rest of the enterprise account — but as of this writing the portal pages themselves (My Team, Assessment Tokens, Assessment Results, Analytics) don't yet branch on the manager role or filter by team_id; assigning someone the Manager role today only labels them, it doesn't yet change what they can see or do in the portal. That behavior is a follow-up phase.</Card>
           </section>
 
           <section className="section" id="portal-tokens">

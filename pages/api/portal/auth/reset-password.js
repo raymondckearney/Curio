@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     await dbPatch('client_users', { id: user.id }, { password_hash: hash });
     await dbPatch('password_reset_tokens', { token }, { used: true });
 
-    const sessionToken = createSessionToken(user.id, user.account_id, user.role);
+    const sessionToken = createSessionToken(user.id, user.account_id, user.role, user.team_id);
     res.setHeader('Set-Cookie', sessionCookie(sessionToken));
     return res.status(200).json({ success: true });
   } catch (err) {
