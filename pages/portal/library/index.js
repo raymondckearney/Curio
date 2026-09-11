@@ -1,7 +1,8 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import PortalSidebar from '../../components/PortalSidebar';
+import PortalSidebar from '../../../components/PortalSidebar';
+import { TOOL_NUM_TO_SLUG } from '../../../lib/guideContent';
 
 const SUPPORT_MODES = [
   { word: 'Scaffold', def: 'Structure that carries the thinking.' },
@@ -162,9 +163,13 @@ export default function LibraryPage() {
                           <div style={s.cardTitle}>{item.title}</div>
                           {item.summary && <p style={s.cardSummary}>{item.summary}</p>}
                           <div style={s.cardActions}>
-                            <button style={s.cardBtn} disabled={downloading === `${item.tool_num}-guide`} onClick={() => openFile(item.tool_num, 'guide')}>
-                              {downloading === `${item.tool_num}-guide` ? 'Opening…' : 'Download Guide'}
-                            </button>
+                            {TOOL_NUM_TO_SLUG[item.tool_num] ? (
+                              <a href={`/portal/library/${TOOL_NUM_TO_SLUG[item.tool_num]}`} style={s.cardBtnLink}>View Guide</a>
+                            ) : (
+                              <button style={s.cardBtn} disabled={downloading === `${item.tool_num}-guide`} onClick={() => openFile(item.tool_num, 'guide')}>
+                                {downloading === `${item.tool_num}-guide` ? 'Opening…' : 'Download Guide'}
+                              </button>
+                            )}
                             <button style={s.cardBtnSecondary} disabled={downloading === `${item.tool_num}-template`} onClick={() => openFile(item.tool_num, 'template')}>
                               {downloading === `${item.tool_num}-template` ? 'Opening…' : 'Download Template'}
                             </button>
@@ -235,6 +240,7 @@ const s = {
   cardActions: { display: 'flex', gap: 8 },
   cardBtn: { flex: 1, padding: '8px 12px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   cardBtnSecondary: { flex: 1, padding: '8px 12px', background: '#fff', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
+  cardBtnLink: { flex: 1, display: 'block', padding: '8px 12px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', textAlign: 'center' },
   emptyState: { background: '#fff', borderRadius: 12, padding: '40px 28px', textAlign: 'center', color: '#64748B', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' },
 
   guideSection: { marginTop: 40 },
