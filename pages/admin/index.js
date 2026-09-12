@@ -1468,6 +1468,77 @@ function EditPanel({ account, onClose, onSave }) {
   const [profileChanging, setProfileChanging] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
   const [selectedProfile, setSelectedProfile] = useState(account.assessmentProfile || '');
+  const [teams, setTeams] = useState([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [creatingTeam, setCreatingTeam] = useState(false);
+  const [teamMsg, setTeamMsg] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/accounts/${account.id}/teams`)
+      .then(r => r.ok ? r.json() : { teams: [] })
+      .then(d => setTeams(d.teams || []))
+      .catch(() => {})
+      .finally(() => setTeamsLoading(false));
+  }, [account.id]);
+
+  async function createTeam() {
+    if (!newTeamName.trim()) return;
+    setCreatingTeam(true); setTeamMsg(null);
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/teams`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTeamName.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed');
+      setTeams(prev => [...prev, { ...d.team, members: [] }]);
+      setNewTeamName('');
+    } catch (e) { setTeamMsg(e.message); }
+    finally { setCreatingTeam(false); }
+  }
+
+  async function deleteTeam(teamId) {
+    if (!window.confirm('Delete this team? Members and tokens stay in the account but become unassigned, not deleted.')) return;
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/teams`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId }),
+      });
+      if (res.ok) {
+        setTeams(prev => prev.filter(t => t.id !== teamId));
+        setUsers(prev => prev.map(u => u.team_id === teamId ? { ...u, team_id: null } : u));
+      }
+    } catch {}
+  }
+
+  async function updateUserRole(user, role) {
+    setRoleChanging(user.id);
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, role }),
+      });
+      if (res.ok) setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role } : u));
+    } catch {}
+    finally { setRoleChanging(null); }
+  }
+
+  async function updateUserTeam(user, teamId) {
+    setRoleChanging(user.id);
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, team_id: teamId || null }),
+      });
+      if (res.ok) setUsers(prev => prev.map(u => u.id === user.id ? { ...u, team_id: teamId || null } : u));
+    } catch {}
+    finally { setRoleChanging(null); }
+  }
 
   async function updateProfile() {
     if (!selectedProfile) return;
@@ -1513,20 +1584,6 @@ function EditPanel({ account, onClose, onSave }) {
       if (r2.ok) setTokenData(await r2.json());
     } catch (e) { setAddTokenMsg({ ok: false, text: e.message }); }
     finally { setAddingTokens(false); }
-  }
-
-  async function toggleRole(user) {
-    const newRole = user.role === 'owner' ? 'member' : 'owner';
-    setRoleChanging(user.id);
-    try {
-      const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, role: newRole }),
-      });
-      if (res.ok) setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u));
-    } catch {}
-    finally { setRoleChanging(null); }
   }
 
   function addLicense() { setLicenses(prev => [...prev, { type: licType, quantity: licQty || null, expires_at: licExpiry || null }]); setLicQty(''); setLicExpiry(''); }
@@ -1591,20 +1648,48 @@ function EditPanel({ account, onClose, onSave }) {
             <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.82rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '6px 10px' }}>
               <span style={{ flex: 1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.email}</span>
               <span style={{ color: '#64748B', fontSize: '0.78rem', flexShrink: 0 }}>{u.email}</span>
-              <span style={u.role === 'owner' ? { background: '#1E3A5F', color: '#fff', padding: '2px 8px', borderRadius: 4, fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 } : { background: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: 4, fontSize: '0.72rem', fontWeight: 600, flexShrink: 0 }}>
-                {u.role || 'member'}
-              </span>
-              <button
-                style={{ padding: '3px 10px', background: 'none', border: '1px solid #E2E8F0', borderRadius: 5, fontSize: '0.75rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", color: '#374151', flexShrink: 0, opacity: roleChanging === u.id ? 0.5 : 1 }}
-                onClick={() => toggleRole(u)}
+              <select
+                style={{ padding: '3px 8px', border: '1px solid #E2E8F0', borderRadius: 5, fontSize: '0.75rem', fontFamily: "'DM Sans', sans-serif", color: '#374151', flexShrink: 0, opacity: roleChanging === u.id ? 0.5 : 1 }}
+                value={u.role || 'member'}
                 disabled={roleChanging === u.id}
+                onChange={e => updateUserRole(u, e.target.value)}
               >
-                {roleChanging === u.id ? '…' : u.role === 'owner' ? 'Make Member' : 'Make Owner'}
-              </button>
+                <option value="owner">Owner</option>
+                <option value="manager">Manager</option>
+                <option value="member">Member</option>
+              </select>
+              <select
+                style={{ padding: '3px 8px', border: '1px solid #E2E8F0', borderRadius: 5, fontSize: '0.75rem', fontFamily: "'DM Sans', sans-serif", color: '#374151', flexShrink: 0, opacity: roleChanging === u.id ? 0.5 : 1, maxWidth: 130 }}
+                value={u.team_id || ''}
+                disabled={roleChanging === u.id || !teams.length}
+                onChange={e => updateUserTeam(u, e.target.value)}
+              >
+                <option value="">No team</option>
+                {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
             </div>
           ))}
         </div>
       )}
+
+      {/* Teams */}
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Teams</p>
+        {teamsLoading && <p style={{ fontSize: '0.82rem', color: '#94A3B8' }}>Loading…</p>}
+        {!teamsLoading && teams.length === 0 && <p style={{ fontSize: '0.82rem', color: '#94A3B8', marginBottom: 8 }}>No teams yet. A manager's visibility is scoped to a team, so create one before assigning a manager role above.</p>}
+        {teams.map(t => (
+          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.82rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '6px 10px' }}>
+            <span style={{ flex: 1, fontWeight: 500 }}>{t.name}</span>
+            <span style={{ color: '#64748B', fontSize: '0.78rem' }}>{(t.members || []).length} member{(t.members || []).length !== 1 ? 's' : ''}</span>
+            <button style={{ ...s.closeBtn, fontSize: '0.9rem' }} onClick={() => deleteTeam(t.id)}>×</button>
+          </div>
+        ))}
+        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <input style={{ ...s.fieldInput, flex: 1 }} value={newTeamName} onChange={e => setNewTeamName(e.target.value)} placeholder="New team name" />
+          <button style={s.btnSmall} onClick={createTeam} disabled={creatingTeam || !newTeamName.trim()}>{creatingTeam ? '…' : '+ Add Team'}</button>
+        </div>
+        {teamMsg && <p style={{ fontSize: '0.8rem', color: '#DC2626', marginTop: 6 }}>{teamMsg}</p>}
+      </div>
 
       {/* MindPrint™ Profile */}
       <div style={{ marginBottom: 16 }}>

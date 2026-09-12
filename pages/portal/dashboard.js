@@ -77,7 +77,7 @@ export default function PortalDashboard() {
   const licenses = data?.licenses || [];
   const assessment = data?.myAssessment;
   const isIndividual = !!assessment;
-  const isTeamAccount = data?.tier === 'enterprise';
+  const isTeamAccount = !!data?.isTeamAccount;
   const hasRoleAnalyzer = data?.hasRoleAnalyzer;
   const hasAssessment = data?.hasAssessment;
   const tertiary = data?.tertiary;

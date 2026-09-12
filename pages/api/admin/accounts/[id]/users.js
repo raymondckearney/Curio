@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const { id: accountId } = req.query;
 
   if (req.method === 'POST') {
-    const { email, name, role = 'member', password } = req.body || {};
+    const { email, name, role = 'member', password, team_id } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'email and password are required' });
 
     try {
@@ -18,6 +18,7 @@ export default async function handler(req, res) {
         email: email.toLowerCase().trim(),
         name: name || null,
         role,
+        team_id: team_id || null,
         password_hash: hash,
       });
       const { password_hash, ...safe } = rows[0];
@@ -39,12 +40,15 @@ export default async function handler(req, res) {
     }
   }
 
-  // PATCH — update role or reset password
+  // PATCH — update role, team assignment, or reset password
   if (req.method === 'PATCH') {
-    const { userId, role, password } = req.body || {};
+    const { userId, role, password, team_id } = req.body || {};
     if (!userId) return res.status(400).json({ error: 'userId required' });
     const update = {};
     if (role) update.role = role;
+    // team_id is explicitly nullable (moving someone back to unassigned), so
+    // check for the key's presence rather than truthiness.
+    if ('team_id' in (req.body || {})) update.team_id = team_id || null;
     if (password) update.password_hash = await hashPassword(password);
     if (!Object.keys(update).length) return res.status(400).json({ error: 'Nothing to update' });
     try {

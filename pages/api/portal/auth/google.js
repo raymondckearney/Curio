@@ -56,7 +56,7 @@ export default async function handler(req, res) {
       }
       await dbPatch('client_users', { id: user.id }, { last_login_at: new Date().toISOString() }).catch(() => {});
       await applyAndConsumeToken(assessmentToken, user.account_id);
-      const token = createSessionToken(user.id, user.account_id, user.role);
+      const token = createSessionToken(user.id, user.account_id, user.role, user.team_id);
       res.setHeader('Set-Cookie', sessionCookie(token));
       return res.status(200).json({ success: true });
     }

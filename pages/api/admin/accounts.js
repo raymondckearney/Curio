@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
       const enriched = await Promise.all(accounts.map(async acc => {
         const [users, licenses, tokens] = await Promise.all([
-          dbQuery('client_users', { account_id: `eq.${acc.id}`, select: 'id,email,name,role,last_login_at,provider', order: 'created_at.asc' }),
+          dbQuery('client_users', { account_id: `eq.${acc.id}`, select: 'id,email,name,role,last_login_at,provider,team_id', order: 'created_at.asc' }),
           dbQuery('account_licenses', { account_id: `eq.${acc.id}`, select: '*' }),
           dbQuery('tokens', { account_id: `eq.${acc.id}`, select: 'token,engagement_id', order: 'created_at.asc' }),
         ]);
