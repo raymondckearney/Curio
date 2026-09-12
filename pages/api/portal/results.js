@@ -7,13 +7,20 @@ export default async function handler(req, res) {
   const session = getPortalSession(req);
   if (!session) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { accountId, userId, role } = session;
+  const { accountId, userId, role, teamId } = session;
 
   try {
+    const tokenFilter = { account_id: `eq.${accountId}`, select: 'token,name,email,role' };
+    // A manager's results are scoped to their own team, independent of the
+    // account's restrict_results toggle below (that toggle is about a plain
+    // member seeing only themselves — a manager always sees their whole
+    // team, never just their own single result).
+    if (role === 'manager') tokenFilter.team_id = `eq.${teamId}`;
+
     const [accountRows, userRows, tokens] = await Promise.all([
       dbGet('client_accounts', { id: accountId }),
       dbGet('client_users', { id: userId }),
-      dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token,name,email,role' }),
+      dbQuery('tokens', tokenFilter),
     ]);
 
     const account = accountRows[0];

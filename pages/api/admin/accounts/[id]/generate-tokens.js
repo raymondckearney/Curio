@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   if (!getAdminSession(req)) return res.status(401).json({ error: 'Unauthorized' });
 
   const { id: accountId } = req.query;
-  const { quantity, engagement_id, granted_tier, granted_tools } = req.body || {};
+  const { quantity, engagement_id, granted_tier, granted_tools, team_id } = req.body || {};
 
   const qty = parseInt(quantity, 10);
   if (!qty || qty < 1 || qty > 500) return res.status(400).json({ error: 'quantity must be between 1 and 500' });
@@ -42,11 +42,12 @@ export default async function handler(req, res) {
       name: '',
       granted_tier: tier,
       granted_tools: tools,
+      team_id: team_id || null,
       used: false,
     }));
 
     const inserted = await dbInsert('tokens', rows);
-    return res.status(201).json({ created: inserted.length, engagement_id: engId, granted_tier: tier, granted_tools: tools });
+    return res.status(201).json({ created: inserted.length, engagement_id: engId, granted_tier: tier, granted_tools: tools, team_id: team_id || null });
   } catch (err) {
     console.error('[admin/accounts/generate-tokens]', err);
     return res.status(500).json({ error: err.message });

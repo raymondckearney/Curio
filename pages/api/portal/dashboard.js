@@ -8,12 +8,12 @@ export default async function handler(req, res) {
   const session = getPortalSession(req);
   if (!session) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { accountId, userId } = session;
+  const { accountId, userId, role, teamId } = session;
 
   try {
-    const [licenses, tokens, account, userRows] = await Promise.all([
+    const [licenses, allTokens, account, userRows] = await Promise.all([
       dbGet('account_licenses', { account_id: accountId }),
-      dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token,used,name,email,purpose,used_at' }),
+      dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token,used,name,email,purpose,used_at,team_id' }),
       dbGet('client_accounts', { id: accountId }),
       dbGet('client_users', { id: userId }),
     ]);
@@ -41,14 +41,23 @@ export default async function handler(req, res) {
     // not gated behind a license row.
     const hasLibrary = true;
 
+    // isTeamAccount reflects the whole account's shape (does it look like an
+    // enterprise pool at all), not a single manager's own team size — a
+    // small or brand-new team must not lose access to the team-only nav
+    // just because its own token count happens to be 1. A self-serve
+    // buyer's account is provisioned with exactly one assessment token
+    // (their own); a team/enterprise pool always has more than one. `tier`
+    // ('basic' | 'premium') never holds an 'enterprise' value, so it can't
+    // be used for this.
+    const isTeamAccount = allTokens.length > 1;
+
+    // A manager's own stats, recent-assessments, and "my pending token"
+    // lookup below are scoped to their own team only, never the rest of
+    // the enterprise account.
+    const tokens = role === 'manager' ? allTokens.filter(t => t.team_id === teamId) : allTokens;
+
     const tokenCount = tokens.length;
     const usedTokens = tokens.filter(t => t.used).length;
-    // A self-serve buyer's account is provisioned with exactly one
-    // assessment token (their own). A team/enterprise pool always has more
-    // than one, whether or not any of them have been sent or used yet.
-    // `tier` ('basic' | 'premium') never holds an 'enterprise' value, so it
-    // cannot be used to gate the team-only nav items.
-    const isTeamAccount = tokenCount > 1;
 
     const tokenIds = tokens.map(t => t.token).filter(Boolean);
     let recentAssessments = [];

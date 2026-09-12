@@ -7,7 +7,9 @@ export default async function handler(req, res) {
 
   const session = getPortalSession(req);
   if (!session) return res.status(401).json({ error: 'Unauthorized' });
-  if (session.role !== 'owner') return res.status(403).json({ error: 'Only account owners can distribute tokens.' });
+  if (session.role !== 'owner' && session.role !== 'manager') {
+    return res.status(403).json({ error: 'Only account owners and team managers can distribute tokens.' });
+  }
 
   const { recipients, message } = req.body || {};
   if (!recipients?.length) return res.status(400).json({ error: 'recipients required' });
@@ -16,14 +18,18 @@ export default async function handler(req, res) {
   if (!process.env.RESEND_API_KEY) return res.status(500).json({ error: 'Email not configured' });
 
   try {
-    // Fetch available tokens (no email assigned, not used)
-    const available = await dbQuery('tokens', {
+    // Fetch available tokens (no email assigned, not used). A manager can
+    // only draw from their own team's pool, not the whole account's.
+    const availableFilter = {
       account_id: `eq.${session.accountId}`,
       email: 'is.null',
       used: 'eq.false',
       order: 'created_at.asc',
       select: 'token,engagement_id',
-    });
+    };
+    if (session.role === 'manager') availableFilter.team_id = `eq.${session.teamId}`;
+
+    const available = await dbQuery('tokens', availableFilter);
 
     if (available.length < recipients.length) {
       return res.status(400).json({

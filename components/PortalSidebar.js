@@ -23,6 +23,7 @@ const TEAM_CHILD_KEYS = NAV_ITEMS.filter(i => i.groupKey === 'team').map(i => i.
 export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false, isTeamAccount = false }) {
   const licenseTypes = new Set(licenses.map(l => l.type));
   const isOwner = me?.user?.role === 'owner';
+  const isManager = me?.user?.role === 'manager';
   const [teamOpen, setTeamOpen] = useState(active === 'team' || TEAM_CHILD_KEYS.includes(active));
 
   const visibleItems = NAV_ITEMS.filter(item => {
@@ -30,7 +31,12 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
     // shown on enterprise accounts. Self-serve buyers are owners of their
     // own account but have no team to manage.
     if (item.enterpriseOnly && !isTeamAccount) return false;
-    if (item.ownerOnly && !isOwner) return false;
+    // A manager sees the same tabs as an owner here — their view is just
+    // scoped server-side to their own team's data, not to the whole
+    // account. Managers don't get any additional owner-only actions
+    // beyond what these four tabs already expose (e.g. inviting/removing
+    // members is still owner-only inside pages/api/portal/team.js).
+    if (item.ownerOnly && !isOwner && !isManager) return false;
     if (item.alwaysShow) return true;
     if (item.licenseAny) return item.licenseAny.some(t => licenseTypes.has(t));
     return licenseTypes.has(item.license);

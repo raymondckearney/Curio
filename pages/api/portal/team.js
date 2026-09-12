@@ -8,14 +8,22 @@ export default async function handler(req, res) {
   const session = getPortalSession(req);
   if (!session) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { accountId, role } = session;
+  const { accountId, role, teamId } = session;
+  const isManager = role === 'manager';
 
-  // GET — return all team members + their assessment status
+  // GET — return all team members + their assessment status. An owner sees
+  // the whole account; a manager sees only their own team.
   if (req.method === 'GET') {
     try {
+      const userFilter = { account_id: `eq.${accountId}`, select: 'id,email,name,role,last_login_at,created_at,team_id', order: 'created_at.asc' };
+      const tokenFilter = { account_id: `eq.${accountId}`, select: 'token,email,used,used_at,link_sent_at,name' };
+      if (isManager) {
+        userFilter.team_id = `eq.${teamId}`;
+        tokenFilter.team_id = `eq.${teamId}`;
+      }
       const [users, tokens] = await Promise.all([
-        dbQuery('client_users', { account_id: `eq.${accountId}`, select: 'id,email,name,role,last_login_at,created_at', order: 'created_at.asc' }),
-        dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token,email,used,used_at,link_sent_at,name' }),
+        dbQuery('client_users', userFilter),
+        dbQuery('tokens', tokenFilter),
       ]);
 
       // Build a map of email → token status

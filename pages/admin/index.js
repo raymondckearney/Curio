@@ -1461,6 +1461,7 @@ function EditPanel({ account, onClose, onSave }) {
   const [addQty, setAddQty] = useState('');
   const [addEngId, setAddEngId] = useState('');
   const [addGrantedTools, setAddGrantedTools] = useState(['assessment_tokens']);
+  const [addTeamId, setAddTeamId] = useState('');
   const [addingTokens, setAddingTokens] = useState(false);
   const [addTokenMsg, setAddTokenMsg] = useState(null);
   const [users, setUsers] = useState(account.users || []);
@@ -1573,7 +1574,7 @@ function EditPanel({ account, onClose, onSave }) {
       const res = await fetch(`/api/admin/accounts/${account.id}/generate-tokens`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: qty, engagement_id: addEngId.trim() || undefined, granted_tools: addGrantedTools }),
+        body: JSON.stringify({ quantity: qty, engagement_id: addEngId.trim() || undefined, granted_tools: addGrantedTools, team_id: addTeamId || undefined }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Failed');
@@ -1734,6 +1735,15 @@ function EditPanel({ account, onClose, onSave }) {
                   <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#374151', marginBottom: 3 }}>Engagement / Label <span style={{ fontWeight: 400, color: '#94A3B8' }}>(optional)</span></label>
                   <input style={s.fieldInput} value={addEngId} onChange={e => setAddEngId(e.target.value)} placeholder="e.g. acme-q3-2025 (auto-generated if blank)" />
                 </div>
+                {teams.length > 0 && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#374151', marginBottom: 3 }}>Team <span style={{ fontWeight: 400, color: '#94A3B8' }}>(optional)</span></label>
+                    <select style={{ ...s.fieldInput, maxWidth: 150 }} value={addTeamId} onChange={e => setAddTeamId(e.target.value)}>
+                      <option value="">Enterprise-wide</option>
+                      {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
               <ToolAccessField grantedTools={addGrantedTools} setGrantedTools={setAddGrantedTools} />
               <button style={{ ...s.btnSmall, background: '#059669', color: '#fff', border: 'none', opacity: addingTokens ? 0.7 : 1, marginTop: 10 }} onClick={handleAddTokens} disabled={addingTokens}>
@@ -1762,7 +1772,7 @@ function EditPanel({ account, onClose, onSave }) {
               <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                   <thead style={{ position: 'sticky', top: 0, background: '#F8FAFC' }}>
-                    <tr>{['Name', 'Email', 'Engagement', 'Status', 'Sent', 'Completed', 'Expires'].map(h => <th key={h} style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid #E2E8F0', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>)}</tr>
+                    <tr>{['Name', 'Email', 'Engagement', 'Team', 'Status', 'Sent', 'Completed', 'Expires'].map(h => <th key={h} style={{ textAlign: 'left', padding: '7px 10px', borderBottom: '1px solid #E2E8F0', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
                     {tokenData.tokens.map((t, i) => (
@@ -1770,6 +1780,7 @@ function EditPanel({ account, onClose, onSave }) {
                         <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9' }}>{t.name || '—'}</td>
                         <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.email || '—'}</td>
                         <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.engagement_id || '—'}</td>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{teams.find(team => team.id === t.team_id)?.name || '—'}</td>
                         <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9' }}>
                           <span style={t.used ? { color: '#059669', fontWeight: 600 } : t.email ? { color: '#1D4ED8', fontWeight: 600 } : { color: '#94A3B8' }}>
                             {t.used ? 'Completed' : t.email ? 'Sent' : 'Available'}
