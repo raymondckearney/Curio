@@ -22,6 +22,13 @@ export default function PortalTeam() {
   // Remove state
   const [removingId, setRemovingId] = useState(null);
 
+  // Teams (owner only)
+  const [teams, setTeams] = useState([]);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [creatingTeam, setCreatingTeam] = useState(false);
+  const [teamMsg, setTeamMsg] = useState(null);
+  const [updatingMemberId, setUpdatingMemberId] = useState(null);
+
   async function load() {
     const [meRes, dashRes, teamRes] = await Promise.all([
       fetch('/api/portal/me'),
@@ -29,19 +36,85 @@ export default function PortalTeam() {
       fetch('/api/portal/team'),
     ]);
     if (!meRes.ok) throw new Error('unauth');
-    return {
-      me: await meRes.json(),
-      dash: dashRes.ok ? await dashRes.json() : null,
-      team: teamRes.ok ? await teamRes.json() : null,
-    };
+    const me = await meRes.json();
+    const dash = dashRes.ok ? await dashRes.json() : null;
+    const team = teamRes.ok ? await teamRes.json() : null;
+    let teamsList = [];
+    if (me?.user?.role === 'owner') {
+      const teamsRes = await fetch('/api/portal/teams');
+      if (teamsRes.ok) teamsList = (await teamsRes.json()).teams || [];
+    }
+    return { me, dash, team, teamsList };
   }
 
   useEffect(() => {
     load()
-      .then(({ me, dash, team }) => { setMe(me); setDash(dash || null); setData(team); })
+      .then(({ me, dash, team, teamsList }) => { setMe(me); setDash(dash || null); setData(team); setTeams(teamsList); })
       .catch(() => router.replace('/portal/login'))
       .finally(() => setLoading(false));
   }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function createTeam() {
+    if (!newTeamName.trim()) return;
+    setCreatingTeam(true); setTeamMsg(null);
+    try {
+      const res = await fetch('/api/portal/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTeamName.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed to create team.');
+      setTeams(prev => [...prev, d.team]);
+      setNewTeamName('');
+    } catch (e) { setTeamMsg(e.message); }
+    finally { setCreatingTeam(false); }
+  }
+
+  async function deleteTeam(teamId) {
+    if (!confirm('Delete this team? Members and tokens stay on the account but become unassigned, not deleted.')) return;
+    try {
+      const res = await fetch('/api/portal/teams', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId }),
+      });
+      if (res.ok) {
+        setTeams(prev => prev.filter(t => t.id !== teamId));
+        setData(prev => prev ? { ...prev, members: prev.members.map(m => m.team_id === teamId ? { ...m, team_id: null } : m) } : prev);
+      }
+    } catch {}
+  }
+
+  async function updateMemberRole(member, newRole) {
+    setUpdatingMemberId(member.id);
+    try {
+      const res = await fetch('/api/portal/team', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: member.id, role: newRole }),
+      });
+      const d = await res.json();
+      if (!res.ok) { alert(d.error || 'Failed to update role.'); return; }
+      setData(prev => ({ ...prev, members: prev.members.map(m => m.id === member.id ? { ...m, role: newRole } : m) }));
+    } catch { alert('Network error.'); }
+    finally { setUpdatingMemberId(null); }
+  }
+
+  async function updateMemberTeam(member, teamId) {
+    setUpdatingMemberId(member.id);
+    try {
+      const res = await fetch('/api/portal/team', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: member.id, team_id: teamId || null }),
+      });
+      const d = await res.json();
+      if (!res.ok) { alert(d.error || 'Failed to update team.'); return; }
+      setData(prev => ({ ...prev, members: prev.members.map(m => m.id === member.id ? { ...m, team_id: teamId || null } : m) }));
+    } catch { alert('Network error.'); }
+    finally { setUpdatingMemberId(null); }
+  }
 
   async function logout() {
     await fetch('/api/portal/logout', { method: 'POST' });
@@ -124,6 +197,34 @@ export default function PortalTeam() {
             </div>
           )}
 
+          {/* Teams (owners only) */}
+          {isOwner && (
+            <div style={{ ...s.panel, marginBottom: 24 }}>
+              <h2 style={s.sectionTitle}>Teams</h2>
+              <p style={s.sectionSub}>Split your account into sub-teams and assign a manager to each. A manager sees and acts only on their own team — not the rest of the account.</p>
+              {teams.length === 0 ? (
+                <p style={{ color: '#94A3B8', fontSize: '0.875rem', marginBottom: 12 }}>No teams yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                  {teams.map(t => (
+                    <div key={t.id} style={s.teamRow}>
+                      <span style={{ flex: 1, fontWeight: 500 }}>{t.name}</span>
+                      <span style={{ color: '#64748B', fontSize: '0.82rem' }}>{(t.members || []).length} member{(t.members || []).length !== 1 ? 's' : ''}</span>
+                      <button style={s.teamDeleteBtn} onClick={() => deleteTeam(t.id)}>Delete</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input style={{ ...s.input, flex: 1 }} value={newTeamName} onChange={e => setNewTeamName(e.target.value)} placeholder="New team name" />
+                <button style={{ ...s.btn, alignSelf: 'auto' }} onClick={createTeam} disabled={creatingTeam || !newTeamName.trim()}>
+                  {creatingTeam ? 'Adding…' : '+ Add Team'}
+                </button>
+              </div>
+              {teamMsg && <p style={{ color: '#DC2626', fontSize: '0.85rem', marginTop: 8 }}>{teamMsg}</p>}
+            </div>
+          )}
+
           {/* Invite form (owners only) */}
           {isOwner && (
             <div style={{ ...s.panel, marginBottom: 24 }}>
@@ -143,6 +244,7 @@ export default function PortalTeam() {
                     <label style={s.label}>Role</label>
                     <select style={s.select} value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
                       <option value="member">Member</option>
+                      <option value="manager">Manager</option>
                       <option value="owner">Owner</option>
                     </select>
                   </div>
@@ -169,7 +271,7 @@ export default function PortalTeam() {
               <div style={s.tableWrap}>
                 <table style={s.table}>
                   <thead>
-                    <tr>{['Name', 'Email', 'Role', 'Assessment', 'Profile', 'Joined', ...(isOwner ? ['Actions'] : [])].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+                    <tr>{['Name', 'Email', 'Role', ...(isOwner ? ['Team'] : []), 'Assessment', 'Profile', 'Joined', ...(isOwner ? ['Actions'] : [])].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
                     {members.map((m, i) => {
@@ -179,7 +281,35 @@ export default function PortalTeam() {
                         <tr key={m.id} style={i % 2 === 0 ? s.trEven : {}}>
                           <td style={{ ...s.td, fontWeight: 500 }}>{m.name || '—'} {isSelf ? <span style={s.youBadge}>you</span> : null}</td>
                           <td style={{ ...s.td, fontSize: '0.82rem' }}>{m.email}</td>
-                          <td style={s.td}><span style={m.role === 'owner' ? s.badgeOwner : s.badgeMember}>{m.role}</span></td>
+                          <td style={s.td}>
+                            {isOwner ? (
+                              <select
+                                style={s.inlineSelect}
+                                value={m.role || 'member'}
+                                disabled={isSelf || updatingMemberId === m.id}
+                                onChange={e => updateMemberRole(m, e.target.value)}
+                              >
+                                <option value="owner">Owner</option>
+                                <option value="manager">Manager</option>
+                                <option value="member">Member</option>
+                              </select>
+                            ) : (
+                              <span style={m.role === 'owner' ? s.badgeOwner : m.role === 'manager' ? s.badgeManager : s.badgeMember}>{m.role}</span>
+                            )}
+                          </td>
+                          {isOwner && (
+                            <td style={s.td}>
+                              <select
+                                style={s.inlineSelect}
+                                value={m.team_id || ''}
+                                disabled={updatingMemberId === m.id || !teams.length}
+                                onChange={e => updateMemberTeam(m, e.target.value)}
+                              >
+                                <option value="">No team</option>
+                                {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                              </select>
+                            </td>
+                          )}
                           <td style={s.td}>
                             <span style={statusBadge[m.token_status] || s.badgeMember}>
                               {statusLabel[m.token_status] || '—'}
@@ -258,7 +388,11 @@ const s = {
   td: { padding: '10px 12px', borderBottom: '1px solid #F1F5F9', verticalAlign: 'middle' },
   trEven: { background: '#FAFAFA' },
   badgeOwner: { background: '#1E3A5F', color: '#fff', padding: '2px 9px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' },
+  badgeManager: { background: '#D97706', color: '#fff', padding: '2px 9px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' },
   badgeMember: { background: '#F1F5F9', color: '#475569', padding: '2px 9px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap' },
+  teamRow: { display: 'flex', alignItems: 'center', gap: 10, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 12px' },
+  teamDeleteBtn: { padding: '3px 10px', background: 'none', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
+  inlineSelect: { padding: '4px 8px', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', fontFamily: "'DM Sans', sans-serif", background: '#fff', color: '#374151' },
   profileBadge: { padding: '2px 9px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700, fontFamily: 'monospace', border: '1px solid transparent', whiteSpace: 'nowrap' },
   youBadge: { background: '#F0FDF4', color: '#059669', fontSize: '0.7rem', fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginLeft: 4 },
   removeBtn: { padding: '4px 10px', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },

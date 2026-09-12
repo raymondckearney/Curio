@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { getPortalSession } from '../../../lib/portalSession';
-import { dbGet, dbInsert, dbQuery, dbDelete } from '../../../lib/supabase';
+import { dbGet, dbInsert, dbQuery, dbDelete, dbPatch } from '../../../lib/supabase';
 import { hashPassword } from '../../../lib/password';
 
 export default async function handler(req, res) {
@@ -140,6 +140,38 @@ export default async function handler(req, res) {
       console.error('[portal/team POST]', err);
       const msg = err.message.includes('unique') ? 'A user with that email already exists.' : err.message;
       return res.status(400).json({ error: msg });
+    }
+  }
+
+  // PATCH — update a member's role or team assignment (owner only)
+  if (req.method === 'PATCH') {
+    if (role !== 'owner') return res.status(403).json({ error: 'Only owners can update team members.' });
+    const { userId, role: newRole, team_id } = req.body || {};
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+
+    // Prevent an owner from locking themselves out by demoting themselves.
+    if (userId === session.userId && newRole && newRole !== 'owner') {
+      return res.status(400).json({ error: 'You cannot change your own role.' });
+    }
+
+    try {
+      const users = await dbGet('client_users', { id: userId });
+      if (!users.length || users[0].account_id !== accountId) return res.status(404).json({ error: 'User not found.' });
+
+      if (team_id) {
+        const teams = await dbGet('teams', { id: team_id });
+        if (!teams.length || teams[0].account_id !== accountId) return res.status(404).json({ error: 'Team not found.' });
+      }
+
+      const update = {};
+      if (newRole) update.role = newRole;
+      if ('team_id' in (req.body || {})) update.team_id = team_id || null;
+      if (!Object.keys(update).length) return res.status(400).json({ error: 'Nothing to update' });
+
+      await dbPatch('client_users', { id: userId }, update);
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
   }
 
