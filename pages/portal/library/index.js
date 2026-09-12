@@ -197,9 +197,7 @@ export default function LibraryPage() {
                             </div>
                             <div style={s.cardTitle}>{g.title}</div>
                             <div style={s.cardActions}>
-                              <button style={s.cardBtn} disabled={downloading === `guide-${g.profile}`} onClick={() => openGuideFile(g.profile)}>
-                                {downloading === `guide-${g.profile}` ? 'Opening…' : 'Download Guide'}
-                              </button>
+                              <a href={`/portal/library/field-guide/${g.profile.toLowerCase()}`} style={s.cardBtnLink}>View Guide</a>
                             </div>
                           </div>
                         );
