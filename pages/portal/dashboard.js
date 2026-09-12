@@ -17,7 +17,6 @@ export default function PortalDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resendState, setResendState] = useState('idle'); // 'idle' | 'sending' | 'sent' | 'error'
-  const [guideOpening, setGuideOpening] = useState(false);
   const [renewalLoading, setRenewalLoading] = useState(false);
 
   useEffect(() => {
@@ -33,20 +32,6 @@ export default function PortalDashboard() {
   async function logout() {
     await fetch('/api/portal/logout', { method: 'POST' });
     router.push('/portal/login');
-  }
-
-  async function openFieldGuide(profileType) {
-    setGuideOpening(true);
-    try {
-      const res = await fetch(`/api/portal/library-file?profile=${profileType}`);
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Failed to open file');
-      window.open(d.url, '_blank', 'noopener');
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setGuideOpening(false);
-    }
   }
 
   async function startRenewal() {
@@ -164,13 +149,12 @@ export default function PortalDashboard() {
                     <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Your Communication Field Guide</div>
                     <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>How your wiring shows up in writing, how each orientation hears it, and the three adjustments that buy the most understanding.</div>
                   </div>
-                  <button
-                    onClick={() => openFieldGuide(assessment.type.toUpperCase())}
-                    disabled={guideOpening}
-                    style={{ ...s.analyzerBtn, background: color, border: 'none', cursor: 'pointer' }}
+                  <Link
+                    href={`/portal/library/field-guide/${assessment.type.toLowerCase()}`}
+                    style={{ ...s.analyzerBtn, background: color, border: 'none' }}
                   >
-                    {guideOpening ? 'Opening…' : 'View Field Guide →'}
-                  </button>
+                    View Field Guide →
+                  </Link>
                 </div>
                 <div style={s.contentCard}>
                   <div style={{ ...s.cardLabel, color }}>Who You Are</div>

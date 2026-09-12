@@ -81,20 +81,6 @@ export default function LibraryPage() {
     }
   }
 
-  async function openGuideFile(profile) {
-    setDownloading(`guide-${profile}`);
-    try {
-      const res = await fetch(`/api/portal/library-file?profile=${profile}`);
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Failed to open file');
-      window.open(d.url, '_blank', 'noopener');
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setDownloading(null);
-    }
-  }
-
   if (loading) return <div style={s.loading}>Loading…</div>;
   if (!me) return null;
 
