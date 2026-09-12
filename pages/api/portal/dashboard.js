@@ -1,6 +1,6 @@
 import { getPortalSession } from '../../../lib/portalSession';
 import { dbQuery, dbGet } from '../../../lib/supabase';
-import { tertiaryFromProfileSlug } from '../../../lib/tertiary';
+import { resolveMyProfile } from '../../../lib/ownProfile';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -61,30 +61,22 @@ export default async function handler(req, res) {
 
     const tokenIds = tokens.map(t => t.token).filter(Boolean);
     let recentAssessments = [];
-    let myAssessment = null;
 
     if (tokenIds.length) {
-      const aRes = await dbQuery('assessments', {
+      recentAssessments = await dbQuery('assessments', {
         token: `in.(${tokenIds.join(',')})`,
         order: 'submitted_at.desc',
         limit: '5',
         select: 'id,name,email,type,h_score,w_score,y_score,submitted_at,token',
       });
-      recentAssessments = aRes;
-
-      if (user?.email) {
-        // The aRes[0] fallback exists for a genuine single-person account
-        // whose stored assessment email doesn't exactly match their portal
-        // login email. It must never fire when the account has more than
-        // one assessment (an enterprise owner managing a team who hasn't
-        // taken the assessment themselves), or it misattributes a team
-        // member's profile as the owner's own, both on their dashboard and
-        // via isIndividual, which then hides the enterprise-only nav items.
-        myAssessment = aRes.find(a => a.email === user.email) || (aRes.length === 1 ? aRes[0] : null);
-      }
     }
 
-    const tertiary = myAssessment?.type ? tertiaryFromProfileSlug(myAssessment.type.toLowerCase()) : null;
+    // Resolved against every token the account has ever issued, not the
+    // (possibly team-scoped) `tokens` above — a manager's own completed
+    // assessment may live on a token from before they were ever assigned
+    // to a team, and must never be hidden by that scoping.
+    const allTokenIds = allTokens.map(t => t.token).filter(Boolean);
+    const { myAssessment, tertiary } = await resolveMyProfile(allTokenIds, user?.email);
 
     // Premium accounts get their own tertiary-matching Companion free, same
     // baseline pattern as Resources' free tertiary collection above; an
@@ -96,10 +88,15 @@ export default async function handler(req, res) {
 
     // If this user hasn't completed their own assessment yet, surface their
     // unused assessment token so the portal can link straight to /go/<token>
-    // instead of only saying "check your email".
+    // instead of only saying "check your email". An exact email match can
+    // be searched account-wide (unambiguously theirs, regardless of team);
+    // the blank/unassigned-token fallback must stay within the caller's own
+    // scope (team-scoped `tokens` for a manager) so it never hands out a
+    // token meant for a different team's candidate pool.
     let assessmentPath = null;
     if (!myAssessment) {
-      const myToken = tokens.find(t => t.purpose === 'assessment' && !t.used && (t.email === user?.email || !t.email));
+      const myToken = allTokens.find(t => t.purpose === 'assessment' && !t.used && t.email === user?.email)
+        || tokens.find(t => t.purpose === 'assessment' && !t.used && !t.email);
       if (myToken) assessmentPath = `/go/${myToken.token}`;
     }
 

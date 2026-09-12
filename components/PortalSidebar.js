@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 const NAV_ITEMS = [
   { key: 'dashboard',        href: '/portal/dashboard',        label: 'My Profile',           alwaysShow: true },
+  { key: 'ai-delegation-guide', href: '/portal/tools/ai-delegation-guide', label: 'AI & Delegation Guide', requiresProfile: true },
   { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
   { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',    license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'results',          href: '/portal/results',          label: 'Assessment Results',   license: 'assessment_tokens', enterpriseOnly: true, groupKey: 'team' },
@@ -38,6 +39,11 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
     // members is still owner-only inside pages/api/portal/team.js).
     if (item.ownerOnly && !isOwner && !isManager) return false;
     if (item.alwaysShow) return true;
+    // Tier-agnostic (both basic and premium can see it once they have a
+    // completed assessment) — gated on having a profile at all, not on any
+    // license row or account tier. Terminal check: unlike the license-gated
+    // items below, this one has no `license` field to fall through to.
+    if (item.requiresProfile) return isIndividual;
     if (item.licenseAny) return item.licenseAny.some(t => licenseTypes.has(t));
     return licenseTypes.has(item.license);
   });
