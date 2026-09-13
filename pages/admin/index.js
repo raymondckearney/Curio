@@ -2921,6 +2921,8 @@ function EmailsPanel() {
   const [previewTpl, setPreviewTpl] = useState(null); // template to show in preview modal
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [triggerVars, setTriggerVars] = useState({});
+  const [weeklyTipsEnabled, setWeeklyTipsEnabled] = useState(null);
+  const [wtToggling, setWtToggling] = useState(false);
 
   // New email form state
   const [newName, setNewName] = useState('');
@@ -2941,6 +2943,23 @@ function EmailsPanel() {
     });
   }
   useEffect(reload, []);
+  useEffect(() => {
+    fetch('/api/admin/settings/weekly-tips').then(r => r.json()).then(d => setWeeklyTipsEnabled(!!d.enabled)).catch(() => {});
+  }, []);
+
+  async function toggleWeeklyTips() {
+    setWtToggling(true);
+    try {
+      const next = !weeklyTipsEnabled;
+      const res = await fetch('/api/admin/settings/weekly-tips', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: next }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      setWeeklyTipsEnabled(d.enabled);
+    } catch (e) { alert('Failed to update: ' + e.message); }
+    finally { setWtToggling(false); }
+  }
 
   async function openEdit(t) {
     setLoadingEdit(true);
@@ -3253,6 +3272,28 @@ function EmailsPanel() {
   // ── List view ──────────────────────────────────────────────────────────────
   return (
     <section style={s.panel}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '14px 18px', borderRadius: 10, marginBottom: 20,
+        background: weeklyTipsEnabled ? '#ECFDF5' : '#F8FAFC',
+        border: `1px solid ${weeklyTipsEnabled ? '#6EE7B7' : '#E2E8F0'}`,
+      }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0F172A' }}>Weekly Profile Tips</div>
+          <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>
+            {weeklyTipsEnabled === null ? 'Loading…' : weeklyTipsEnabled
+              ? 'ON — sending every Monday to everyone with a completed assessment who hasn’t opted out.'
+              : 'OFF — the weekly cron runs but sends nothing while this is off.'}
+          </div>
+        </div>
+        <button
+          style={{ ...s.btn, background: weeklyTipsEnabled ? '#DC2626' : '#059669', opacity: weeklyTipsEnabled === null || wtToggling ? 0.6 : 1 }}
+          onClick={toggleWeeklyTips}
+          disabled={weeklyTipsEnabled === null || wtToggling}
+        >
+          {wtToggling ? 'Updating…' : weeklyTipsEnabled ? 'Turn Off' : 'Turn On'}
+        </button>
+      </div>
       {previewTpl && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setPreviewTpl(null)}>
           <div style={{ background: '#fff', borderRadius: 12, width: '90vw', maxWidth: 700, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
