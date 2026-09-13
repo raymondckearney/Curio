@@ -20,6 +20,10 @@ export default function AiDelegationGuide() {
   const [loading, setLoading] = useState(true);
   const [selectedCode, setSelectedCode] = useState('');
   const [universalOpen, setUniversalOpen] = useState(false);
+  const [taskInput, setTaskInput] = useState('');
+  const [classifying, setClassifying] = useState(false);
+  const [classifyResult, setClassifyResult] = useState(null);
+  const [classifyError, setClassifyError] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -43,12 +47,38 @@ export default function AiDelegationGuide() {
     router.push('/portal/login');
   }
 
+  async function classifyTask(e) {
+    e.preventDefault();
+    if (!taskInput.trim() || classifying) return;
+    setClassifying(true);
+    setClassifyError('');
+    setClassifyResult(null);
+    try {
+      const res = await fetch('/api/portal/tertiary-task-classify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskDescription: taskInput.trim(), profileCode: selectedCode }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed to classify task.');
+      setClassifyResult(d);
+    } catch (err) {
+      setClassifyError(err.message);
+    } finally {
+      setClassifying(false);
+    }
+  }
+
   if (loading) return <div style={s.loading}>Loading…</div>;
   if (!me) return null;
 
   const isIndividual = !!dash?.myAssessment;
   const profile = guide?.profiles.find(p => p.code === selectedCode) || guide?.profiles[0];
   const orientationColor = profile ? ORIENTATION_COLORS[profile.primary] : '#6EE7B7';
+  // Server-side re-checks this on every classify call — this only controls
+  // whether the module renders at all, matching the "absent entirely for
+  // basic, not just disabled" requirement.
+  const isPremium = !!dash?.tier && dash.tier !== 'basic';
 
   return (
     <>
@@ -127,6 +157,50 @@ export default function AiDelegationGuide() {
                   </div>
                 </div>
 
+                {isPremium && (
+                  <div style={{ ...s.panel, marginTop: 20 }}>
+                    <h2 style={s.contextTitle}>Classify a task of your own</h2>
+                    <p style={{ ...s.contextBody, marginBottom: 16 }}>Describe a specific task you're facing. We'll tell you whether it's tertiary work for {profile.code}, and if so, how to route it.</p>
+                    <form onSubmit={classifyTask}>
+                      <textarea
+                        value={taskInput}
+                        onChange={e => setTaskInput(e.target.value)}
+                        placeholder="e.g. I need to write detailed release notes summarizing our last three sprints"
+                        maxLength={1000}
+                        rows={3}
+                        style={s.classifyInput}
+                      />
+                      <button type="submit" style={{ ...s.classifyBtn, opacity: classifying || !taskInput.trim() ? 0.6 : 1 }} disabled={classifying || !taskInput.trim()}>
+                        {classifying ? 'Classifying…' : 'Classify Task'}
+                      </button>
+                    </form>
+                    {classifyError && <p style={{ color: '#DC2626', fontSize: '0.85rem', marginTop: 12 }}>{classifyError}</p>}
+                    {classifyResult && (
+                      <div style={s.classifyResult}>
+                        {!classifyResult.appliesToTertiary ? (
+                          <p style={{ fontSize: '0.9rem', color: '#64748B', margin: 0 }}>This doesn't look like {profile.code}'s tertiary zone. {classifyResult.rationale}</p>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                              <span style={{ ...s.badge, background: ROUTE_BADGE[classifyResult.route]?.background, color: ROUTE_BADGE[classifyResult.route]?.color }}>
+                                {ROUTE_BADGE[classifyResult.route]?.label || classifyResult.route}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 10 }}>{classifyResult.rationale}</p>
+                            <p style={{ fontSize: '0.85rem', margin: 0 }}>
+                              {classifyResult.scaffold ? (
+                                <Link href={`/portal/library/${classifyResult.scaffold.slug}`} style={s.scaffoldLink}>
+                                  Tool {classifyResult.scaffold.number} — {classifyResult.scaffold.name}
+                                </Link>
+                              ) : '—'}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div style={{ ...s.panel, marginTop: 20 }}>
                   <div
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
@@ -185,4 +259,7 @@ const s = {
   badge: { display: 'inline-block', padding: '3px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' },
   scaffoldLink: { color: '#059669', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' },
   universalRow: { padding: '10px 0', borderBottom: '1px solid #F1F5F9' },
+  classifyInput: { width: '100%', padding: '12px 14px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", resize: 'vertical', marginBottom: 12, color: '#0F172A' },
+  classifyBtn: { padding: '10px 22px', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
+  classifyResult: { marginTop: 18, padding: '16px 18px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10 },
 };
