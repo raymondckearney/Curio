@@ -158,7 +158,7 @@ export default function AiDelegationGuide() {
                 </div>
 
                 {isPremium && (
-                  <div style={{ ...s.panel, marginTop: 20 }}>
+                  <div style={{ ...s.panel, ...s.classifyPanel, marginTop: 20 }}>
                     <h2 style={s.contextTitle}>Classify a task of your own</h2>
                     <p style={{ ...s.contextBody, marginBottom: 16 }}>Describe a specific task you're facing. We'll tell you whether it's tertiary work for {profile.code}, and if so, how to route it.</p>
                     <form onSubmit={classifyTask}>
@@ -259,7 +259,8 @@ const s = {
   badge: { display: 'inline-block', padding: '3px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' },
   scaffoldLink: { color: '#059669', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' },
   universalRow: { padding: '10px 0', borderBottom: '1px solid #F1F5F9' },
-  classifyInput: { width: '100%', padding: '12px 14px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", resize: 'vertical', marginBottom: 12, color: '#0F172A' },
+  classifyPanel: { background: '#ECFDF5', border: '1px solid #6EE7B7', boxShadow: '0 1px 8px rgba(5,150,105,0.12)' },
+  classifyInput: { width: '100%', padding: '12px 14px', border: '1px solid #A7F3D0', borderRadius: 8, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", resize: 'vertical', marginBottom: 12, color: '#0F172A', background: '#fff' },
   classifyBtn: { padding: '10px 22px', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
-  classifyResult: { marginTop: 18, padding: '16px 18px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10 },
+  classifyResult: { marginTop: 18, padding: '16px 18px', background: '#fff', border: '1px solid #A7F3D0', borderRadius: 10 },
 };
