@@ -6,6 +6,10 @@ import { TOKEN_GRANT_TYPES } from '../../../lib/licenseTypes';
 // The 4 tools a "premium" tier grants by default (independent of the full
 // set of grantable tool types below — premium doesn't mean "every tool").
 const PREMIUM_TOOLS = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
+// A grant counts as premium the moment it includes any ONE of these — not
+// all three — since assessment_tokens alone is just baseline assessment
+// access, not a premium tool.
+const ADDITIONAL_PREMIUM_TOOLS = PREMIUM_TOOLS.filter(t => t !== 'assessment_tokens');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -32,7 +36,7 @@ export default async function handler(req, res) {
     }
 
     // Derive tier from tools for backwards compat
-    const tier = PREMIUM_TOOLS.every(t => tools.includes(t)) ? 'premium' : 'basic';
+    const tier = tools.some(t => ADDITIONAL_PREMIUM_TOOLS.includes(t)) ? 'premium' : 'basic';
 
     const rows = participants.map(({ name, email, company, role }) => ({
       token: crypto.randomUUID(),

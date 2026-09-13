@@ -7,6 +7,10 @@ import { TOKEN_GRANT_TYPES } from '../../../../../lib/licenseTypes';
 // Mirrors pages/api/tokens/generate.js so both token-creation paths agree
 // on what "basic" vs "premium" means.
 const PREMIUM_TOOLS = ['assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer'];
+// A grant counts as premium the moment it includes any ONE of these — not
+// all three — since assessment_tokens alone is just baseline assessment
+// access, not a premium tool.
+const ADDITIONAL_PREMIUM_TOOLS = PREMIUM_TOOLS.filter(t => t !== 'assessment_tokens');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -31,7 +35,7 @@ export default async function handler(req, res) {
   }
 
   // Derive tier from tools for backwards compat
-  const tier = PREMIUM_TOOLS.every(t => tools.includes(t)) ? 'premium' : 'basic';
+  const tier = tools.some(t => ADDITIONAL_PREMIUM_TOOLS.includes(t)) ? 'premium' : 'basic';
 
   try {
     const rows = Array.from({ length: qty }, () => ({
