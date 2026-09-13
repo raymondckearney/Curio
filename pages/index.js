@@ -233,6 +233,18 @@ export default function Home() {
             </div>
             <div className="mp-intro-img reveal reveal-d1">
               <img src="/images/tertiary-boulder.png" alt="The MindPrint Energy Model — primary, secondary, tertiary" />
+              <div className="mp-tip-inline">
+                <span className="mp-tip-inline-label">What shielding looks like, in practice</span>
+                <div className="tip-card">
+                  <div className="tip-eyebrow">Why-What · Weekly Tip 10</div>
+                  <div className="tip-headline">Contain Detail Work in Sprints</div>
+                  <p className="tip-body">Some draining work can&apos;t be delegated. Contain it instead: a timer, a defined finish line, a reward after. Detail work costs you less in short, bounded bursts than spread across a week.</p>
+                  <div className="tip-footer">
+                    <span className="tip-badge">Purpose-Driven · Progress-Oriented</span>
+                    <span className="tip-logo">Curio<span>.</span></span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -285,6 +297,7 @@ export default function Home() {
                 Hover to explore
               </div>
               <div className="pv-detail">
+                <div className="pv-thumb"><img src="/marketing/product-quiz.png" alt="A question from the MindPrint assessment" /></div>
                 <p className="pv-desc">Before we can help your team evolve, we need to understand it deeply. We gather rich data about how each person naturally approaches problems and how your team&apos;s work is currently structured.</p>
                 <ul className="pv-list">
                   <li>Individual MindPrint™ assessment for each team member</li>
@@ -302,6 +315,7 @@ export default function Home() {
                 Hover to explore
               </div>
               <div className="pv-detail">
+                <div className="pv-thumb"><img src="/marketing/product-dashboard.png" alt="A completed MindPrint profile shown in the dashboard" /></div>
                 <p className="pv-desc">We bring the team together in a transformative workshop that gives everyone a shared framework for understanding how they — and their colleagues — think. What was invisible becomes visible and actionable.</p>
                 <ul className="pv-list">
                   <li>Immersive team workshop</li>
@@ -321,6 +335,7 @@ export default function Home() {
                 Hover to explore
               </div>
               <div className="pv-detail">
+                <div className="pv-thumb"><img src="/marketing/product-library.png" alt="The Resources library, curated to a MindPrint profile" /></div>
                 <p className="pv-desc">We work closely with leadership to translate insights into actionable strategy — customized specifically to your team&apos;s composition and the challenges you face.</p>
                 <ul className="pv-list">
                   <li>Customized recommendations report for your team</li>
