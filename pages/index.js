@@ -42,9 +42,11 @@ function tipCardMarkup(item) {
 function RotatingTipCard() {
   const [sequence, setSequence] = useState(null);
   const [index, setIndex] = useState(0);
-  const [fading, setFading] = useState(false);
+  const [prevIndex, setPrevIndex] = useState(null);
   const [cardHeight, setCardHeight] = useState(null);
   const measureRef = useRef(null);
+  const indexRef = useRef(0);
+  useEffect(() => { indexRef.current = index; }, [index]);
 
   useEffect(() => {
     // One random tip per profile, drawn once per page load — not
@@ -86,16 +88,19 @@ function RotatingTipCard() {
   useEffect(() => {
     if (!sequence) return;
     const id = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setIndex(i => (i + 1) % sequence.length);
-        setFading(false);
-      }, 600);
+      const cur = indexRef.current;
+      const next = (cur + 1) % sequence.length;
+      setPrevIndex(cur);
+      setIndex(next);
+      // Clears the outgoing card once its exit animation has finished —
+      // matches the 0.6s slide duration below, with a small buffer.
+      setTimeout(() => setPrevIndex(null), 650);
     }, 5000);
     return () => clearInterval(id);
   }, [sequence]);
 
   const current = sequence ? sequence[index] : FALLBACK_TIP;
+  const outgoing = sequence && prevIndex !== null ? sequence[prevIndex] : null;
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
@@ -106,11 +111,20 @@ function RotatingTipCard() {
           ))}
         </div>
       )}
-      <div
-        className={`tip-card tip-card-live${fading ? ' tip-card-fade' : ''}`}
-        style={cardHeight ? { height: cardHeight } : undefined}
-      >
-        {tipCardMarkup(current)}
+      <div className="tip-card-wrap" style={cardHeight ? { height: cardHeight } : undefined}>
+        {/* Rendered first (behind, in paint order) so that with
+            prefers-reduced-motion — where the slide animations are
+            disabled — the incoming card simply sits on top with no visible
+            transition, instead of both cards showing statically side by
+            side. */}
+        {outgoing && (
+          <div className="tip-card tip-card-panel tip-card-exit" key={`exit-${prevIndex}`}>
+            {tipCardMarkup(outgoing)}
+          </div>
+        )}
+        <div className={`tip-card tip-card-panel tip-card-live${outgoing ? ' tip-card-enter' : ''}`} key={`enter-${index}`}>
+          {tipCardMarkup(current)}
+        </div>
       </div>
     </div>
   );

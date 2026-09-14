@@ -499,20 +499,29 @@ p  { line-height: 1.78; }
 
 /* Weekly tip card — mirrors the standalone tip graphics, recreated live so
    copy can be swapped without regenerating an image per tip. */
-.tip-card {
+.tip-card-wrap {
+  position: relative;
+  width: 100%;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
+  overflow: hidden; /* clips the sliding panels to the rounded corners */
+  transition: height 0.3s ease;
+}
+.tip-card {
   background: linear-gradient(135deg, #0B1220 0%, #0F172A 45%, #064E3B 100%);
   padding: 28px 26px;
   display: flex;
   flex-direction: column;
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.6s ease, transform 0.6s ease, height 0.3s ease;
+  width: 100%;
 }
-.tip-card-fade { opacity: 0; transform: translateY(8px); }
+.tip-card-panel { position: absolute; top: 0; left: 0; height: 100%; }
+.tip-card-enter { animation: tip-slide-in 0.6s ease forwards; }
+.tip-card-exit { animation: tip-slide-out 0.6s ease forwards; }
+@keyframes tip-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes tip-slide-out { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 @media (prefers-reduced-motion: reduce) {
-  .tip-card { transition: none; }
+  .tip-card-enter, .tip-card-exit { animation: none; }
+  .tip-card-wrap { transition: none; }
 }
 .tip-eyebrow {
   display: flex;
