@@ -25,24 +25,63 @@ const FALLBACK_TIP = {
   tip: { number: 10, headline: 'Contain Detail Work in Sprints', body: "Some draining work can't be delegated. Contain it instead: a timer, a defined finish line, a reward after. Detail work costs you less in short, bounded bursts than spread across a week." },
 };
 
+function tipCardMarkup(item) {
+  return (
+    <>
+      <div className="tip-eyebrow">{item.label} · Weekly Tip {item.tip.number}</div>
+      <div className="tip-headline">{item.tip.headline}</div>
+      <p className="tip-body">{item.tip.body}</p>
+      <div className="tip-footer">
+        <span className="tip-badge">{item.tagline}</span>
+        <span className="tip-logo">Curio<span>.</span></span>
+      </div>
+    </>
+  );
+}
+
 function RotatingTipCard() {
   const [sequence, setSequence] = useState(null);
   const [index, setIndex] = useState(0);
   const [fading, setFading] = useState(false);
+  const [cardHeight, setCardHeight] = useState(null);
+  const measureRef = useRef(null);
 
   useEffect(() => {
     // One random tip per profile, drawn once per page load — not
     // resampled on every rotation — so the six tips in the loop are fixed
-    // but never predictably "Tip 1, 2, 3…" or the same number each visit.
-    // Runs client-side only (after mount) so the server-rendered markup
-    // stays deterministic and there's no hydration mismatch.
-    const seq = TIP_PROFILES.map(p => {
-      const tips = WEEKLY_TIPS[p.slug];
-      const tip = tips[Math.floor(Math.random() * tips.length)];
-      return { ...p, tip };
-    });
+    // but never predictably "Tip 1, 2, 3…". Numbers are drawn without
+    // replacement across the six profiles so no two of them repeat a tip
+    // number, while still landing on all 6 profiles. Runs client-side only
+    // (after mount) so the server-rendered markup stays deterministic and
+    // there's no hydration mismatch.
+    const pool = Array.from({ length: 20 }, (_, i) => i); // 0-based tip indices
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const seq = TIP_PROFILES.map((p, i) => ({ ...p, tip: WEEKLY_TIPS[p.slug][pool[i]] }));
     setSequence(seq);
   }, []);
+
+  // Measures every card in the sequence at the page's actual current width
+  // (via a stack rendered off-screen at that same width, never visible or
+  // in the flow) and locks the visible card to the tallest of the six —
+  // otherwise a shorter/taller tip swapping in shifts the illustration
+  // above it and the text column beside it. Re-measures on resize since
+  // this card's width changes with viewport (a fixed pixel height would be
+  // wrong at other widths).
+  useEffect(() => {
+    if (!sequence || !measureRef.current) return;
+    function measure() {
+      const cards = measureRef.current.querySelectorAll('.tip-card');
+      let max = 0;
+      cards.forEach(c => { max = Math.max(max, c.getBoundingClientRect().height); });
+      if (max) setCardHeight(max);
+    }
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [sequence]);
 
   useEffect(() => {
     if (!sequence) return;
@@ -51,21 +90,27 @@ function RotatingTipCard() {
       setTimeout(() => {
         setIndex(i => (i + 1) % sequence.length);
         setFading(false);
-      }, 300);
-    }, 3000);
+      }, 600);
+    }, 5000);
     return () => clearInterval(id);
   }, [sequence]);
 
   const current = sequence ? sequence[index] : FALLBACK_TIP;
 
   return (
-    <div className={`tip-card${fading ? ' tip-card-fade' : ''}`}>
-      <div className="tip-eyebrow">{current.label} · Weekly Tip {current.tip.number}</div>
-      <div className="tip-headline">{current.tip.headline}</div>
-      <p className="tip-body">{current.tip.body}</p>
-      <div className="tip-footer">
-        <span className="tip-badge">{current.tagline}</span>
-        <span className="tip-logo">Curio<span>.</span></span>
+    <div style={{ position: 'relative', width: '100%' }}>
+      {sequence && (
+        <div ref={measureRef} aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+          {sequence.map((item, i) => (
+            <div className="tip-card" key={i} style={{ marginBottom: 8 }}>{tipCardMarkup(item)}</div>
+          ))}
+        </div>
+      )}
+      <div
+        className={`tip-card tip-card-live${fading ? ' tip-card-fade' : ''}`}
+        style={cardHeight ? { height: cardHeight } : undefined}
+      >
+        {tipCardMarkup(current)}
       </div>
     </div>
   );
