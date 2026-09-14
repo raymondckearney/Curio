@@ -4,24 +4,35 @@ import { useEffect, useRef, useState } from 'react';
 import Layout from '../components/Layout';
 import { WEEKLY_TIPS } from '../lib/weeklyTips';
 
+// Same three orientation colors as the style guide's orientation-word demo
+// (pages/style-guide/index.js: .orient-why/.orient-what/.orient-how) — WHY
+// mint, WHAT blue, HOW gold. Each profile is colored by its PRIMARY
+// orientation (the first half of its code), so WHY-WHAT and WHY-HOW share
+// a color, etc.
+const ORIENTATION_COLOR = { WHY: '#6EE7B7', WHAT: '#93C5FD', HOW: '#FCD34D' };
+
 // Kept local rather than importing lib/profiles.js — that file carries each
 // profile's full long-form content (whoYouAre, superpower, etc.), far more
 // than this homepage card needs, and would needlessly bloat this page's
 // bundle for six short label/tagline pairs.
+//
+// Ordered one-of-each-color, then one-of-each-color again (WHY, WHAT, HOW,
+// WHY, WHAT, HOW) rather than grouped by primary orientation, so the
+// rotation doesn't show two same-colored cards back to back.
 const TIP_PROFILES = [
-  { slug: 'why-what', label: 'WHY-WHAT', tagline: 'Purpose-Driven · Progress-Oriented' },
-  { slug: 'why-how', label: 'WHY-HOW', tagline: 'Purpose-Driven · Precision-Oriented' },
-  { slug: 'what-why', label: 'WHAT-WHY', tagline: 'Progress-Driven · Purpose-Oriented' },
-  { slug: 'what-how', label: 'WHAT-HOW', tagline: 'Progress-Driven · Precision-Oriented' },
-  { slug: 'how-why', label: 'HOW-WHY', tagline: 'Precision-Driven · Purpose-Oriented' },
-  { slug: 'how-what', label: 'HOW-WHAT', tagline: 'Precision-Driven · Progress-Oriented' },
+  { slug: 'why-what', label: 'WHY-WHAT', tagline: 'Purpose-Driven · Progress-Oriented', color: ORIENTATION_COLOR.WHY },
+  { slug: 'what-why', label: 'WHAT-WHY', tagline: 'Progress-Driven · Purpose-Oriented', color: ORIENTATION_COLOR.WHAT },
+  { slug: 'how-why', label: 'HOW-WHY', tagline: 'Precision-Driven · Purpose-Oriented', color: ORIENTATION_COLOR.HOW },
+  { slug: 'why-how', label: 'WHY-HOW', tagline: 'Purpose-Driven · Precision-Oriented', color: ORIENTATION_COLOR.WHY },
+  { slug: 'what-how', label: 'WHAT-HOW', tagline: 'Progress-Driven · Precision-Oriented', color: ORIENTATION_COLOR.WHAT },
+  { slug: 'how-what', label: 'HOW-WHAT', tagline: 'Precision-Driven · Progress-Oriented', color: ORIENTATION_COLOR.HOW },
 ];
 
 // Static fallback for server render / no-JS — identical shape to what the
 // client picks, so swapping in the randomized sequence after mount never
 // causes a layout shift, just a content crossfade.
 const FALLBACK_TIP = {
-  slug: 'why-what', label: 'WHY-WHAT', tagline: 'Purpose-Driven · Progress-Oriented',
+  slug: 'why-what', label: 'WHY-WHAT', tagline: 'Purpose-Driven · Progress-Oriented', color: ORIENTATION_COLOR.WHY,
   tip: { number: 10, headline: 'Contain Detail Work in Sprints', body: "Some draining work can't be delegated. Contain it instead: a timer, a defined finish line, a reward after. Detail work costs you less in short, bounded bursts than spread across a week." },
 };
 
@@ -107,7 +118,7 @@ function RotatingTipCard() {
       {sequence && (
         <div ref={measureRef} aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
           {sequence.map((item, i) => (
-            <div className="tip-card" key={i} style={{ marginBottom: 8 }}>{tipCardMarkup(item)}</div>
+            <div className="tip-card" key={i} style={{ marginBottom: 8, '--tip-color': item.color }}>{tipCardMarkup(item)}</div>
           ))}
         </div>
       )}
@@ -118,11 +129,11 @@ function RotatingTipCard() {
             transition, instead of both cards showing statically side by
             side. */}
         {outgoing && (
-          <div className="tip-card tip-card-panel tip-card-exit" key={`exit-${prevIndex}`}>
+          <div className="tip-card tip-card-panel tip-card-exit" key={`exit-${prevIndex}`} style={{ '--tip-color': outgoing.color }}>
             {tipCardMarkup(outgoing)}
           </div>
         )}
-        <div className={`tip-card tip-card-panel tip-card-live${outgoing ? ' tip-card-enter' : ''}`} key={`enter-${index}`}>
+        <div className={`tip-card tip-card-panel tip-card-live${outgoing ? ' tip-card-enter' : ''}`} key={`enter-${index}`} style={{ '--tip-color': current.color }}>
           {tipCardMarkup(current)}
         </div>
       </div>
