@@ -532,7 +532,7 @@ export default function CareerGuidance() {
       </Head>
       <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' }}>
         <PortalNav me={me} onLogout={logout} active="career" licenses={dash?.licenses} isIndividual={isIndividual} />
-        <main style={{ marginLeft: 220, flex: 1, padding: '48px 48px 0', maxWidth: 'calc(100vw - 220px)' }}>
+        <main className="portal-main" style={{ marginLeft: 220, flex: 1, padding: '48px 48px 0', maxWidth: 'calc(100vw - 220px)' }}>
 
           <div style={{ marginBottom: 36 }}>
             <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2.2rem', fontWeight: 700, color: '#0F172A', marginBottom: 4, lineHeight: 1.1 }}>Career Guidance Tool</h1>

@@ -375,7 +375,7 @@ export default function PortalFitPage() {
         <style>{fitCss}</style>
       </Head>
       <PortalSidebar me={me} onLogout={logout} active="fit" licenses={licenses} isIndividual={isIndividual} />
-      <main style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
+      <main className="portal-main" style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
         {!licensed ? (
           <div style={{ maxWidth: 820, margin: '80px auto', padding: '0 24px' }}>
             <div style={{ background: '#FAFAF9', border: '1px solid #E7E5E4', borderLeft: '3px solid #059669', borderRadius: 8, padding: '40px 48px', maxWidth: 520 }}>

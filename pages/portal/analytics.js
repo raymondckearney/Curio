@@ -114,7 +114,7 @@ export default function PortalAnalytics() {
       </Head>
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="analytics" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={!!dash?.isTeamAccount} />
-        <main style={s.main}>
+        <main style={s.main} className="portal-main">
         <div style={s.container}>
           <div style={{ marginBottom: 24 }}>
             <h1 style={s.pageTitle}>Analytics</h1>
