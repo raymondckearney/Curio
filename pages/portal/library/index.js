@@ -97,7 +97,7 @@ export default function LibraryPage() {
       </Head>
       <div style={s.layout}>
         <PortalSidebar me={me} onLogout={logout} active="library" licenses={licenses} isIndividual={isIndividual} />
-        <main style={s.main}>
+        <main style={s.main} className="portal-main">
           <div style={s.hero}>
             <div style={s.pill}>Resources</div>
             <h1 style={s.title}>Your Curated Library of Support Resources</h1>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const NAV_ITEMS = [
@@ -21,22 +21,72 @@ const NAV_ITEMS = [
 
 const TEAM_CHILD_KEYS = NAV_ITEMS.filter(i => i.groupKey === 'team').map(i => i.key);
 
+const MOBILE_CSS = `
+  @media (max-width: 768px) {
+    .portal-sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      z-index: 200 !important;
+    }
+    .portal-sidebar.sidebar-open {
+      transform: translateX(0);
+    }
+    .portal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 199;
+    }
+    .portal-backdrop.sidebar-open {
+      display: block;
+    }
+    .portal-hamburger {
+      display: flex !important;
+    }
+    .portal-main {
+      margin-left: 0 !important;
+    }
+  }
+  @media (min-width: 769px) {
+    .portal-hamburger {
+      display: none !important;
+    }
+    .portal-sidebar {
+      transform: none !important;
+    }
+  }
+`;
+
 export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false, isTeamAccount = false }) {
   const licenseTypes = new Set(licenses.map(l => l.type));
   const isOwner = me?.user?.role === 'owner';
   const isManager = me?.user?.role === 'manager';
   const [teamOpen, setTeamOpen] = useState(active === 'team' || TEAM_CHILD_KEYS.includes(active));
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Inject CSS once on mount
+  useEffect(() => {
+    if (document.getElementById('portal-sidebar-css')) return;
+    const el = document.createElement('style');
+    el.id = 'portal-sidebar-css';
+    el.textContent = MOBILE_CSS;
+    document.head.appendChild(el);
+  }, []);
+
+  // Close drawer on route change
+  useEffect(() => { setMobileOpen(false); }, [active]);
+
+  // Prevent body scroll when drawer open
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    }
+    return () => { if (typeof document !== 'undefined') document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
   const visibleItems = NAV_ITEMS.filter(item => {
-    // enterpriseOnly tabs (My Team, tokens, results, analytics) are only
-    // shown on enterprise accounts. Self-serve buyers are owners of their
-    // own account but have no team to manage.
     if (item.enterpriseOnly && !isTeamAccount) return false;
-    // A manager sees the same tabs as an owner here — their view is just
-    // scoped server-side to their own team's data, not to the whole
-    // account. Managers don't get any additional owner-only actions
-    // beyond what these four tabs already expose (e.g. inviting/removing
-    // members is still owner-only inside pages/api/portal/team.js).
     if (item.ownerOnly && !isOwner && !isManager) return false;
     if (item.alwaysShow) return true;
     // Tier-agnostic (both basic and premium can see it once they have a
@@ -49,65 +99,89 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
   });
 
   const visibleKeys = new Set(visibleItems.map(i => i.key));
-  // Assessment Results has no ownerOnly flag, so a member without "My Team"
-  // access can still see it — nest it under the accordion only when the
-  // team parent is actually visible; otherwise render it as its own
-  // top-level item, same as before this redesign.
   const teamVisible = visibleKeys.has('team');
   const topLevelItems = visibleItems.filter(item => !(teamVisible && item.groupKey === 'team'));
   const teamChildren = teamVisible ? visibleItems.filter(item => item.groupKey === 'team') : [];
 
   return (
-    <div style={sb.sidebar}>
-      <div style={sb.brand}>
-        <span style={sb.wordmark}>Curio<span style={sb.dot}>.</span></span>
-        <span style={sb.accountName}>{me?.account?.name}</span>
-      </div>
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
-        {topLevelItems.map(item => {
-          if (item.key !== 'team' || !teamVisible) {
-            return (
-              <Link
-                key={item.key}
-                href={item.href}
-                style={active === item.key
-                  ? { ...sb.navItem, ...sb.navItemActive }
-                  : sb.navItem}
-              >
-                {item.label}
-              </Link>
-            );
-          }
-          return (
-            <div key={item.key}>
-              <div
-                style={{ ...sb.navItem, ...(active === 'team' ? sb.navItemActive : {}), display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-                onClick={() => setTeamOpen(o => !o)}
-              >
-                <Link href={item.href} style={{ color: 'inherit', textDecoration: 'none', flex: 1 }}>{item.label}</Link>
-                <span style={{ fontSize: '0.65rem', opacity: 0.6, transform: teamOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</span>
-              </div>
-              {teamOpen && teamChildren.map(child => (
+    <>
+      {/* Hamburger button — hidden on desktop via CSS */}
+      <button
+        className="portal-hamburger"
+        onClick={() => setMobileOpen(true)}
+        style={sb.hamburger}
+        aria-label="Open menu"
+      >
+        <span style={sb.bar} />
+        <span style={sb.bar} />
+        <span style={sb.bar} />
+      </button>
+
+      {/* Backdrop */}
+      <div
+        className={`portal-backdrop${mobileOpen ? ' sidebar-open' : ''}`}
+        onClick={() => setMobileOpen(false)}
+      />
+
+      {/* Sidebar */}
+      <div className={`portal-sidebar${mobileOpen ? ' sidebar-open' : ''}`} style={sb.sidebar}>
+        <div style={sb.brand}>
+          <span style={sb.wordmark}>Curio<span style={sb.dot}>.</span></span>
+          <span style={sb.accountName}>{me?.account?.name}</span>
+        </div>
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          {topLevelItems.map(item => {
+            if (item.key !== 'team' || !teamVisible) {
+              return (
                 <Link
-                  key={child.key}
-                  href={child.href}
-                  style={active === child.key
-                    ? { ...sb.navItem, ...sb.navItemActive, ...sb.navItemChild }
-                    : { ...sb.navItem, ...sb.navItemChild }}
+                  key={item.key}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  style={active === item.key
+                    ? { ...sb.navItem, ...sb.navItemActive }
+                    : sb.navItem}
                 >
-                  {child.label}
+                  {item.label}
                 </Link>
-              ))}
-            </div>
-          );
-        })}
-      </nav>
-      <div style={sb.footer}>
-        <span style={sb.userName}>{me?.user?.name || me?.user?.email}</span>
-        <button style={sb.signOut} onClick={onLogout}>Sign out</button>
+              );
+            }
+            return (
+              <div key={item.key}>
+                <div
+                  style={{ ...sb.navItem, ...(active === 'team' ? sb.navItemActive : {}), display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                  onClick={() => setTeamOpen(o => !o)}
+                >
+                  <Link href={item.href} style={{ color: 'inherit', textDecoration: 'none', flex: 1 }}>{item.label}</Link>
+                  <span style={{ fontSize: '0.65rem', opacity: 0.6, transform: teamOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</span>
+                </div>
+                {teamOpen && teamChildren.map(child => (
+                  <Link
+                    key={child.key}
+                    href={child.href}
+                    onClick={() => setMobileOpen(false)}
+                    style={active === child.key
+                      ? { ...sb.navItem, ...sb.navItemActive, ...sb.navItemChild }
+                      : { ...sb.navItem, ...sb.navItemChild }}
+                  >
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            );
+          })}
+        </nav>
+        <div style={sb.footer}>
+          <span style={sb.userName}>{me?.user?.name || me?.user?.email}</span>
+          <button style={sb.signOut} onClick={onLogout}>Sign out</button>
+        </div>
       </div>
-    </div>
+    </>
   );
+}
+
+// Keep PortalNav export for backward-compat
+export function PortalNav(props) {
+  return <PortalSidebar {...props} />;
 }
 
 const sb = {
@@ -191,5 +265,26 @@ const sb = {
     cursor: 'pointer',
     fontFamily: "'DM Sans', sans-serif",
     textAlign: 'left',
+  },
+  hamburger: {
+    display: 'none', // overridden to flex on mobile via CSS
+    position: 'fixed',
+    top: 14,
+    left: 14,
+    zIndex: 201,
+    flexDirection: 'column',
+    gap: 5,
+    padding: '10px 11px',
+    background: '#0F172A',
+    border: 'none',
+    borderRadius: 8,
+    cursor: 'pointer',
+  },
+  bar: {
+    display: 'block',
+    width: 20,
+    height: 2,
+    background: 'rgba(255,255,255,0.75)',
+    borderRadius: 2,
   },
 };

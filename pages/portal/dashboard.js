@@ -85,10 +85,23 @@ export default function PortalDashboard() {
         <title>Dashboard — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+        <style>{`
+          @media (max-width: 768px) {
+            .portal-main { margin-left: 0 !important; padding-top: 56px; }
+            .dash-hero { padding: 28px 20px 28px !important; }
+            .dash-hero-type { font-size: 2.4rem !important; }
+            .dash-content { padding: 20px 16px 48px !important; }
+            .dash-two-col { grid-template-columns: 1fr !important; }
+            .dash-cta { flex-direction: column !important; align-items: flex-start !important; }
+            .dash-cta-btn { width: 100% !important; text-align: center !important; box-sizing: border-box; }
+            .dash-stats { flex-direction: column !important; }
+            .dash-companion-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+          }
+        `}</style>
       </Head>
       <div style={s.layout}>
         <PortalSidebar me={me} onLogout={logout} active="dashboard" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
-        <main style={s.main}>
+        <main style={s.main} className="portal-main">
 
           {/* License expiry banners */}
           {data?.isExpired && (
@@ -113,7 +126,7 @@ export default function PortalDashboard() {
           {/* My Profile section */}
           {assessment && profile ? (
             <>
-              <div style={{ ...s.heroBand, background: `linear-gradient(135deg, ${color}0d 0%, ${color}05 100%)`, borderBottom: `1px solid ${color}22` }}>
+              <div className="dash-hero" style={{ ...s.heroBand, background: `linear-gradient(135deg, ${color}0d 0%, ${color}05 100%)`, borderBottom: `1px solid ${color}22` }}>
                 <img src="/images/brain-fingerprint-watermark.webp" alt="" aria-hidden="true" style={s.heroWatermark} />
                 <div style={s.heroInner}>
                   <div style={s.heroMeta}>
@@ -125,7 +138,7 @@ export default function PortalDashboard() {
                   {me?.user?.name && (
                     <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#475569', marginBottom: 6, letterSpacing: '-0.01em' }}>{me.user.name}</div>
                   )}
-                  <h1 style={{ ...s.heroType, color }}>{profile.label}</h1>
+                  <h1 className="dash-hero-type" style={{ ...s.heroType, color }}>{profile.label}</h1>
                   <p style={s.heroTagline}>{profile.tagline}</p>
                   <blockquote style={{ ...s.signal, borderLeftColor: color }}>
                     <span style={{ color, fontSize: '1.2rem', lineHeight: 1, marginRight: 6 }}>"</span>
@@ -143,14 +156,15 @@ export default function PortalDashboard() {
                 </div>
               </div>
 
-              <div style={s.contentWrap}>
-                <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
+              <div className="dash-content" style={s.contentWrap}>
+                <div className="dash-cta" style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                   <div>
                     <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Your Communication Field Guide</div>
                     <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>How your wiring shows up in writing, how each orientation hears it, and the three adjustments that buy the most understanding.</div>
                   </div>
                   <Link
                     href={`/portal/library/field-guide/${assessment.type.toLowerCase()}`}
+                    className="dash-cta-btn"
                     style={{ ...s.analyzerBtn, background: color, border: 'none' }}
                   >
                     View Field Guide →
@@ -160,7 +174,7 @@ export default function PortalDashboard() {
                   <div style={{ ...s.cardLabel, color }}>Who You Are</div>
                   <p style={s.prose}>{profile.whoYouAre}</p>
                 </div>
-                <div style={s.twoCol}>
+                <div className="dash-two-col" style={s.twoCol}>
                   <div style={{ ...s.contentCard, flex: 1 }}>
                     <div style={{ ...s.cardLabel, color }}>Your Superpower</div>
                     <p style={s.prose}>{profile.superpower}</p>
@@ -260,12 +274,12 @@ export default function PortalDashboard() {
                 </div>
 
                 {hasRoleAnalyzer && (
-                  <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
+                  <div className="dash-cta" style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                     <div>
                       <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>See how your profile fits specific roles</div>
                       <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Use the Role Alignment Analyzer to explore what energizes you, what drains you, and how you collaborate best — for any role you enter.</div>
                     </div>
-                    <Link href="/portal/tools/fit" style={{ ...s.analyzerBtn, background: color }}>Open Analyzer →</Link>
+                    <Link href="/portal/tools/fit" className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color }}>Open Analyzer →</Link>
                   </div>
                 )}
 
@@ -274,12 +288,12 @@ export default function PortalDashboard() {
                     <div style={{ ...s.cardLabel, color }}>Your AI Companions</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {companionCards.map(c => (
-                        <div key={c.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 16px', borderRadius: 10, border: `1px solid ${c.tertiary === tertiary ? color + '40' : '#E2E8F0'}`, background: c.tertiary === tertiary ? `${color}08` : '#FAFAFA' }}>
+                        <div key={c.key} className="dash-companion-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 16px', borderRadius: 10, border: `1px solid ${c.tertiary === tertiary ? color + '40' : '#E2E8F0'}`, background: c.tertiary === tertiary ? `${color}08` : '#FAFAFA' }}>
                           <div>
                             <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.925rem' }}>{c.label}{c.tertiary === tertiary && <span style={{ marginLeft: 8, fontSize: '0.65rem', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Matches your tertiary</span>}</div>
                             <div style={{ fontSize: '0.825rem', color: '#64748B', marginTop: 2 }}>{c.desc}</div>
                           </div>
-                          <Link href={c.href} style={{ ...s.analyzerBtn, background: color, flexShrink: 0 }}>Open →</Link>
+                          <Link href={c.href} className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color, flexShrink: 0 }}>Open →</Link>
                         </div>
                       ))}
                     </div>
@@ -287,22 +301,22 @@ export default function PortalDashboard() {
                 )}
 
                 {data?.hasOrientationTranslator && (
-                  <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
+                  <div className="dash-cta" style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                     <div>
                       <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Orientation Translator</div>
                       <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Translate a message to WHY-speak, WHAT-speak, HOW-speak, or a specific person's profile. Universal, works for any profile.</div>
                     </div>
-                    <Link href="/portal/tools/orientation-translator" style={{ ...s.analyzerBtn, background: color }}>Open Translator →</Link>
+                    <Link href="/portal/tools/orientation-translator" className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color }}>Open Translator →</Link>
                   </div>
                 )}
 
                 {hasLibrary && (
-                  <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
+                  <div className="dash-cta" style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                     <div>
                       <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Your Resources</div>
                       <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Guides and templates for your tertiary collection, plus the universal collection.</div>
                     </div>
-                    <Link href="/portal/library" style={{ ...s.analyzerBtn, background: color }}>Open Resources →</Link>
+                    <Link href="/portal/library" className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color }}>Open Resources →</Link>
                   </div>
                 )}
               </div>
@@ -337,17 +351,17 @@ export default function PortalDashboard() {
                   <h1 style={s.welcomeTitle}>Welcome back{me.user.name ? `, ${me.user.name.split(' ')[0]}` : ''}</h1>
 
                   {hasLibrary && (
-                    <div style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08`, marginBottom: 24 }}>
+                    <div className="dash-cta" style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08`, marginBottom: 24 }}>
                       <div>
                         <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Your Resources</div>
                         <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Guides and templates for your team's collections, plus the universal collection.</div>
                       </div>
-                      <Link href="/portal/library" style={{ ...s.analyzerBtn, background: color }}>Open Resources →</Link>
+                      <Link href="/portal/library" className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color }}>Open Resources →</Link>
                     </div>
                   )}
 
                   {hasAssessment !== false && (
-                    <div style={s.statsRow}>
+                    <div className="dash-stats" style={s.statsRow}>
                       <StatCard label="Assessment Tokens" value={total} sub="total purchased" color="#059669" />
                       <StatCard label="Completed" value={used} sub="assessments taken" color="#3B82F6" />
                       <StatCard label="Available" value={available} sub="tokens remaining" color="#D97706" />

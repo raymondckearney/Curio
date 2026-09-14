@@ -47,7 +47,7 @@ export default function AnalyzerHistory() {
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="analyzer-history" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} />
 
-        <main style={s.main}>
+        <main style={s.main} className="portal-main">
         <div style={s.container}>
           <div style={s.header}>
             <h1 style={s.title}>Role Analyzer History</h1>

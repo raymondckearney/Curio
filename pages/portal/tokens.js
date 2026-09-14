@@ -124,7 +124,7 @@ export default function PortalTokens() {
       </Head>
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="tokens" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={!!dash?.isTeamAccount} />
-        <main style={s.main}>
+        <main style={s.main} className="portal-main">
         <div style={s.container}>
           <h1 style={s.pageTitle}>Assessment Tokens</h1>
 

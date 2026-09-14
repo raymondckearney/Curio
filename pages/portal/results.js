@@ -51,7 +51,7 @@ export default function PortalResults() {
       </Head>
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="results" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={!!dash?.isTeamAccount} />
-        <main style={s.main}>
+        <main style={s.main} className="portal-main">
         <div style={s.container}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
             <div>
