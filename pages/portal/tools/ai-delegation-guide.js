@@ -89,7 +89,7 @@ export default function AiDelegationGuide() {
       </Head>
       <div style={s.page}>
         <PortalSidebar me={me} onLogout={logout} active="ai-delegation-guide" licenses={dash?.licenses} isIndividual={isIndividual} isTeamAccount={!!dash?.isTeamAccount} />
-        <main style={s.main}>
+        <main className="portal-main" style={s.main}>
           {noAssessment || !profile ? (
             <div style={s.container}>
               <div style={s.emptyState}>Complete your MindPrint™ assessment to see your AI & Delegation Guide.</div>

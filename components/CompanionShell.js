@@ -116,7 +116,7 @@ export default function CompanionShell({ companionKey, initialProfile, initialTe
 
       <PortalSidebar me={me} onLogout={logout} active={companionKey} licenses={licenses} isIndividual={isIndividual} />
 
-      <main style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
+      <main className="portal-main" style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
 
       <div style={{ background: NAVY, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
