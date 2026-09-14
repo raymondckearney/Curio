@@ -144,7 +144,7 @@ export default function AiDelegationGuide() {
                               <td style={{ ...s.td, color: '#64748B', fontSize: '0.85rem' }}>{t.why}</td>
                               <td style={s.td}>
                                 {t.scaffold ? (
-                                  <Link href={`/portal/library/${t.scaffold.slug}`} style={s.scaffoldLink}>
+                                  <Link href={`/portal/library/${t.scaffold.slug}`} style={s.scaffoldBtn}>
                                     Tool {t.scaffold.number} — {t.scaffold.name}
                                   </Link>
                                 ) : '—'}
@@ -189,7 +189,7 @@ export default function AiDelegationGuide() {
                             <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 10 }}>{classifyResult.rationale}</p>
                             <p style={{ fontSize: '0.85rem', margin: 0 }}>
                               {classifyResult.scaffold ? (
-                                <Link href={`/portal/library/${classifyResult.scaffold.slug}`} style={s.scaffoldLink}>
+                                <Link href={`/portal/library/${classifyResult.scaffold.slug}`} style={s.scaffoldBtn}>
                                   Tool {classifyResult.scaffold.number} — {classifyResult.scaffold.name}
                                 </Link>
                               ) : '—'}
@@ -214,8 +214,8 @@ export default function AiDelegationGuide() {
                       {guide.universalSupports.map(u => (
                         <div key={u.tool} style={s.universalRow}>
                           <div>
-                            <Link href={`/portal/library/${u.slug}`} style={s.scaffoldLink}>{u.tool} — {u.name}</Link>
-                            <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748B' }}>{u.desc}</p>
+                            <Link href={`/portal/library/${u.slug}`} style={s.scaffoldBtn}>{u.tool} — {u.name}</Link>
+                            <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: '#64748B' }}>{u.desc}</p>
                           </div>
                         </div>
                       ))}
@@ -257,7 +257,18 @@ const s = {
   td: { padding: '12px 12px', borderBottom: '1px solid #F1F5F9', verticalAlign: 'top' },
   trEven: { background: '#FAFAFA' },
   badge: { display: 'inline-block', padding: '3px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' },
-  scaffoldLink: { color: '#059669', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' },
+  scaffoldBtn: {
+    display: 'inline-block',
+    color: '#059669',
+    background: '#ECFDF5',
+    border: '1px solid #A7F3D0',
+    fontWeight: 600,
+    fontSize: '0.8rem',
+    textDecoration: 'none',
+    padding: '6px 12px',
+    borderRadius: 6,
+    whiteSpace: 'nowrap',
+  },
   universalRow: { padding: '10px 0', borderBottom: '1px solid #F1F5F9' },
   classifyPanel: { background: '#ECFDF5', border: '1px solid #6EE7B7', boxShadow: '0 1px 8px rgba(5,150,105,0.12)' },
   classifyInput: { width: '100%', padding: '12px 14px', border: '1px solid #A7F3D0', borderRadius: 8, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", resize: 'vertical', marginBottom: 12, color: '#0F172A', background: '#fff' },
