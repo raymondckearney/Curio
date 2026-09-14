@@ -1,7 +1,75 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Layout from '../components/Layout';
+import { WEEKLY_TIPS } from '../lib/weeklyTips';
+
+// Kept local rather than importing lib/profiles.js — that file carries each
+// profile's full long-form content (whoYouAre, superpower, etc.), far more
+// than this homepage card needs, and would needlessly bloat this page's
+// bundle for six short label/tagline pairs.
+const TIP_PROFILES = [
+  { slug: 'why-what', label: 'WHY-WHAT', tagline: 'Purpose-Driven · Progress-Oriented' },
+  { slug: 'why-how', label: 'WHY-HOW', tagline: 'Purpose-Driven · Precision-Oriented' },
+  { slug: 'what-why', label: 'WHAT-WHY', tagline: 'Progress-Driven · Purpose-Oriented' },
+  { slug: 'what-how', label: 'WHAT-HOW', tagline: 'Progress-Driven · Precision-Oriented' },
+  { slug: 'how-why', label: 'HOW-WHY', tagline: 'Precision-Driven · Purpose-Oriented' },
+  { slug: 'how-what', label: 'HOW-WHAT', tagline: 'Precision-Driven · Progress-Oriented' },
+];
+
+// Static fallback for server render / no-JS — identical shape to what the
+// client picks, so swapping in the randomized sequence after mount never
+// causes a layout shift, just a content crossfade.
+const FALLBACK_TIP = {
+  slug: 'why-what', label: 'WHY-WHAT', tagline: 'Purpose-Driven · Progress-Oriented',
+  tip: { number: 10, headline: 'Contain Detail Work in Sprints', body: "Some draining work can't be delegated. Contain it instead: a timer, a defined finish line, a reward after. Detail work costs you less in short, bounded bursts than spread across a week." },
+};
+
+function RotatingTipCard() {
+  const [sequence, setSequence] = useState(null);
+  const [index, setIndex] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    // One random tip per profile, drawn once per page load — not
+    // resampled on every rotation — so the six tips in the loop are fixed
+    // but never predictably "Tip 1, 2, 3…" or the same number each visit.
+    // Runs client-side only (after mount) so the server-rendered markup
+    // stays deterministic and there's no hydration mismatch.
+    const seq = TIP_PROFILES.map(p => {
+      const tips = WEEKLY_TIPS[p.slug];
+      const tip = tips[Math.floor(Math.random() * tips.length)];
+      return { ...p, tip };
+    });
+    setSequence(seq);
+  }, []);
+
+  useEffect(() => {
+    if (!sequence) return;
+    const id = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setIndex(i => (i + 1) % sequence.length);
+        setFading(false);
+      }, 300);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [sequence]);
+
+  const current = sequence ? sequence[index] : FALLBACK_TIP;
+
+  return (
+    <div className={`tip-card${fading ? ' tip-card-fade' : ''}`}>
+      <div className="tip-eyebrow">{current.label} · Weekly Tip {current.tip.number}</div>
+      <div className="tip-headline">{current.tip.headline}</div>
+      <p className="tip-body">{current.tip.body}</p>
+      <div className="tip-footer">
+        <span className="tip-badge">{current.tagline}</span>
+        <span className="tip-logo">Curio<span>.</span></span>
+      </div>
+    </div>
+  );
+}
 
 function MandalaCanvas() {
   const canvasRef = useRef(null);
@@ -235,15 +303,7 @@ export default function Home() {
               <img src="/images/tertiary-boulder.png" alt="The MindPrint Energy Model — primary, secondary, tertiary" />
               <div className="mp-tip-inline">
                 <span className="mp-tip-inline-label">What shielding looks like, in practice</span>
-                <div className="tip-card">
-                  <div className="tip-eyebrow">Why-What · Weekly Tip 10</div>
-                  <div className="tip-headline">Contain Detail Work in Sprints</div>
-                  <p className="tip-body">Some draining work can&apos;t be delegated. Contain it instead: a timer, a defined finish line, a reward after. Detail work costs you less in short, bounded bursts than spread across a week.</p>
-                  <div className="tip-footer">
-                    <span className="tip-badge">Purpose-Driven · Progress-Oriented</span>
-                    <span className="tip-logo">Curio<span>.</span></span>
-                  </div>
-                </div>
+                <RotatingTipCard />
               </div>
             </div>
           </div>
