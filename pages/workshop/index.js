@@ -11,10 +11,14 @@ const TYPES = [
   { id: "HOW-WHAT", primary: "HOW",  secondary: "WHAT", label: "HOW – WHAT", desc: "Precision-driven, progress-oriented" },
 ];
 
-const BRAIN = {
-  WHY:  { color: "#1a3a5c", light: "#e8f0f8", mid: "#b8cfe8", label: "WHY",  sub: "Purpose-Driven"   },
-  WHAT: { color: "#1a4a2a", light: "#e8f4ec", mid: "#b8d8c0", label: "WHAT", sub: "Progress-Driven"  },
-  HOW:  { color: "#4a1a1a", light: "#f8e8e8", mid: "#e0b8b8", label: "HOW",  sub: "Precision-Driven" },
+// Same three orientation colors used site-wide (style guide's .orient-why/
+// what/how, and components/workshop/SessionArchitect.js's badges): mint,
+// sky blue, amber. `mid` is the bright accent tone (dots, bars); `color`/
+// `light` are the badge text/background pair.
+const ORIENT = {
+  WHY:  { color: "#065F46", light: "#DCFCE7", mid: "#6EE7B7", label: "WHY",  sub: "Purpose-Driven"   },
+  WHAT: { color: "#1E40AF", light: "#DBEAFE", mid: "#93C5FD", label: "WHAT", sub: "Progress-Driven"  },
+  HOW:  { color: "#92400E", light: "#FEF3C7", mid: "#FCD34D", label: "HOW",  sub: "Precision-Driven" },
 };
 
 const PROBLEM_TYPES = {
@@ -74,80 +78,82 @@ function saveTeams(teams) {
 }
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  :root{--font-serif:'Caveat',cursive;--font-sans:'DM Sans',system-ui,sans-serif;--bg:#fafaf8;--surface:#ffffff;--border:#e8e6e0;--border-light:#f0ede8;--text:#1a1a18;--text-mid:#5a5a54;--text-light:#9a9a90;--why:#1a3a5c;--why-light:#e8f0f8;--why-mid:#7a9cbf;--what:#1a4a2a;--what-light:#e8f4ec;--what-mid:#7aaf8a;--how:#5c1a1a;--how-light:#f8e8e8;--how-mid:#bf7a7a;--accent:#059669;--radius:4px;--radius-lg:8px;}
+  :root{--font-serif:'Caveat',cursive;--font-sans:'DM Sans',system-ui,sans-serif;--bg:#F8FAFC;--surface:#ffffff;--border:#E2E8F0;--border-light:#F1F5F9;--text:#0F172A;--text-mid:#475569;--text-light:#94A3B8;--why:#065F46;--why-light:#DCFCE7;--why-mid:#6EE7B7;--what:#1E40AF;--what-light:#DBEAFE;--what-mid:#93C5FD;--how:#92400E;--how-light:#FEF3C7;--how-mid:#FCD34D;--avoid:#991B1B;--avoid-light:#FEE2E2;--avoid-mid:#FCA5A5;--accent:#059669;--accent-deep:#065F46;--navy:#0F172A;--radius:8px;--radius-lg:12px;--shadow:0 1px 6px rgba(15,23,42,0.05);}
   .wd-root{font-family:var(--font-sans);background:var(--bg);min-height:100vh;color:var(--text);font-size:14px;line-height:1.6;}
   .wd-shell{display:flex;min-height:100vh;}
   .wd-sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
   .wd-main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
-  .wd-logo{padding:28px 24px 20px;border-bottom:1px solid var(--border-light);}
-  .wd-logo-name{font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--text);letter-spacing:0.01em;}
-  .wd-logo-sub{font-size:11px;color:var(--text-light);letter-spacing:0.08em;text-transform:uppercase;margin-top:2px;}
+  .wd-logo{padding:24px 24px 20px;border-bottom:1px solid var(--border-light);}
+  .wd-wordmark{font-family:var(--font-serif);font-weight:700;font-size:22px;color:var(--text);line-height:1;margin-bottom:10px;}
+  .wd-wordmark span{color:var(--accent);}
+  .wd-logo-name{font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text);letter-spacing:0.01em;}
+  .wd-logo-sub{font-size:10px;color:var(--text-light);letter-spacing:0.1em;text-transform:uppercase;margin-top:3px;}
   .wd-teams-section{padding:20px 16px 0;flex:1;}
   .wd-section-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;padding:0 8px;}
   .wd-team-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius);cursor:pointer;transition:background 0.12s;border:none;background:none;width:100%;text-align:left;}
   .wd-team-item:hover{background:var(--bg);}
   .wd-team-item.active{background:var(--why-light);}
-  .wd-team-dot{width:7px;height:7px;border-radius:50%;background:var(--why);flex-shrink:0;}
+  .wd-team-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;}
   .wd-team-name{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
   .wd-team-count{font-size:11px;color:var(--text-light);flex-shrink:0;}
   .wd-new-team-btn{margin:12px 16px;padding:10px 16px;border:1px dashed var(--border);border-radius:var(--radius);background:none;cursor:pointer;font-size:12px;color:var(--text-mid);width:calc(100% - 32px);text-align:center;transition:all 0.12s;font-family:var(--font-sans);}
   .wd-new-team-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--why-light);}
-  .wd-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid var(--border);}
-  .wd-page-title{font-family:var(--font-serif);font-size:28px;font-weight:500;color:var(--text);letter-spacing:-0.02em;line-height:1.2;}
-  .wd-page-meta{font-size:13px;color:var(--text-light);margin-top:4px;}
-  .wd-modules{display:flex;gap:2px;margin-bottom:36px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
-  .wd-module-tab{font-size:12px;color:var(--text-light);padding:8px 14px;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.12s;font-family:var(--font-sans);white-space:nowrap;letter-spacing:0.01em;}
-  .wd-module-tab:hover{color:var(--text);}
-  .wd-module-tab.active{color:var(--text);font-weight:600;border-bottom-color:var(--text);}
-  .wd-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 28px;margin-bottom:16px;}
-  .wd-card-title{font-family:var(--font-serif);font-size:16px;font-weight:500;color:var(--text);margin-bottom:4px;}
+  .wd-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:32px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+  .wd-page-title{font-family:var(--font-serif);font-size:2.1rem;font-weight:700;color:var(--text);letter-spacing:-0.01em;line-height:1.15;}
+  .wd-page-meta{font-size:13px;color:var(--text-light);margin-top:6px;}
+  .wd-modules{display:flex;gap:4px;margin-bottom:32px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .wd-module-tab{font-size:12.5px;color:var(--text-light);padding:9px 16px;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.12s;font-family:var(--font-sans);font-weight:600;white-space:nowrap;letter-spacing:0.01em;border-radius:var(--radius) var(--radius) 0 0;}
+  .wd-module-tab:hover{color:var(--accent-deep);background:var(--why-light);}
+  .wd-module-tab.active{color:var(--accent-deep);border-bottom-color:var(--accent);}
+  .wd-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 28px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .wd-card-title{font-family:var(--font-serif);font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:4px;}
   .wd-card-sub{font-size:12px;color:var(--text-light);margin-bottom:20px;letter-spacing:0.02em;}
   .wd-participant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px;}
   .wd-participant-card{background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;position:relative;transition:border-color 0.12s;}
-  .wd-participant-card:hover{border-color:var(--border);}
+  .wd-participant-card:hover{border-color:var(--accent);}
   .wd-p-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;}
   .wd-p-remove{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--text-light);font-size:14px;padding:2px 5px;border-radius:2px;line-height:1;transition:color 0.1s;}
-  .wd-p-remove:hover{color:var(--how);}
+  .wd-p-remove:hover{color:var(--avoid);}
   .wd-input{width:100%;padding:10px 14px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font-sans);outline:none;transition:border-color 0.12s;}
   .wd-input:focus{border-color:var(--accent);}
-  .wd-select{width:100%;padding:10px 14px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font-sans);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239a9a90' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+  .wd-select{width:100%;padding:10px 14px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font-sans);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
   .wd-select:focus{border-color:var(--accent);}
-  .wd-btn{padding:10px 20px;font-size:13px;font-weight:500;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font-sans);transition:all 0.12s;letter-spacing:0.01em;}
-  .wd-btn-primary{background:var(--text);color:white;}
-  .wd-btn-primary:hover{background:#2a2a28;}
+  .wd-btn{padding:10px 22px;font-size:13px;font-weight:700;border:none;border-radius:999px;cursor:pointer;font-family:var(--font-sans);transition:all 0.15s;letter-spacing:0.01em;}
+  .wd-btn-primary{background:var(--accent);color:white;}
+  .wd-btn-primary:hover{background:var(--accent-deep);}
   .wd-btn-primary:disabled{background:var(--border);color:var(--text-light);cursor:not-allowed;}
-  .wd-btn-ghost{background:none;color:var(--text-mid);border:1px solid var(--border);}
+  .wd-btn-ghost{background:none;color:var(--text-mid);border:1.5px solid var(--border);}
   .wd-btn-ghost:hover{border-color:var(--text-mid);color:var(--text);}
   .wd-dist-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-  .wd-dist-label{width:48px;font-size:11px;font-weight:600;letter-spacing:0.06em;}
+  .wd-dist-label{width:48px;font-size:11px;font-weight:700;letter-spacing:0.06em;}
   .wd-dist-bar-bg{flex:1;height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;}
   .wd-dist-bar-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
   .wd-dist-count{width:28px;font-size:12px;color:var(--text-light);text-align:right;}
   .wd-match-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:12px;}
   .wd-match-card{border-radius:var(--radius-lg);padding:14px;border:1px solid transparent;}
-  .wd-match-card.lead{background:#e8f4ec;border-color:#b8d8c0;}
-  .wd-match-card.support{background:#e8f0f8;border-color:#b8cfe8;}
-  .wd-match-card.caution{background:#fef8ec;border-color:#f0d890;}
-  .wd-match-card.avoid{background:#f8e8e8;border-color:#e0b8b8;}
-  .wd-match-role{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
-  .wd-match-role.lead{color:var(--what);}
-  .wd-match-role.support{color:var(--why);}
-  .wd-match-role.caution{color:#7a5a00;}
-  .wd-match-role.avoid{color:var(--how);}
+  .wd-match-card.lead{background:var(--why-light);border-color:var(--why-mid);}
+  .wd-match-card.support{background:var(--what-light);border-color:var(--what-mid);}
+  .wd-match-card.caution{background:var(--how-light);border-color:var(--how-mid);}
+  .wd-match-card.avoid{background:var(--avoid-light);border-color:var(--avoid-mid);}
+  .wd-match-role{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
+  .wd-match-role.lead{color:var(--why);}
+  .wd-match-role.support{color:var(--what);}
+  .wd-match-role.caution{color:var(--how);}
+  .wd-match-role.avoid{color:var(--avoid);}
   .wd-friction-select-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
   .wd-friction-result{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;}
   .wd-friction-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-light);margin-bottom:4px;}
-  .wd-friction-pattern{font-family:var(--font-serif);font-size:17px;font-weight:500;color:var(--text);margin-bottom:16px;line-height:1.4;}
+  .wd-friction-pattern{font-family:var(--font-serif);font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:16px;line-height:1.35;}
   .wd-friction-item{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
-  .wd-friction-dot{width:5px;height:5px;border-radius:50%;background:var(--text-light);margin-top:7px;flex-shrink:0;}
+  .wd-friction-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);margin-top:7px;flex-shrink:0;}
   .wd-energy-table{width:100%;border-collapse:collapse;}
-  .wd-energy-table th{text-align:left;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-light);padding:0 12px 12px 0;border-bottom:1px solid var(--border);font-weight:500;}
+  .wd-energy-table th{text-align:left;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-light);padding:0 12px 12px 0;border-bottom:1px solid var(--border);font-weight:700;}
   .wd-energy-table td{padding:14px 12px 14px 0;border-bottom:1px solid var(--border-light);vertical-align:top;font-size:13px;}
   .wd-energy-table tr:last-child td{border-bottom:none;}
-  .wd-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;margin:2px;font-weight:500;}
-  .wd-bs-title{font-family:var(--font-serif);font-size:15px;font-weight:500;margin-bottom:8px;}
+  .wd-pill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:99px;margin:2px;font-weight:600;}
+  .wd-bs-title{font-family:var(--font-serif);font-size:1.2rem;font-weight:700;margin-bottom:8px;color:var(--text);}
   .wd-bs-text{font-size:13px;color:var(--text-mid);line-height:1.7;}
   .wd-collab-result{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-top:16px;}
   .wd-collab-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;}
@@ -155,14 +161,14 @@ const CSS = `
   .wd-collab-pair-names{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
   .wd-collab-pair-reason{font-size:13px;color:var(--text-mid);line-height:1.6;}
   .wd-empty{text-align:center;padding:80px 40px;color:var(--text-light);}
-  .wd-empty-title{font-family:var(--font-serif);font-size:20px;font-weight:400;color:var(--text-mid);margin-bottom:8px;}
+  .wd-empty-title{font-family:var(--font-serif);font-size:1.6rem;font-weight:700;color:var(--text-mid);margin-bottom:8px;}
   .wd-empty-sub{font-size:13px;line-height:1.6;}
-  .wd-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
-  .wd-modal{background:var(--surface);border-radius:var(--radius-lg);padding:32px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.12);}
-  .wd-modal-title{font-family:var(--font-serif);font-size:20px;font-weight:500;margin-bottom:6px;}
+  .wd-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+  .wd-modal{background:var(--surface);border-radius:var(--radius-lg);padding:32px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(15,23,42,0.18);}
+  .wd-modal-title{font-family:var(--font-serif);font-size:1.6rem;font-weight:700;margin-bottom:6px;color:var(--text);}
   .wd-modal-sub{font-size:13px;color:var(--text-light);margin-bottom:24px;}
   .wd-form-row{margin-bottom:16px;}
-  .wd-form-label{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px;display:block;}
+  .wd-form-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent-deep);margin-bottom:6px;display:block;}
   .wd-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
   .wd-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
   .wd-type-opt{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;background:none;text-align:left;font-family:var(--font-sans);transition:all 0.12s;}
@@ -171,21 +177,21 @@ const CSS = `
   .wd-type-opt-desc{font-size:10px;color:var(--text-light);margin-top:1px;}
   .wd-divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
   .wd-problem-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
-  .wd-problem-tab{padding:8px 16px;border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text-mid);font-family:var(--font-sans);transition:all 0.12s;}
-  .wd-problem-tab:hover{border-color:var(--text-mid);color:var(--text);}
-  .wd-problem-tab.active{background:var(--text);color:white;border-color:var(--text);}
+  .wd-problem-tab{padding:8px 18px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:none;color:var(--text-mid);font-family:var(--font-sans);transition:all 0.12s;}
+  .wd-problem-tab:hover{border-color:var(--accent);color:var(--accent-deep);}
+  .wd-problem-tab.active{background:var(--accent);color:white;border-color:var(--accent);}
   .wd-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
   .wd-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-mid);}
   .wd-legend-dot{width:8px;height:8px;border-radius:2px;}
 `;
 
-function typeBrainColors(type) {
+function typeOrientColors(type) {
   const t = TYPES.find(x => x.id === type);
   if (!t) return { bg: "#f0ede8", color: "#5a5a54", border: "#e0ddd8" };
-  return { bg: BRAIN[t.primary].light, color: BRAIN[t.primary].color, border: BRAIN[t.primary].mid };
+  return { bg: ORIENT[t.primary].light, color: ORIENT[t.primary].color, border: ORIENT[t.primary].mid };
 }
 function TypeBadge({ type }) {
-  const c = typeBrainColors(type);
+  const c = typeOrientColors(type);
   const t = TYPES.find(x => x.id === type);
   return <span style={{background:c.bg,color:c.color,border:`1px solid ${c.border}`,borderRadius:99,fontSize:11,fontWeight:700,letterSpacing:"0.04em",padding:"2px 9px",display:"inline-block",fontFamily:"var(--font-sans)"}}>{t?.label||type}</span>;
 }
@@ -245,11 +251,11 @@ function AddParticipantModal({ onSave, onClose }) {
     <div className="wd-modal-overlay" onClick={onClose}>
       <div className="wd-modal" onClick={e => e.stopPropagation()}>
         <div className="wd-modal-title">Add Participant</div>
-        <div className="wd-modal-sub">Enter their name, role, and Three Brains type.</div>
+        <div className="wd-modal-sub">Enter their name, role, and MindPrint™ profile.</div>
         <div className="wd-form-row"><label className="wd-form-label">Name</label><input className="wd-input" value={name} onChange={e => setName(e.target.value)} placeholder="Full name" autoFocus /></div>
         <div className="wd-form-row"><label className="wd-form-label">Role / Title (optional)</label><input className="wd-input" value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. VP of Product" /></div>
         <div className="wd-form-row">
-          <label className="wd-form-label">Three Brains Type</label>
+          <label className="wd-form-label">MindPrint™ Profile</label>
           <div className="wd-type-grid">
             {TYPES.map(t => (
               <button key={t.id} className={`wd-type-opt${type === t.id ? " selected" : ""}`} onClick={() => setType(t.id)}>
@@ -278,15 +284,15 @@ function ModuleCanvas({ participants }) {
     <div>
       <div className="wd-card">
         <div className="wd-card-title">Type Distribution</div>
-        <div className="wd-card-sub">Primary brain orientation across the team</div>
+        <div className="wd-card-sub">Primary orientation across the team</div>
         {["WHY","WHAT","HOW"].map(b => (
           <div className="wd-dist-row" key={b}>
-            <div className="wd-dist-label" style={{color:BRAIN[b].color,fontFamily:"var(--font-sans)",fontSize:11,fontWeight:700,letterSpacing:"0.06em"}}>{b}</div>
-            <div className="wd-dist-bar-bg"><div className="wd-dist-bar-fill" style={{width:total?`${(counts[b]/total)*100}%`:"0%",background:BRAIN[b].color,opacity:0.7}}/></div>
+            <div className="wd-dist-label" style={{color:ORIENT[b].color,fontFamily:"var(--font-sans)",fontSize:11,fontWeight:700,letterSpacing:"0.06em"}}>{b}</div>
+            <div className="wd-dist-bar-bg"><div className="wd-dist-bar-fill" style={{width:total?`${(counts[b]/total)*100}%`:"0%",background:ORIENT[b].color,opacity:0.7}}/></div>
             <div className="wd-dist-count">{counts[b]}</div>
           </div>
         ))}
-        {missing.length > 0 && <div style={{marginTop:16,padding:"10px 14px",background:"#fef8ec",border:"1px solid #f0d890",borderRadius:"var(--radius)",fontSize:12,color:"#7a5a00"}}>⚠ No primary <strong>{missing.join(" or ")}</strong> orientation on this team. This is a structural coverage gap.</div>}
+        {missing.length > 0 && <div style={{marginTop:16,padding:"10px 14px",background:"var(--how-light)",border:"1px solid var(--how-mid)",borderRadius:"var(--radius)",fontSize:12,color:"var(--how)"}}>⚠ No primary <strong>{missing.join(" or ")}</strong> orientation on this team. This is a structural coverage gap.</div>}
       </div>
       <div className="wd-card">
         <div className="wd-card-title">Team Members</div>
@@ -298,7 +304,7 @@ function ModuleCanvas({ participants }) {
               <div className="wd-p-name">{p.name}</div>
               {p.role && <div style={{fontSize:11,color:"var(--text-light)",marginBottom:8}}>{p.role}</div>}
               <TypeBadge type={p.type} />
-              <div style={{marginTop:8,fontSize:11,color:"var(--text-light)"}}>Tertiary: <strong style={{color:BRAIN[tertiary(p.type)]?.color}}>{tertiary(p.type)}</strong></div>
+              <div style={{marginTop:8,fontSize:11,color:"var(--text-light)"}}>Tertiary: <strong style={{color:ORIENT[tertiary(p.type)]?.color}}>{tertiary(p.type)}</strong></div>
             </div>
           ))}
         </div>
@@ -327,7 +333,7 @@ function ModuleProblemMatch({ participants }) {
         <div className="wd-card-title">Team Composition for {pt.label} Work</div>
         <div className="wd-card-sub">How each team member should be positioned for this problem type</div>
         <div className="wd-legend">
-          {[["lead","#1a4a2a","#e8f4ec","#b8d8c0"],["support","#1a3a5c","#e8f0f8","#b8cfe8"],["caution","#7a5a00","#fef8ec","#f0d890"],["avoid","#5c1a1a","#f8e8e8","#e0b8b8"]].map(([r,c,bg,bd]) => (
+          {[["lead","#065F46","#DCFCE7","#6EE7B7"],["support","#1E40AF","#DBEAFE","#93C5FD"],["caution","#92400E","#FEF3C7","#FCD34D"],["avoid","#991B1B","#FEE2E2","#FCA5A5"]].map(([r,c,bg,bd]) => (
             <div className="wd-legend-item" key={r}><div className="wd-legend-dot" style={{background:bg,border:`1px solid ${bd}`}}/><span style={{color:c,fontWeight:600,textTransform:"capitalize"}}>{roleLabel[r]}</span></div>
           ))}
         </div>
@@ -392,9 +398,9 @@ function ModuleEnergyMap({ participants }) {
               <tr key={p.id}>
                 <td><div style={{fontWeight:600,fontSize:13}}>{p.name}</div>{p.role && <div style={{fontSize:11,color:"var(--text-light)"}}>{p.role}</div>}</td>
                 <td><TypeBadge type={p.type}/></td>
-                <td>{profile?.energizes.slice(0,2).map((e,i) => <span key={i} className="wd-pill" style={{background:t?BRAIN[t.primary].light:"#eee",color:t?BRAIN[t.primary].color:"#666"}}>{e}</span>)}</td>
-                <td>{t && <span className="wd-pill" style={{background:BRAIN[t.secondary].light,color:BRAIN[t.secondary].color}}>{t.secondary} work</span>}</td>
-                <td>{ter && profile?.drains.slice(0,2).map((d,i) => <span key={i} className="wd-pill" style={{background:BRAIN[ter]?.light||"#eee",color:BRAIN[ter]?.color||"#666"}}>{d}</span>)}</td>
+                <td>{profile?.energizes.slice(0,2).map((e,i) => <span key={i} className="wd-pill" style={{background:t?ORIENT[t.primary].light:"#eee",color:t?ORIENT[t.primary].color:"#666"}}>{e}</span>)}</td>
+                <td>{t && <span className="wd-pill" style={{background:ORIENT[t.secondary].light,color:ORIENT[t.secondary].color}}>{t.secondary} work</span>}</td>
+                <td>{ter && profile?.drains.slice(0,2).map((d,i) => <span key={i} className="wd-pill" style={{background:ORIENT[ter]?.light||"#eee",color:ORIENT[ter]?.color||"#666"}}>{d}</span>)}</td>
               </tr>
             );
           })}
@@ -415,7 +421,7 @@ function ModuleCollaboration({ participants }) {
     if (!task.trim()) return;
     setLoading(true); setError(""); setResult(null);
     const teamDesc = participants.map(p => `${p.name} (${p.type}${p.role?", "+p.role:""})`).join(", ");
-    const systemPrompt = `You are an expert in The Three Brains Framework. Given a team and a task, recommend collaboration pairings. Return ONLY valid JSON: {"pairings":[{"person1":"<name>","person2":"<name>","reason":"<1-2 sentences>","role":"<what each brings>"}],"leadType":"<name>","leadReason":"<why>","watchOut":"<one key dynamic>"}`;
+    const systemPrompt = `You are an expert in the MindPrint™ Framework. Given a team and a task, recommend collaboration pairings. Return ONLY valid JSON: {"pairings":[{"person1":"<name>","person2":"<name>","reason":"<1-2 sentences>","role":"<what each brings>"}],"leadType":"<name>","leadReason":"<why>","watchOut":"<one key dynamic>"}`;
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -452,7 +458,7 @@ function ModuleCollaboration({ participants }) {
           {result.leadType && <div style={{marginBottom:20,padding:"14px 16px",background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",borderLeft:"3px solid var(--why)"}}><div className="wd-collab-label">Recommended Lead</div><div style={{fontFamily:"var(--font-serif)",fontSize:16,fontWeight:500,color:"var(--text)",marginBottom:4}}>{result.leadType}</div><div style={{fontSize:13,color:"var(--text-mid)",lineHeight:1.6}}>{result.leadReason}</div></div>}
           <div className="wd-collab-label">Recommended Pairings</div>
           {result.pairings?.map((pair,i) => <div key={i} className="wd-collab-pair"><div className="wd-collab-pair-names">{pair.person1} + {pair.person2}</div>{pair.role && <div style={{fontSize:11,color:"var(--text-light)",marginBottom:4}}>{pair.role}</div>}<div className="wd-collab-pair-reason">{pair.reason}</div></div>)}
-          {result.watchOut && <div style={{marginTop:16,padding:"12px 14px",background:"#fef8ec",border:"1px solid #f0d890",borderRadius:"var(--radius)",fontSize:12,color:"#7a5a00"}}><strong>Watch:</strong> {result.watchOut}</div>}
+          {result.watchOut && <div style={{marginTop:16,padding:"12px 14px",background:"var(--how-light)",border:"1px solid var(--how-mid)",borderRadius:"var(--radius)",fontSize:12,color:"var(--how)"}}><strong>Watch:</strong> {result.watchOut}</div>}
         </div>
       )}
     </div>
@@ -483,23 +489,23 @@ function ModuleBlindSpots({ participants }) {
       <div className="wd-card">
         <div className="wd-card-title">Team Blind Spot Report</div>
         <div className="wd-card-sub">Structural vulnerabilities based on type composition</div>
-        {missingPrimaries.length===0 && <div style={{padding:"12px 14px",background:"var(--what-light)",border:"1px solid var(--what-mid)",borderRadius:"var(--radius)",fontSize:13,color:"var(--what)",marginBottom:20}}>✓ All three brain orientations are represented on this team.</div>}
+        {missingPrimaries.length===0 && <div style={{padding:"12px 14px",background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:"var(--radius)",fontSize:13,color:"#065F46",marginBottom:20}}>✓ All three orientations are represented on this team.</div>}
         {missingPrimaries.map(b => (
-          <div key={b} style={{padding:20,background:BRAIN[b].light,border:`1px solid ${BRAIN[b].mid}`,borderRadius:"var(--radius-lg)",borderLeft:`3px solid ${BRAIN[b].color}`,marginBottom:16}}>
-            <div style={{fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:BRAIN[b].color,fontWeight:700,marginBottom:4}}>Missing Primary: {b}</div>
+          <div key={b} style={{padding:20,background:ORIENT[b].light,border:`1px solid ${ORIENT[b].mid}`,borderRadius:"var(--radius-lg)",borderLeft:`3px solid ${ORIENT[b].color}`,marginBottom:16}}>
+            <div style={{fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:ORIENT[b].color,fontWeight:700,marginBottom:4}}>Missing Primary: {b}</div>
             <div className="wd-bs-title">{BLINDSPOTS[b].gap}</div>
             <div className="wd-bs-text" style={{marginBottom:12}}>{BLINDSPOTS[b].risk}</div>
-            <div style={{fontSize:11,fontWeight:600,color:BRAIN[b].color,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Recommendation</div>
+            <div style={{fontSize:11,fontWeight:600,color:ORIENT[b].color,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>Recommendation</div>
             <div className="wd-bs-text">{BLINDSPOTS[b].fix}</div>
           </div>
         ))}
         <hr className="wd-divider"/>
         <div className="wd-bs-title" style={{marginBottom:8}}>Tertiary Clustering</div>
         <div className="wd-bs-text" style={{marginBottom:16}}>When multiple people share a tertiary orientation, the team has a collective blind spot in that area.</div>
-        {heavyTertiary.filter(([,v]) => v>0).map(([brain,count]) => (
-          <div className="wd-dist-row" key={brain}>
-            <div className="wd-dist-label" style={{color:BRAIN[brain].color,fontSize:11,fontWeight:700,letterSpacing:"0.06em",fontFamily:"var(--font-sans)"}}>{brain}</div>
-            <div className="wd-dist-bar-bg"><div className="wd-dist-bar-fill" style={{width:`${(count/participants.length)*100}%`,background:BRAIN[brain].color,opacity:0.5}}/></div>
+        {heavyTertiary.filter(([,v]) => v>0).map(([orientation,count]) => (
+          <div className="wd-dist-row" key={orientation}>
+            <div className="wd-dist-label" style={{color:ORIENT[orientation].color,fontSize:11,fontWeight:700,letterSpacing:"0.06em",fontFamily:"var(--font-sans)"}}>{orientation}</div>
+            <div className="wd-dist-bar-bg"><div className="wd-dist-bar-fill" style={{width:`${(count/participants.length)*100}%`,background:ORIENT[orientation].color,opacity:0.5}}/></div>
             <div className="wd-dist-count">{count}</div>
           </div>
         ))}
@@ -574,8 +580,9 @@ export default function WorkshopDashboard() {
         <div className="wd-shell">
           <div className="wd-sidebar">
             <div className="wd-logo">
+              <div className="wd-wordmark">Curio<span>.</span></div>
               <div className="wd-logo-name">Workshop Dashboard</div>
-              <div className="wd-logo-sub">Three Brains Framework</div>
+              <div className="wd-logo-sub">MindPrint™ Framework</div>
             </div>
             <div className="wd-teams-section">
               <div className="wd-section-label">Teams</div>
