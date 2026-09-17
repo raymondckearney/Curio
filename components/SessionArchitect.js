@@ -255,6 +255,24 @@ const SESSION_TYPE_LABELS = {
   retro: "Retrospective",
 };
 
+// ── Deck generation (Generate Session Materials) ────────────────────────
+// Brand palette and character art reused verbatim from the rest of the
+// app (public/images/*-character.png, the same WHY/WHAT/HOW accent tones
+// as sa-bar-* above) so the deck reads as the same product, not a
+// generic export.
+const DECK_NAVY = "0F172A", DECK_EMERALD = "059669", DECK_DEEP_EMERALD = "065F46",
+  DECK_SLATE = "64748B", DECK_INK = "1E293B";
+const DECK_ENERGY_ACCENT = { WHY: "6EE7B7", WHAT: "93C5FD", HOW: "FCD34D", MIX: "6EE7B7" };
+const DECK_ENERGY_IMAGE = {
+  WHY: "/images/why-character.png",
+  WHAT: "/images/what-character.png",
+  HOW: "/images/how-character.png",
+  MIX: "/images/tertiary-boulder.png",
+};
+// Natural aspect ratio of each source image, so it's placed without
+// stretching (why/what are square, how is portrait, the boulder is landscape).
+const DECK_ENERGY_IMAGE_SIZE = { WHY: { w: 3.4, h: 3.4 }, WHAT: { w: 3.4, h: 3.4 }, HOW: { w: 2.55, h: 3.83 }, MIX: { w: 3.83, h: 2.55 } };
+
 function orientationLabel(id) {
   return ORIENTATIONS.find(o => o.id === id).label;
 }
@@ -404,6 +422,7 @@ export default function SessionArchitect() {
   const [duration, setDuration] = useState(60);
   const [result, setResult] = useState(null);
   const [pdfBuilding, setPdfBuilding] = useState(false);
+  const [deckBuilding, setDeckBuilding] = useState(false);
   const outputRef = useRef(null);
 
   // Own data fetch — this is a portal tool page now, not a child of the
@@ -594,6 +613,117 @@ export default function SessionArchitect() {
     }
   }
 
+  // Builds a facilitator-ready deck: cover, agenda, then a section-divider
+  // slide + activity-instruction slide for every agenda block, styled off
+  // the same brand palette/fonts as the rest of the portal (and the
+  // Curio_Team_Activation_Day reference deck this was modeled on).
+  async function handleGenerateDeck() {
+    if (!result) return;
+    setDeckBuilding(true);
+    try {
+      const PptxGenJS = (await import("pptxgenjs")).default;
+      const pres = new PptxGenJS();
+      pres.layout = "LAYOUT_WIDE";
+
+      let cover = pres.addSlide();
+      cover.background = { color: DECK_NAVY };
+      cover.addText("Curio", { x: 0.6, y: 0.5, w: 4, h: 0.6, fontFace: "Caveat", fontSize: 28, bold: true, color: "6EE7B7", isTextBox: true });
+      cover.addText(result.typeLabel, { x: 0.6, y: 2.5, w: 12, h: 1.6, fontFace: "Caveat", bold: true, fontSize: 54, color: "FFFFFF", isTextBox: true, fit: "shrink" });
+      cover.addText(`${result.totalMin}-minute session`, { x: 0.6, y: 4.0, w: 10, h: 0.5, fontFace: "DM Sans", fontSize: 18, color: "A7F3D0", isTextBox: true });
+      cover.addText(
+        `Prepared with Curio Session Architect · ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+        { x: 0.6, y: 6.7, w: 11, h: 0.4, fontFace: "DM Sans", fontSize: 12, color: "94A3B8", isTextBox: true }
+      );
+
+      let agenda = pres.addSlide();
+      agenda.background = { color: "FFFFFF" };
+      agenda.addText("Agenda", { x: 0.6, y: 0.4, w: 8, h: 0.7, fontFace: "Caveat", bold: true, fontSize: 34, color: DECK_DEEP_EMERALD, isTextBox: true });
+      let ay = 1.35;
+      result.blocks.forEach((b, i) => {
+        const accent = DECK_ENERGY_ACCENT[b.energy] || DECK_ENERGY_ACCENT.MIX;
+        agenda.addShape(pres.ShapeType.ellipse, { x: 0.6, y: ay, w: 0.42, h: 0.42, fill: { color: accent }, line: { type: "none" } });
+        agenda.addText(String(i + 1), { x: 0.6, y: ay, w: 0.42, h: 0.42, align: "center", valign: "middle", fontFace: "DM Sans", bold: true, fontSize: 14, color: DECK_INK, isTextBox: true });
+        agenda.addText(`${b.start}–${b.end} min`, { x: 1.25, y: ay, w: 1.35, h: 0.42, valign: "middle", fontFace: "DM Sans", fontSize: 11, color: DECK_SLATE, isTextBox: true });
+        agenda.addText(
+          [
+            { text: b.name, options: { bold: true, fontSize: 14, color: DECK_INK, breakLine: true } },
+            { text: `Activity: ${b.activity.name}`, options: { fontSize: 11, color: DECK_EMERALD } },
+          ],
+          { x: 2.75, y: ay - 0.06, w: 9.9, h: 0.55, valign: "top", fontFace: "DM Sans", isTextBox: true }
+        );
+        ay += 0.78;
+      });
+
+      result.blocks.forEach((b, i) => {
+        const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
+        const accent = DECK_ENERGY_ACCENT[energyKey];
+        const imgSize = DECK_ENERGY_IMAGE_SIZE[energyKey];
+
+        let divider = pres.addSlide();
+        divider.background = { color: DECK_NAVY };
+        divider.addText(`BLOCK 0${i + 1} · ${energyKey === "MIX" ? "WHY + HOW" : energyKey} ENERGY`, { x: 0.6, y: 0.7, w: 7, h: 0.4, fontFace: "DM Sans", bold: true, fontSize: 12, color: accent, charSpacing: 2, isTextBox: true });
+        divider.addText(b.name, { x: 0.6, y: 1.3, w: 7.4, h: 1.7, fontFace: "Caveat", bold: true, fontSize: 40, color: "FFFFFF", isTextBox: true, fit: "shrink" });
+        divider.addText(b.purpose, { x: 0.6, y: 3.05, w: 7, h: 1.1, fontFace: "DM Sans", fontSize: 16, color: "CBD5E1", isTextBox: true });
+        if (b.opener) {
+          divider.addText(`Suggested opener: ${b.opener.name} (${orientationLabel(b.opener.id)})`, { x: 0.6, y: 4.3, w: 7, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 13, color: accent, isTextBox: true });
+        } else {
+          divider.addText("No one in this orientation is in the room. Plan to open this block yourself.", { x: 0.6, y: 4.3, w: 7, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 13, color: "FCA5A5", isTextBox: true });
+        }
+        divider.addImage({ path: DECK_ENERGY_IMAGE[energyKey], x: 13.33 - 0.6 - imgSize.w, y: (7.5 - imgSize.h) / 2, w: imgSize.w, h: imgSize.h });
+
+        const a = b.activity;
+        let sheet = pres.addSlide();
+        sheet.background = { color: "FFFFFF" };
+        sheet.addText("ACTIVITY", { x: 0.6, y: 0.4, w: 5, h: 0.35, fontFace: "DM Sans", bold: true, fontSize: 11, color: DECK_EMERALD, charSpacing: 2, isTextBox: true });
+        sheet.addText(a.name, { x: 0.6, y: 0.72, w: 8.6, h: 0.7, fontFace: "DM Sans", bold: true, fontSize: 24, color: DECK_INK, isTextBox: true, fit: "shrink" });
+        sheet.addText(a.purpose, { x: 0.6, y: 1.4, w: 8.6, h: 0.65, fontFace: "DM Sans", italic: true, fontSize: 12.5, color: DECK_SLATE, isTextBox: true });
+
+        sheet.addShape(pres.ShapeType.roundRect, { x: 0.6, y: 2.15, w: 8.6, h: 0.55, rectRadius: 0.07, fill: { color: "F1F5F9" }, line: { type: "none" } });
+        sheet.addText(
+          [
+            { text: "TIME   ", options: { bold: true, color: DECK_EMERALD, fontSize: 10 } },
+            { text: `${b.start}–${b.end} min      `, options: { color: DECK_INK, fontSize: 11 } },
+            { text: "ENERGY   ", options: { bold: true, color: DECK_EMERALD, fontSize: 10 } },
+            { text: `${energyKey === "MIX" ? "WHY + HOW" : energyKey}      `, options: { color: DECK_INK, fontSize: 11 } },
+            { text: "MATERIALS   ", options: { bold: true, color: DECK_EMERALD, fontSize: 10 } },
+            { text: a.materials.join(", "), options: { color: DECK_INK, fontSize: 11 } },
+          ],
+          { x: 0.85, y: 2.15, w: 8.1, h: 0.55, valign: "middle", fontFace: "DM Sans", isTextBox: true }
+        );
+
+        sheet.addText("STEPS", { x: 0.6, y: 2.95, w: 5, h: 0.3, fontFace: "DM Sans", bold: true, fontSize: 12, color: DECK_DEEP_EMERALD, isTextBox: true });
+        sheet.addText(
+          a.steps.map((st, idx) => ({ text: `${idx + 1}.  ${st}`, options: { breakLine: true, paraSpaceAfter: 8 } })),
+          { x: 0.6, y: 3.3, w: 7.7, h: 3.7, fontFace: "DM Sans", fontSize: 12, color: DECK_INK, valign: "top", isTextBox: true, fit: "shrink" }
+        );
+
+        sheet.addShape(pres.ShapeType.roundRect, { x: 8.55, y: 2.95, w: 4.2, h: 2.15, rectRadius: 0.07, fill: { color: "ECFDF5" }, line: { type: "none" } });
+        sheet.addText("FACILITATOR TIPS", { x: 8.75, y: 3.1, w: 3.8, h: 0.3, fontFace: "DM Sans", bold: true, fontSize: 11, color: DECK_DEEP_EMERALD, isTextBox: true });
+        sheet.addText(
+          a.tips.map((t, idx) => ({ text: `•  ${t}`, options: { breakLine: true, paraSpaceAfter: 6 } })),
+          { x: 8.75, y: 3.45, w: 3.85, h: 1.6, fontFace: "DM Sans", fontSize: 10, color: DECK_INK, valign: "top", isTextBox: true, fit: "shrink" }
+        );
+
+        sheet.addShape(pres.ShapeType.roundRect, { x: 8.55, y: 5.25, w: 4.2, h: 1.8, rectRadius: 0.07, fill: { color: "FFFBEB" }, line: { type: "none" } });
+        sheet.addText("YOU'LL KNOW IT WORKED WHEN", { x: 8.75, y: 5.4, w: 3.8, h: 0.5, fontFace: "DM Sans", bold: true, fontSize: 10.5, color: "92400E", isTextBox: true });
+        sheet.addText(a.signal, { x: 8.75, y: 5.85, w: 3.85, h: 1.1, fontFace: "DM Sans", fontSize: 10.5, color: DECK_INK, valign: "top", isTextBox: true, fit: "shrink" });
+      });
+
+      let close = pres.addSlide();
+      close.background = { color: DECK_NAVY };
+      close.addText("Curio", { x: 0.6, y: 0.5, w: 4, h: 0.6, fontFace: "Caveat", fontSize: 28, bold: true, color: "6EE7B7", isTextBox: true });
+      close.addText("Run it. Then close it out.", { x: 0.6, y: 2.9, w: 11, h: 1.3, fontFace: "Caveat", bold: true, fontSize: 44, color: "FFFFFF", isTextBox: true, fit: "shrink" });
+      close.addText("Every block above has an owner and a purpose on purpose. End the session the way it started: on purpose.", { x: 0.6, y: 4.35, w: 9, h: 0.9, fontFace: "DM Sans", fontSize: 15, color: "CBD5E1", isTextBox: true });
+
+      await pres.writeFile({ fileName: `curio-session-${result.typeSlug}-deck.pptx` });
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't build the session deck. Please try again.");
+    } finally {
+      setDeckBuilding(false);
+    }
+  }
+
   return (
     <div className="sa-root">
       <style dangerouslySetInnerHTML={{ __html: SA_CSS }} />
@@ -638,6 +768,9 @@ export default function SessionArchitect() {
           <button className="sa-btn sa-btn-primary" onClick={handleGenerate}>Build the session</button>
           <button className="sa-btn sa-btn-primary" onClick={handleDownloadPDF} disabled={!result || pdfBuilding}>
             {pdfBuilding ? "Building PDF…" : "Download PDF"}
+          </button>
+          <button className="sa-btn sa-btn-primary" onClick={handleGenerateDeck} disabled={!result || deckBuilding}>
+            {deckBuilding ? "Building deck…" : "Generate Session Materials"}
           </button>
         </div>
       </div>
