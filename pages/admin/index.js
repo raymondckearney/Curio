@@ -18,6 +18,7 @@ const TOOL_LABELS = {
   precision_companion: 'Precision Companion', purpose_companion: 'Purpose Companion', progress_companion: 'Progress Companion',
   companion_match: 'Companion — matches their profile',
   orientation_translator: 'Orientation Translator',
+  session_architect: 'Session Architect',
   library_full: 'Client Library (Full)', library_a: 'Client Library — Collection A', library_b: 'Client Library — Collection B',
   library_c: 'Client Library — Collection C', library_d: 'Client Library — Collection D', library_e: 'Client Library — Collection E',
   library_match: 'Client Library — matches their profile',
