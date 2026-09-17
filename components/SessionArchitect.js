@@ -268,12 +268,13 @@ function findOpener(roster, orientationIds) {
   return null;
 }
 
-// The saved-team dashboard on this page stores each participant's type as
-// "WHY-WHAT" (hyphenated, matching pages/workshop/index.js's TYPES array);
-// Session Architect's own ORIENTATIONS array (ported verbatim from the
-// reference build) uses "WHYWHAT" (no hyphen). This is the only adapter
-// needed to auto-fill the roster from a team that's already been entered,
-// instead of asking the user to retype names the page already has.
+// The portal's real team data (/api/portal/team) stores each member's
+// resolved MindPrint profile as "WHY-WHAT" (hyphenated, matching
+// assessments.type uppercased); Session Architect's own ORIENTATIONS array
+// (ported verbatim from the reference build) uses "WHYWHAT" (no hyphen).
+// This is the only adapter needed to auto-fill the roster from the
+// account's actual team, instead of asking the user to retype names the
+// portal already has.
 function rosterTextFromParticipants(participants) {
   const grouped = {};
   ORIENTATIONS.forEach(o => { grouped[o.id] = []; });
@@ -396,20 +397,38 @@ function ActivitySheet({ block }) {
   );
 }
 
-export default function SessionArchitect({ participants }) {
-  const [rosterText, setRosterText] = useState(() => rosterTextFromParticipants(participants));
+export default function SessionArchitect() {
+  const [participants, setParticipants] = useState(null);
+  const [rosterText, setRosterText] = useState(() => rosterTextFromParticipants([]));
   const [sessionType, setSessionType] = useState("brainstorm");
   const [duration, setDuration] = useState(60);
   const [result, setResult] = useState(null);
   const [pdfBuilding, setPdfBuilding] = useState(false);
   const outputRef = useRef(null);
 
-  // Re-seed the roster whenever the active team changes, so switching teams
-  // in the sidebar doesn't leave a stale roster from a different team.
-  // Free-text edits made afterward are the user's own and aren't clobbered
-  // by this effect (it only fires on a real participants-list change).
+  // Own data fetch — this is a portal tool page now, not a child of the
+  // /workshop dashboard's local team-selection state, so it loads the
+  // caller's real team directly (an owner sees the whole account, a
+  // manager sees only their own team — /api/portal/team already scopes
+  // this by session role). Only members with a completed, resolved
+  // MindPrint profile are usable for the roster.
   useEffect(() => {
-    setRosterText(rosterTextFromParticipants(participants));
+    fetch('/api/portal/team')
+      .then(r => r.ok ? r.json() : { members: [] })
+      .then(d => {
+        const withProfiles = (d.members || [])
+          .filter(m => m.assessment_type)
+          .map(m => ({ name: m.name || m.email, type: m.assessment_type.toUpperCase() }));
+        setParticipants(withProfiles);
+      })
+      .catch(() => setParticipants([]));
+  }, []);
+
+  // Re-seed the roster once the team loads. Free-text edits made afterward
+  // are the user's own and aren't clobbered by this effect (it only fires
+  // when the fetched participants list itself changes, i.e. once on load).
+  useEffect(() => {
+    if (participants) setRosterText(rosterTextFromParticipants(participants));
   }, [participants]);
 
   function updateRoster(id, value) {
@@ -577,7 +596,7 @@ export default function SessionArchitect({ participants }) {
 
   return (
     <div className="sa-root">
-      <style>{SA_CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: SA_CSS }} />
 
       <div className="sa-hero">
         <p style={{ margin: 0, fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: "1.8rem" }}>Session Architect</p>

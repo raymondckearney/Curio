@@ -197,7 +197,7 @@ export default function Manual() {
               <span className="badge badge-admin">Admin</span>
             </div>
             <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, last login, and an Expiry column showing the soonest upcoming license expiration date (shown in red if already past due, "No expiry" if none set). Filterable by type, tier, and name/email search.</Card>
-            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, extra Resources collections beyond the free default) at creation time.</Card>
+            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, Session Architect, extra Resources collections beyond the free default) at creation time.</Card>
             <Card title="Edit Account">
               Click <strong>Edit</strong> on any account to expand a panel with these sections:
               <ul>
@@ -325,6 +325,23 @@ export default function Manual() {
             <Card title="Invite a Team Member">Owner only. Enter an email, optional name, and role (Member, Manager, or Owner). A portal account is created and a "Set Up Your Account" email is sent with a 7-day setup link. The invited user sets their own password. A newly invited manager still needs to be assigned a team afterward via the Team Table's Team dropdown, same as any existing member.</Card>
             <Card title="Team Table">An owner sees every portal user on the account and gets an inline Role dropdown (Owner / Manager / Member) and Team dropdown per row to reassign either instantly — this is how a member becomes a manager and gets attached to a team. An owner cannot change their own role here (a safety guard against accidentally locking themselves out) and cannot remove themselves. A manager sees only the users on their own team, as plain read-only rows with no dropdowns. Columns: name, email, role, team (owner only), assessment status (No Token / Invited / Completed), MindPrint™ profile type, and join date.</Card>
             <Card title="Manager role and team scoping">A third role, <code>manager</code>, sits alongside owner and member on <code>client_users</code>, backed by a <code>teams</code> table and a <code>team_id</code> column on both <code>client_users</code> and <code>tokens</code> — assignable here by the owner, or in admin Accounts → Edit Account → Teams and Users & Roles. A manager sees the same four tabs as an owner — My Team, Assessment Tokens, Assessment Results, Analytics — but every one of them is filtered server-side to the manager's own <code>team_id</code>, including the token pool they can send from on Assessment Tokens (their one write action) and the stats/recent-assessments shown on their own My Profile dashboard. A manager gets no other owner action: no invite/remove, no team creation/deletion, no license or tier changes, no visibility into other teams or the enterprise-wide unassigned token pool. <code>isTeamAccount</code> (which gates whether these tabs appear at all) is still computed from the whole account's token count, not the manager's own team size, so a small or brand-new team doesn't lose the tabs.</Card>
+          </section>
+
+          {/* ─── Session Architect ─── */}
+          <section className="section" id="portal-session-architect">
+            <div className="section-header">
+              <h2 className="section-title">Session Architect</h2>
+              <span className="section-path">/portal/tools/session-architect</span>
+            </div>
+            <div className="badges">
+              <span className="badge badge-owner">Owner</span>
+              <span className="badge badge-member">Member</span>
+            </div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>Builds MindPrint&trade;-informed team session plans — workshops, brainstorms, retros, and planning sessions structured around participants' WHY/WHAT/HOW profiles rather than a generic agenda template. Gated on the <code>session_architect</code> license, granted individually by admin per account (not bundled with any tier), so it can be limited to specific pilot accounts. Sits in the sidebar directly under My Team.</p>
+            <Card title="Roster auto-fill">On load, fetches the caller's own team from <code>/api/portal/team</code> (owner sees the whole account, manager sees only their own team) and pre-fills the roster with every member who has a completed MindPrint™ assessment, labeled by profile. The roster is a free-text field afterward — edits made by hand aren't overwritten unless the page reloads.</Card>
+            <Card title="Session builder">Pick a session type (Brainstorm, Retro, Planning, or Workshop) and a duration; Session Architect assembles a block-by-block agenda with per-block activities and facilitation techniques drawn from a fixed template set, weighted toward the orientations present in the roster.</Card>
+            <Card title="Download PDF">Client-side PDF export (via <code>jsPDF</code>) of the generated agenda and activity sheets, ready to print or share with a facilitator.</Card>
+            <div className="info-block"><strong>Pilot access:</strong> the <code>session_architect</code> license supports an expiry date like any other license (admin Accounts → Edit Account → Tier &amp; Licenses). Once it passes, access reverts to locked automatically — the same expiry-as-gate mechanism used everywhere else in the portal, not a separate reminder-only timer.</div>
           </section>
 
           <section className="section" id="portal-tokens">

@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
-import SessionArchitect from '../../components/workshop/SessionArchitect';
 
 const TYPES = [
   { id: "WHY-WHAT", primary: "WHY", secondary: "WHAT", label: "WHY – WHAT", desc: "Purpose-driven, progress-oriented" },
@@ -12,7 +11,7 @@ const TYPES = [
 ];
 
 // Same three orientation colors used site-wide (style guide's .orient-why/
-// what/how, and components/workshop/SessionArchitect.js's badges): mint,
+// what/how, and components/SessionArchitect.js's badges): mint,
 // sky blue, amber. `mid` is the bright accent tone (dots, bars); `color`/
 // `light` are the badge text/background pair.
 const ORIENT = {
@@ -522,7 +521,6 @@ const MODULES = [
   { id:"energy",    label:"Energy Map" },
   { id:"collab",    label:"Collaboration" },
   { id:"blindspot", label:"Blind Spot Report" },
-  { id:"session",   label:"Session Architect" },
 ];
 
 export default function WorkshopDashboard() {
@@ -626,7 +624,6 @@ export default function WorkshopDashboard() {
                 {activeModule==="energy"    && <ModuleEnergyMap participants={participants}/>}
                 {activeModule==="collab"    && <ModuleCollaboration participants={participants}/>}
                 {activeModule==="blindspot" && <ModuleBlindSpots participants={participants}/>}
-                {activeModule==="session"   && <SessionArchitect participants={participants}/>}
               </>
             )}
           </div>

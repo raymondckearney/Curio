@@ -4,6 +4,7 @@ import { dbInsert, dbDelete, dbPatch } from '../../../../../lib/supabase';
 const VALID_TYPES = [
   'assessment_tokens', 'role_analyzer', 'career_guidance', 'jd_analyzer',
   'precision_companion', 'purpose_companion', 'progress_companion', 'orientation_translator',
+  'session_architect',
   'library_full', 'library_a', 'library_b', 'library_c', 'library_d', 'library_e',
 ];
 
