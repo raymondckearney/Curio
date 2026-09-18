@@ -262,6 +262,17 @@ const SESSION_TYPE_LABELS = {
 const DECK_NAVY = "0F172A", DECK_EMERALD = "059669", DECK_DEEP_EMERALD = "065F46",
   DECK_SLATE = "64748B", DECK_INK = "1E293B";
 const DECK_ENERGY_ACCENT = { WHY: "6EE7B7", WHAT: "93C5FD", HOW: "FCD34D", MIX: "6EE7B7" };
+// Same brain-fingerprint mark used as the dashboard's profile-page
+// watermark (public/images/brain-fingerprint-watermark.webp), pre-tinted
+// per energy and baked down to ~12% opacity (see the PIL script used to
+// generate these — matches the old placeholder circle's transparency: 88)
+// since pptxgenjs's addImage has no runtime transparency/recolor option.
+const DECK_ENERGY_WATERMARK = {
+  WHY: "/images/brainprint-deck-why.png",
+  WHAT: "/images/brainprint-deck-what.png",
+  HOW: "/images/brainprint-deck-how.png",
+  MIX: "/images/brainprint-deck-why.png",
+};
 
 function orientationLabel(id) {
   return ORIENTATIONS.find(o => o.id === id).label;
@@ -413,8 +424,8 @@ function ActivitySheet({ block }) {
 const PDF_INK = [15, 23, 42], PDF_SLATE = [100, 116, 139], PDF_EMERALD = [5, 150, 105], PDF_DEEP_EMERALD = [6, 95, 70];
 const PDF_ENERGY_RGB = { WHY: [110, 231, 183], WHAT: [147, 197, 253], HOW: [252, 211, 77], MIX: [110, 231, 183] };
 
-function newPdfDoc(JsPDF) {
-  const doc = new JsPDF({ unit: "pt", format: "letter" });
+function newPdfDoc(JsPDF, orientation = "portrait") {
+  const doc = new JsPDF({ orientation, unit: "pt", format: "letter" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 54;
@@ -563,6 +574,123 @@ function buildFacilitatorGuidePdf(JsPDF, result) {
     doc.text(signalLines, margin + 12, y);
   });
 
+  // Room watch-fors: only the orientations actually present in this
+  // session's roster, same condensed framing as the on-screen version.
+  doc.addPage();
+  let ry = margin;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.setTextColor(...PDF_INK);
+  doc.text("Room Watch-Fors", margin, ry);
+  ry += 20;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.setTextColor(...PDF_SLATE);
+  doc.text("Quick reference for who's in the room today, condensed for this session.", margin, ry);
+  doc.setTextColor(...PDF_INK);
+  ry += 26;
+
+  if (result.present.length === 0) {
+    doc.setFont("helvetica", "italic"); doc.setFontSize(10.5);
+    doc.setTextColor(...PDF_SLATE);
+    doc.text("No roster was entered for this session.", margin, ry);
+  } else {
+    result.present.forEach(o => {
+      ry = pageBreakIfNeeded(ry, 70);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+      doc.setTextColor(...PDF_INK);
+      doc.text(result.roster[o.id].join(", "), margin, ry);
+      ry += 15;
+      doc.setFont("helvetica", "italic"); doc.setFontSize(10);
+      doc.setTextColor(...PDF_SLATE);
+      doc.text(`${o.label} · ${o.tag}`, margin, ry);
+      doc.setTextColor(...PDF_INK);
+      ry += 16;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+      doc.setTextColor(...PDF_DEEP_EMERALD);
+      doc.text("GIVE THEM", margin, ry);
+      doc.setTextColor(...PDF_INK);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      let givenLines = doc.splitTextToSize(o.bestUsedFor, maxW - 10);
+      doc.text(givenLines, margin + 68, ry);
+      ry += Math.max(givenLines.length * 12, 12) + 8;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+      doc.setTextColor(...PDF_DEEP_EMERALD);
+      doc.text("WATCH FOR", margin, ry);
+      doc.setTextColor(...PDF_INK);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      let watchLines = doc.splitTextToSize(o.watchFor, maxW - 10);
+      doc.text(watchLines, margin + 68, ry);
+      ry += Math.max(watchLines.length * 12, 12) + 22;
+    });
+  }
+
+  // Orientation reference: always included, all six combinations, useful
+  // even before the facilitator knows exactly who's in the room.
+  doc.addPage();
+  ry = margin;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.setTextColor(...PDF_INK);
+  doc.text("Orientation Reference", margin, ry);
+  ry += 20;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.setTextColor(...PDF_SLATE);
+  const refSubLines = doc.splitTextToSize("What each combination is energized by in a facilitated session, and where they'll drain if misused.", maxW);
+  doc.text(refSubLines, margin, ry);
+  doc.setTextColor(...PDF_INK);
+  ry += refSubLines.length * 12 + 14;
+
+  ORIENTATIONS.forEach(o => {
+    ry = pageBreakIfNeeded(ry, 90);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.setTextColor(...PDF_INK);
+    doc.text(o.label, margin, ry);
+    ry += 15;
+    doc.setFont("helvetica", "italic"); doc.setFontSize(10);
+    doc.setTextColor(...PDF_SLATE);
+    doc.text(o.tag, margin, ry);
+    doc.setTextColor(...PDF_INK);
+    ry += 16;
+    [["ENERGIZED BY", o.energizedBy], ["BEST USED FOR", o.bestUsedFor], ["WATCH FOR", o.watchFor]].forEach(([label, text]) => {
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+      doc.setTextColor(...PDF_DEEP_EMERALD);
+      doc.text(label, margin, ry);
+      doc.setTextColor(...PDF_INK);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+      const lines = doc.splitTextToSize(text, maxW - 10);
+      ry = pageBreakIfNeeded(ry, lines.length * 11 + 6);
+      doc.text(lines, margin, ry + 12);
+      ry += lines.length * 11 + 16;
+    });
+    ry += 8;
+  });
+
+  // Facilitation techniques: structural moves, always included.
+  doc.addPage();
+  ry = margin;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.setTextColor(...PDF_INK);
+  doc.text("Facilitation Techniques", margin, ry);
+  ry += 20;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  doc.setTextColor(...PDF_SLATE);
+  doc.text("Structural moves that make the agenda actually work in the room.", margin, ry);
+  doc.setTextColor(...PDF_INK);
+  ry += 26;
+
+  TECHNIQUES.forEach(([title, body]) => {
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
+    doc.setTextColor(...PDF_DEEP_EMERALD);
+    const titleLines = doc.splitTextToSize(title, maxW);
+    ry = pageBreakIfNeeded(ry, titleLines.length * 13 + 4);
+    doc.text(titleLines, margin, ry);
+    doc.setTextColor(...PDF_INK);
+    ry += titleLines.length * 13 + 4;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    const bodyLines = doc.splitTextToSize(body, maxW);
+    ry = pageBreakIfNeeded(ry, bodyLines.length * 13 + 14);
+    doc.text(bodyLines, margin, ry);
+    ry += bodyLines.length * 13 + 18;
+  });
+
   return doc;
 }
 
@@ -637,7 +765,7 @@ function buildParticipantHandoutPdf(JsPDF, result) {
 // start-to-front like the guide/handout. No numbered steps on purpose:
 // anyone needing the full sequence flips to the handout instead.
 function buildActivityCardsPdf(JsPDF, result) {
-  const { doc, pageW, pageH, margin, maxW } = newPdfDoc(JsPDF);
+  const { doc, pageW, pageH, margin, maxW } = newPdfDoc(JsPDF, "landscape");
 
   result.blocks.forEach((b, i) => {
     if (i > 0) doc.addPage();
@@ -939,10 +1067,9 @@ export default function SessionArchitect() {
 
         let divider = pres.addSlide();
         divider.background = { color: DECK_NAVY };
-        // Large soft off-slide circle instead of a character illustration —
-        // a visual anchor without needing artwork, and a motif (a circle)
-        // already established by the agenda slide's numbered bullets.
-        divider.addShape(pres.ShapeType.ellipse, { x: 9.3, y: -3.2, w: 7.5, h: 7.5, fill: { color: accent, transparency: 88 }, line: { type: "none" } });
+        // Same brain-fingerprint watermark as the dashboard's profile page,
+        // pre-tinted per energy, bleeding off the top-right corner.
+        divider.addImage({ path: DECK_ENERGY_WATERMARK[energyKey], x: 9.3, y: -3.2, w: 7.5, h: 7.5 });
         divider.addText(`BLOCK 0${i + 1} · ${energyKey === "MIX" ? "WHY + HOW" : energyKey} ENERGY`, { x: 0.6, y: 0.9, w: 11.5, h: 0.4, fontFace: "DM Sans", bold: true, fontSize: 12, color: accent, charSpacing: 2, isTextBox: true });
         divider.addText(b.name, { x: 0.6, y: 1.5, w: 11.5, h: 1.7, fontFace: "Caveat", bold: true, fontSize: 46, color: "FFFFFF", isTextBox: true, fit: "shrink" });
         divider.addText(b.purpose, { x: 0.6, y: 3.35, w: 10.5, h: 1.1, fontFace: "DM Sans", fontSize: 18, color: "CBD5E1", isTextBox: true });
