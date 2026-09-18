@@ -287,6 +287,49 @@ function findOpener(roster, orientationIds) {
   return null;
 }
 
+const BREAKOUT_TARGET_GROUP_SIZE = 4;
+const BREAKOUT_MIN_ROOM = 4;
+
+// Recommends breakout groups for one agenda block. The goal is a spread of
+// energies in every group (a group that's all WHAT-primaries diverges fast
+// but has no one to stress-test it) rather than a random shuffle, with a
+// mild bias toward seeding each group with someone from the block's own
+// preferred opener orientation(s) first, so each group has a natural
+// starting voice for this specific activity, not just a generic mix.
+function recommendBreakoutGroups(roster, block) {
+  const people = [];
+  ORIENTATIONS.forEach(o => (roster[o.id] || []).forEach(name => people.push({ name, id: o.id, energy: o.energy })));
+  if (people.length < BREAKOUT_MIN_ROOM) return null;
+
+  const numGroups = Math.max(2, Math.round(people.length / BREAKOUT_TARGET_GROUP_SIZE));
+  const openerIds = block.openers || [];
+
+  const buckets = ["WHY", "WHAT", "HOW"]
+    .map(energy => people
+      .filter(p => p.energy === energy)
+      .sort((a, b) => {
+        const ai = openerIds.indexOf(a.id), bi = openerIds.indexOf(b.id);
+        if (ai === -1 && bi === -1) return 0;
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      }))
+    .filter(bucket => bucket.length);
+
+  // Interleave one person per energy bucket at a time (WHY, WHAT, HOW,
+  // WHY, WHAT, HOW, ...) so the deal order itself alternates energies,
+  // then deal that order round-robin into groups.
+  const dealOrder = [];
+  const maxBucketLen = Math.max(...buckets.map(b => b.length));
+  for (let i = 0; i < maxBucketLen; i++) {
+    buckets.forEach(bucket => { if (bucket[i]) dealOrder.push(bucket[i]); });
+  }
+
+  const groups = Array.from({ length: numGroups }, () => []);
+  dealOrder.forEach((person, idx) => groups[idx % numGroups].push(person));
+  return groups;
+}
+
 // The portal's real team data (/api/portal/team) stores each member's
 // resolved MindPrint profile as "WHY-WHAT" (hyphenated, matching
 // assessments.type uppercased); Session Architect's own ORIENTATIONS array
@@ -375,6 +418,10 @@ const SA_CSS = `
   .sa-as-tips li{margin-bottom:5px;}
   .sa-as-signal{margin-top:16px;padding:10px 14px;background:#FFFBEB;border:1px solid #E9D8A6;border-radius:8px;font-size:0.86rem;}
   .sa-as-signal b{color:#065F46;}
+  .sa-as-groups{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+  @media (max-width:700px){.sa-as-groups{grid-template-columns:1fr;}}
+  .sa-as-group{background:#F0FDF4;border:1px solid #DCFCE7;border-radius:8px;padding:8px 12px;font-size:0.84rem;}
+  .sa-as-group b{display:block;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:#059669;margin-bottom:2px;}
   .sa-empty-note{color:#64748B;font-size:0.88rem;}
 `;
 
@@ -407,6 +454,19 @@ function ActivitySheet({ block }) {
         <div className="sa-as-meta"><b>Energy</b>{block.energy === "MIX" ? "WHY + HOW" : block.energy}</div>
         <div className="sa-as-meta"><b>Materials</b>{a.materials.join(", ")}</div>
       </div>
+      {block.breakoutGroups && (
+        <>
+          <p className="sa-as-h">Suggested breakout groups</p>
+          <div className="sa-as-groups">
+            {block.breakoutGroups.map((g, i) => (
+              <div className="sa-as-group" key={i}>
+                <b>Group {i + 1}</b>
+                <span>{g.map(p => `${p.name} (${orientationLabel(p.id)})`).join(", ")}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       <p className="sa-as-h">Steps</p>
       <ol className="sa-as-steps">{a.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
       <p className="sa-as-h">Facilitator tips</p>
@@ -482,6 +542,29 @@ function pdfAgendaOverview(doc, margin, maxW, pageH, result, { showActivity = tr
   return y;
 }
 
+// Renders the recommended breakout groups for one block, if the roster was
+// large enough to form any (see recommendBreakoutGroups). Shared by the
+// facilitator guide and participant handout since both list groups by name
+// the same way. Returns the updated y.
+function pdfBreakoutGroups(doc, margin, maxW, pageBreakIfNeeded, y, block) {
+  if (!block.breakoutGroups) return y;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.setTextColor(...PDF_DEEP_EMERALD);
+  y = pageBreakIfNeeded(y, 20);
+  doc.text("SUGGESTED BREAKOUT GROUPS", margin, y);
+  doc.setTextColor(...PDF_INK);
+  y += 18;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  block.breakoutGroups.forEach((g, i) => {
+    const line = `Group ${i + 1}:  ${g.map(p => `${p.name} (${orientationLabel(p.id)})`).join(", ")}`;
+    const lines = doc.splitTextToSize(line, maxW - 10);
+    y = pageBreakIfNeeded(y, lines.length * 13 + 6);
+    doc.text(lines, margin, y);
+    y += lines.length * 13 + 6;
+  });
+  return y + 8;
+}
+
 // Full detail, facilitator-only: steps, facilitator tips, and the "you'll
 // know it worked" signal. This is the existing Download PDF content with a
 // branded cover and energy-colored agenda markers added.
@@ -534,6 +617,8 @@ function buildFacilitatorGuidePdf(JsPDF, result) {
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     doc.text(metaLines, margin + 20, y);
     y += metaH + 14;
+
+    y = pdfBreakoutGroups(doc, margin, maxW, pageBreakIfNeeded, y, b);
 
     doc.setFont("helvetica", "bold"); doc.setFontSize(11);
     doc.setTextColor(...PDF_DEEP_EMERALD);
@@ -743,6 +828,8 @@ function buildParticipantHandoutPdf(JsPDF, result) {
     doc.text(metaLines, margin + 20, y);
     y += metaH + 18;
 
+    y = pdfBreakoutGroups(doc, margin, maxW, pageBreakIfNeeded, y, b);
+
     doc.setFont("helvetica", "bold"); doc.setFontSize(11);
     doc.setTextColor(...PDF_DEEP_EMERALD);
     doc.text("STEPS", margin, y);
@@ -806,6 +893,37 @@ function buildActivityCardsPdf(JsPDF, result) {
     doc.setTextColor(...PDF_INK);
     const matLines = doc.splitTextToSize(a.materials.join(", "), maxW);
     doc.text(matLines, margin, y);
+    y += matLines.length * 17 + 26;
+
+    if (b.breakoutGroups) {
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+      doc.setTextColor(...PDF_DEEP_EMERALD);
+      doc.text("SUGGESTED BREAKOUT GROUPS", margin, y);
+      y += 20;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(12);
+      doc.setTextColor(...PDF_INK);
+      // A one-page-per-activity card has a fixed footer and no page-break
+      // path, so a large roster's group list is capped rather than risking
+      // overlap with the footer note — the full list is always in the
+      // facilitator guide and participant handout regardless.
+      const footerLimit = pageH - margin - 20;
+      let shown = 0;
+      for (const g of b.breakoutGroups) {
+        const line = `Group ${shown + 1}:  ${g.map(p => `${p.name} (${orientationLabel(p.id)})`).join(", ")}`;
+        const lines = doc.splitTextToSize(line, maxW);
+        const lineH = lines.length * 16 + 6;
+        if (y + lineH > footerLimit) break;
+        doc.text(lines, margin, y);
+        y += lineH;
+        shown++;
+      }
+      if (shown < b.breakoutGroups.length) {
+        doc.setFont("helvetica", "italic"); doc.setFontSize(10);
+        doc.setTextColor(...PDF_SLATE);
+        doc.text(`+ ${b.breakoutGroups.length - shown} more group(s) — see the facilitator guide.`, margin, y);
+        doc.setTextColor(...PDF_INK);
+      }
+    }
 
     doc.setFont("helvetica", "normal"); doc.setFontSize(9);
     doc.setTextColor(...PDF_SLATE);
@@ -864,7 +982,8 @@ export default function SessionArchitect() {
       const start = elapsed;
       elapsed += mins;
       const opener = findOpener(roster, b.openers);
-      return { ...b, start, end: elapsed, opener };
+      const breakoutGroups = recommendBreakoutGroups(roster, b);
+      return { ...b, start, end: elapsed, opener, breakoutGroups };
     });
     const present = ORIENTATIONS.filter(o => roster[o.id] && roster[o.id].length);
 
@@ -1077,6 +1196,13 @@ export default function SessionArchitect() {
           divider.addText(`Suggested opener: ${b.opener.name} (${orientationLabel(b.opener.id)})`, { x: 0.6, y: 4.7, w: 10.5, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 14, color: accent, isTextBox: true });
         } else {
           divider.addText("No one in this orientation is in the room. Plan to open this block yourself.", { x: 0.6, y: 4.7, w: 10.5, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 14, color: "FCA5A5", isTextBox: true });
+        }
+        if (b.breakoutGroups) {
+          divider.addText("BREAKOUT GROUPS", { x: 0.6, y: 5.5, w: 10.5, h: 0.3, fontFace: "DM Sans", bold: true, fontSize: 11, color: accent, charSpacing: 2, isTextBox: true });
+          divider.addText(
+            b.breakoutGroups.map((g, gi) => `Group ${gi + 1}: ${g.map(p => p.name).join(", ")}`).join("    ·    "),
+            { x: 0.6, y: 5.85, w: 11.5, h: 1.2, fontFace: "DM Sans", fontSize: 13, color: "E2E8F0", isTextBox: true, fit: "shrink" }
+          );
         }
 
         const a = b.activity;
