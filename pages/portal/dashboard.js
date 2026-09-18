@@ -372,7 +372,7 @@ export default function PortalDashboard() {
                     <div style={s.section}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                         <h2 style={{ ...s.sectionTitle, marginBottom: 0 }}>Recent Assessments</h2>
-                        <Link href="/portal/results" style={s.viewAll}>View all →</Link>
+                        <Link href={me.user.role === 'member' ? '/portal/results' : '/portal/analytics'} style={s.viewAll}>View all →</Link>
                       </div>
                       <div style={s.tableWrap}>
                         <table style={s.table}>

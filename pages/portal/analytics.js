@@ -61,6 +61,8 @@ export default function PortalAnalytics() {
   const [error, setError] = useState('');
   const [filterKind, setFilterKind] = useState('profile'); // 'profile' | 'primary' | 'tertiary'
   const [filterValue, setFilterValue] = useState('');
+  const [assessments, setAssessments] = useState(null);
+  const [tableFilter, setTableFilter] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -73,6 +75,7 @@ export default function PortalAnalytics() {
         setDash(dashData);
         if (!anaRes.ok) { setError(anaRes.d.error || 'Analytics is not available on your account.'); return; }
         setPeople(anaRes.d.people);
+        setAssessments(anaRes.d.assessments || []);
       })
       .catch(() => router.replace('/portal/login'))
       .finally(() => setLoading(false));
@@ -91,6 +94,14 @@ export default function PortalAnalytics() {
   const orientationCounts = ORIENTATIONS.map(o => ({ label: o, value: roster.filter(person => person.profile.split('-')[0] === o).length }));
 
   const filterOptions = filterKind === 'profile' ? PROFILES : ORIENTATIONS;
+
+  const filteredTable = (assessments || []).filter(a => {
+    if (!tableFilter.trim()) return true;
+    const q = tableFilter.toLowerCase();
+    return (a.name || '').toLowerCase().includes(q)
+      || (a.email || '').toLowerCase().includes(q)
+      || (a.profile || '').toLowerCase().includes(q);
+  });
 
   const filteredPeople = filterValue ? roster.filter(person => {
     if (filterKind === 'profile') return person.profile === filterValue;
@@ -184,6 +195,47 @@ export default function PortalAnalytics() {
                   </div>
                 )}
               </div>
+
+              <div style={s.panel}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <div style={s.panelLabel}>Results</div>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>Every completed assessment {me.user.role === 'manager' ? 'on your team' : 'on the account'}, with scores.</p>
+                  </div>
+                  <input
+                    style={s.search}
+                    value={tableFilter}
+                    onChange={e => setTableFilter(e.target.value)}
+                    placeholder="Filter by name, email, profile…"
+                  />
+                </div>
+                {filteredTable.length === 0 ? (
+                  <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>{tableFilter ? 'No results match your filter.' : 'No completed assessments yet.'}</p>
+                ) : (
+                  <div style={s.tableWrap}>
+                    <table style={s.table}>
+                      <thead>
+                        <tr>{['Name', 'Email', 'Profile', 'H Score', 'W Score', 'Y Score', 'Date'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+                      </thead>
+                      <tbody>
+                        {filteredTable.map((a, i) => (
+                          <tr key={a.id || i} style={i % 2 === 0 ? s.trEven : {}}>
+                            <td style={s.td}>{a.name || '—'}</td>
+                            <td style={s.td}>{a.email || '—'}</td>
+                            <td style={s.td}>
+                              <span style={{ ...s.typeBadge, background: `${PROFILE_COLORS[a.profile]}18`, color: PROFILE_COLORS[a.profile], borderColor: `${PROFILE_COLORS[a.profile]}44` }}>{a.profile}</span>
+                            </td>
+                            <td style={s.td}>{a.h_score ?? '—'}</td>
+                            <td style={s.td}>{a.w_score ?? '—'}</td>
+                            <td style={s.td}>{a.y_score ?? '—'}</td>
+                            <td style={s.td}>{a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -197,12 +249,13 @@ const s = {
   page: { minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' },
   loading: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#94A3B8', fontFamily: 'sans-serif' },
   main: { marginLeft: 220, padding: '36px 24px' },
-  container: { maxWidth: 1100, margin: '0 auto' },
+  container: { maxWidth: 1200, margin: '0 auto' },
   pageTitle: { fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, marginBottom: 4 },
   pageSub: { fontSize: '0.9rem', color: '#64748B' },
   panel: { background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', marginBottom: 20 },
   panelLabel: { fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16 },
   fieldLabel: { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#374151', marginBottom: 4 },
+  search: { padding: '9px 14px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', width: 240, outline: 'none' },
   select: { padding: '8px 10px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', minWidth: 160, outline: 'none', background: '#fff' },
   emailBtn: { padding: '9px 18px', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   tableWrap: { overflowX: 'auto' },
