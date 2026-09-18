@@ -1,5 +1,13 @@
-import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+
+// ── Data ─────────────────────────────────────────────────────────────────
+// Ported from the standalone /workshop dashboard (now retired) — the
+// module logic (problem-match roles, friction pairs, energy profiles,
+// blind-spot rules) is this tool's own facilitation-specific content, kept
+// verbatim. What changed in the move: participants are no longer typed in
+// by hand, they're the account's real team roster (see
+// pages/portal/team-dynamics.js), so there's no team/participant CRUD here
+// any more — this component is a read-only analysis view.
 
 const TYPES = [
   { id: "WHY-WHAT", primary: "WHY", secondary: "WHAT", label: "WHY – WHAT", desc: "Purpose-driven, progress-oriented" },
@@ -66,121 +74,78 @@ const ENERGY_PROFILES = {
   "HOW-WHAT": { energizes: ["Designing operational processes","Building structures and operating models","Creating SOPs and playbooks","Managing multi-workstream complexity"], drains: ["Ambiguous open-ended creative work","Vision-setting without clear parameters","Frequent pivots without structure","Communicating the 'why' behind systems"] },
 };
 
-const STORAGE_KEY = "workshop_dashboard_teams";
-function loadTeams() {
-  if (typeof window === 'undefined') return [];
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
-}
-function saveTeams(teams) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(teams));
-}
-
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  :root{--font-serif:'Caveat',cursive;--font-sans:'DM Sans',system-ui,sans-serif;--bg:#F8FAFC;--surface:#ffffff;--border:#E2E8F0;--border-light:#F1F5F9;--text:#0F172A;--text-mid:#475569;--text-light:#94A3B8;--why:#065F46;--why-light:#DCFCE7;--why-mid:#6EE7B7;--what:#1E40AF;--what-light:#DBEAFE;--what-mid:#93C5FD;--how:#92400E;--how-light:#FEF3C7;--how-mid:#FCD34D;--avoid:#991B1B;--avoid-light:#FEE2E2;--avoid-mid:#FCA5A5;--accent:#059669;--accent-deep:#065F46;--navy:#0F172A;--radius:8px;--radius-lg:12px;--shadow:0 1px 6px rgba(15,23,42,0.05);}
-  .wd-root{font-family:var(--font-sans);background:var(--bg);min-height:100vh;color:var(--text);font-size:14px;line-height:1.6;}
-  .wd-shell{display:flex;min-height:100vh;}
-  .wd-sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
-  .wd-main{flex:1;overflow-y:auto;padding:40px 48px;max-width:960px;}
-  .wd-logo{padding:24px 24px 20px;border-bottom:1px solid var(--border-light);}
-  .wd-wordmark{font-family:var(--font-serif);font-weight:700;font-size:22px;color:var(--text);line-height:1;margin-bottom:10px;}
-  .wd-wordmark span{color:var(--accent);}
-  .wd-logo-name{font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--text);letter-spacing:0.01em;}
-  .wd-logo-sub{font-size:10px;color:var(--text-light);letter-spacing:0.1em;text-transform:uppercase;margin-top:3px;}
-  .wd-teams-section{padding:20px 16px 0;flex:1;}
-  .wd-section-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;padding:0 8px;}
-  .wd-team-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius);cursor:pointer;transition:background 0.12s;border:none;background:none;width:100%;text-align:left;}
-  .wd-team-item:hover{background:var(--bg);}
-  .wd-team-item.active{background:var(--why-light);}
-  .wd-team-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;}
-  .wd-team-name{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
-  .wd-team-count{font-size:11px;color:var(--text-light);flex-shrink:0;}
-  .wd-new-team-btn{margin:12px 16px;padding:10px 16px;border:1px dashed var(--border);border-radius:var(--radius);background:none;cursor:pointer;font-size:12px;color:var(--text-mid);width:calc(100% - 32px);text-align:center;transition:all 0.12s;font-family:var(--font-sans);}
-  .wd-new-team-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--why-light);}
-  .wd-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:32px;padding-bottom:28px;border-bottom:1px solid var(--border);}
-  .wd-page-title{font-family:var(--font-serif);font-size:2.1rem;font-weight:700;color:var(--text);letter-spacing:-0.01em;line-height:1.15;}
-  .wd-page-meta{font-size:13px;color:var(--text-light);margin-top:6px;}
-  .wd-modules{display:flex;gap:4px;margin-bottom:32px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
-  .wd-module-tab{font-size:12.5px;color:var(--text-light);padding:9px 16px;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.12s;font-family:var(--font-sans);font-weight:600;white-space:nowrap;letter-spacing:0.01em;border-radius:var(--radius) var(--radius) 0 0;}
-  .wd-module-tab:hover{color:var(--accent-deep);background:var(--why-light);}
-  .wd-module-tab.active{color:var(--accent-deep);border-bottom-color:var(--accent);}
-  .wd-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 28px;margin-bottom:16px;box-shadow:var(--shadow);}
-  .wd-card-title{font-family:var(--font-serif);font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:4px;}
-  .wd-card-sub{font-size:12px;color:var(--text-light);margin-bottom:20px;letter-spacing:0.02em;}
+  .td-root{font-family:'DM Sans',system-ui,sans-serif;color:#0F172A;font-size:14px;line-height:1.6;}
+  .td-root :root{--font-serif:'Caveat',cursive;}
+  .td-hero{background:#0F172A;color:#fff;padding:28px 24px;border-radius:8px;margin-bottom:24px;}
+  .td-hero p{margin:8px 0 0;color:#A7F3D0;font-size:0.92rem;max-width:640px;line-height:1.5;}
+  .td-team-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+  .td-team-tab{padding:8px 18px;border-radius:99px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid #E2E8F0;background:#fff;color:#475569;font-family:'DM Sans',sans-serif;transition:all 0.12s;}
+  .td-team-tab:hover{border-color:#059669;color:#065F46;}
+  .td-team-tab.active{background:#059669;color:#fff;border-color:#059669;}
+  .wd-modules{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid #E2E8F0;flex-wrap:wrap;}
+  .wd-module-tab{font-size:12.5px;color:#94A3B8;padding:9px 16px;cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.12s;font-family:'DM Sans',sans-serif;font-weight:600;white-space:nowrap;letter-spacing:0.01em;border-radius:8px 8px 0 0;}
+  .wd-module-tab:hover{color:#065F46;background:#DCFCE7;}
+  .wd-module-tab.active{color:#065F46;border-bottom-color:#059669;}
+  .wd-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:24px 28px;margin-bottom:16px;box-shadow:0 1px 6px rgba(15,23,42,0.05);}
+  .wd-card-title{font-family:'Caveat',cursive;font-size:1.3rem;font-weight:700;color:#0F172A;margin-bottom:4px;}
+  .wd-card-sub{font-size:12px;color:#94A3B8;margin-bottom:20px;letter-spacing:0.02em;}
   .wd-participant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px;}
-  .wd-participant-card{background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;position:relative;transition:border-color 0.12s;}
-  .wd-participant-card:hover{border-color:var(--accent);}
-  .wd-p-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;}
-  .wd-p-remove{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--text-light);font-size:14px;padding:2px 5px;border-radius:2px;line-height:1;transition:color 0.1s;}
-  .wd-p-remove:hover{color:var(--avoid);}
-  .wd-input{width:100%;padding:10px 14px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font-sans);outline:none;transition:border-color 0.12s;}
-  .wd-input:focus{border-color:var(--accent);}
-  .wd-select{width:100%;padding:10px 14px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font-sans);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
-  .wd-select:focus{border-color:var(--accent);}
-  .wd-btn{padding:10px 22px;font-size:13px;font-weight:700;border:none;border-radius:999px;cursor:pointer;font-family:var(--font-sans);transition:all 0.15s;letter-spacing:0.01em;}
-  .wd-btn-primary{background:var(--accent);color:white;}
-  .wd-btn-primary:hover{background:var(--accent-deep);}
-  .wd-btn-primary:disabled{background:var(--border);color:var(--text-light);cursor:not-allowed;}
-  .wd-btn-ghost{background:none;color:var(--text-mid);border:1.5px solid var(--border);}
-  .wd-btn-ghost:hover{border-color:var(--text-mid);color:var(--text);}
+  .wd-participant-card{background:#F8FAFC;border:1px solid #F1F5F9;border-radius:12px;padding:16px;position:relative;transition:border-color 0.12s;}
+  .wd-participant-card:hover{border-color:#059669;}
+  .wd-p-name{font-size:14px;font-weight:600;color:#0F172A;margin-bottom:6px;}
+  .wd-select{width:100%;padding:10px 14px;font-size:14px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#0F172A;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+  .wd-select:focus{border-color:#059669;}
+  .wd-input{width:100%;padding:10px 14px;font-size:14px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#0F172A;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.12s;}
+  .wd-input:focus{border-color:#059669;}
+  .wd-btn{padding:10px 22px;font-size:13px;font-weight:700;border:none;border-radius:999px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;letter-spacing:0.01em;}
+  .wd-btn-primary{background:#059669;color:white;}
+  .wd-btn-primary:hover{background:#065F46;}
+  .wd-btn-primary:disabled{background:#E2E8F0;color:#94A3B8;cursor:not-allowed;}
   .wd-dist-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
   .wd-dist-label{width:48px;font-size:11px;font-weight:700;letter-spacing:0.06em;}
-  .wd-dist-bar-bg{flex:1;height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;}
+  .wd-dist-bar-bg{flex:1;height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden;}
   .wd-dist-bar-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
-  .wd-dist-count{width:28px;font-size:12px;color:var(--text-light);text-align:right;}
+  .wd-dist-count{width:28px;font-size:12px;color:#94A3B8;text-align:right;}
   .wd-match-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:12px;}
-  .wd-match-card{border-radius:var(--radius-lg);padding:14px;border:1px solid transparent;}
-  .wd-match-card.lead{background:var(--why-light);border-color:var(--why-mid);}
-  .wd-match-card.support{background:var(--what-light);border-color:var(--what-mid);}
-  .wd-match-card.caution{background:var(--how-light);border-color:var(--how-mid);}
-  .wd-match-card.avoid{background:var(--avoid-light);border-color:var(--avoid-mid);}
+  .wd-match-card{border-radius:12px;padding:14px;border:1px solid transparent;}
+  .wd-match-card.lead{background:#DCFCE7;border-color:#6EE7B7;}
+  .wd-match-card.support{background:#DBEAFE;border-color:#93C5FD;}
+  .wd-match-card.caution{background:#FEF3C7;border-color:#FCD34D;}
+  .wd-match-card.avoid{background:#FEE2E2;border-color:#FCA5A5;}
   .wd-match-role{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
-  .wd-match-role.lead{color:var(--why);}
-  .wd-match-role.support{color:var(--what);}
-  .wd-match-role.caution{color:var(--how);}
-  .wd-match-role.avoid{color:var(--avoid);}
+  .wd-match-role.lead{color:#065F46;}
+  .wd-match-role.support{color:#1E40AF;}
+  .wd-match-role.caution{color:#92400E;}
+  .wd-match-role.avoid{color:#991B1B;}
   .wd-friction-select-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
-  .wd-friction-result{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;}
-  .wd-friction-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-light);margin-bottom:4px;}
-  .wd-friction-pattern{font-family:var(--font-serif);font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:16px;line-height:1.35;}
+  .wd-friction-result{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:24px;}
+  .wd-friction-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;margin-bottom:4px;}
+  .wd-friction-pattern{font-family:'Caveat',cursive;font-size:1.3rem;font-weight:700;color:#0F172A;margin-bottom:16px;line-height:1.35;}
   .wd-friction-item{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;}
-  .wd-friction-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);margin-top:7px;flex-shrink:0;}
+  .wd-friction-dot{width:5px;height:5px;border-radius:50%;background:#059669;margin-top:7px;flex-shrink:0;}
   .wd-energy-table{width:100%;border-collapse:collapse;}
-  .wd-energy-table th{text-align:left;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-light);padding:0 12px 12px 0;border-bottom:1px solid var(--border);font-weight:700;}
-  .wd-energy-table td{padding:14px 12px 14px 0;border-bottom:1px solid var(--border-light);vertical-align:top;font-size:13px;}
+  .wd-energy-table th{text-align:left;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;padding:0 12px 12px 0;border-bottom:1px solid #E2E8F0;font-weight:700;}
+  .wd-energy-table td{padding:14px 12px 14px 0;border-bottom:1px solid #F1F5F9;vertical-align:top;font-size:13px;}
   .wd-energy-table tr:last-child td{border-bottom:none;}
   .wd-pill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:99px;margin:2px;font-weight:600;}
-  .wd-bs-title{font-family:var(--font-serif);font-size:1.2rem;font-weight:700;margin-bottom:8px;color:var(--text);}
-  .wd-bs-text{font-size:13px;color:var(--text-mid);line-height:1.7;}
-  .wd-collab-result{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-top:16px;}
-  .wd-collab-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;}
-  .wd-collab-pair{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
-  .wd-collab-pair-names{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
-  .wd-collab-pair-reason{font-size:13px;color:var(--text-mid);line-height:1.6;}
-  .wd-empty{text-align:center;padding:80px 40px;color:var(--text-light);}
-  .wd-empty-title{font-family:var(--font-serif);font-size:1.6rem;font-weight:700;color:var(--text-mid);margin-bottom:8px;}
+  .wd-bs-title{font-family:'Caveat',cursive;font-size:1.2rem;font-weight:700;margin-bottom:8px;color:#0F172A;}
+  .wd-bs-text{font-size:13px;color:#475569;line-height:1.7;}
+  .wd-collab-result{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:24px;margin-top:16px;}
+  .wd-collab-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;margin-bottom:8px;}
+  .wd-collab-pair{background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+  .wd-collab-pair-names{font-size:14px;font-weight:600;color:#0F172A;margin-bottom:4px;}
+  .wd-collab-pair-reason{font-size:13px;color:#475569;line-height:1.6;}
+  .wd-empty{text-align:center;padding:80px 40px;color:#94A3B8;}
+  .wd-empty-title{font-family:'Caveat',cursive;font-size:1.6rem;font-weight:700;color:#475569;margin-bottom:8px;}
   .wd-empty-sub{font-size:13px;line-height:1.6;}
-  .wd-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
-  .wd-modal{background:var(--surface);border-radius:var(--radius-lg);padding:32px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(15,23,42,0.18);}
-  .wd-modal-title{font-family:var(--font-serif);font-size:1.6rem;font-weight:700;margin-bottom:6px;color:var(--text);}
-  .wd-modal-sub{font-size:13px;color:var(--text-light);margin-bottom:24px;}
-  .wd-form-row{margin-bottom:16px;}
-  .wd-form-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent-deep);margin-bottom:6px;display:block;}
-  .wd-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
-  .wd-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-  .wd-type-opt{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;background:none;text-align:left;font-family:var(--font-sans);transition:all 0.12s;}
-  .wd-type-opt:hover,.wd-type-opt.selected{border-color:var(--accent);background:var(--why-light);}
-  .wd-type-opt-label{font-size:12px;font-weight:700;color:var(--text);letter-spacing:0.02em;}
-  .wd-type-opt-desc{font-size:10px;color:var(--text-light);margin-top:1px;}
-  .wd-divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
+  .wd-divider{border:none;border-top:1px solid #E2E8F0;margin:24px 0;}
   .wd-problem-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
-  .wd-problem-tab{padding:8px 18px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:none;color:var(--text-mid);font-family:var(--font-sans);transition:all 0.12s;}
-  .wd-problem-tab:hover{border-color:var(--accent);color:var(--accent-deep);}
-  .wd-problem-tab.active{background:var(--accent);color:white;border-color:var(--accent);}
+  .wd-problem-tab{padding:8px 18px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #E2E8F0;background:none;color:#475569;font-family:'DM Sans',sans-serif;transition:all 0.12s;}
+  .wd-problem-tab:hover{border-color:#059669;color:#065F46;}
+  .wd-problem-tab.active{background:#059669;color:white;border-color:#059669;}
   .wd-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
-  .wd-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-mid);}
+  .wd-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#475569;}
   .wd-legend-dot{width:8px;height:8px;border-radius:2px;}
 `;
 
@@ -192,7 +157,7 @@ function typeOrientColors(type) {
 function TypeBadge({ type }) {
   const c = typeOrientColors(type);
   const t = TYPES.find(x => x.id === type);
-  return <span style={{background:c.bg,color:c.color,border:`1px solid ${c.border}`,borderRadius:99,fontSize:11,fontWeight:700,letterSpacing:"0.04em",padding:"2px 9px",display:"inline-block",fontFamily:"var(--font-sans)"}}>{t?.label||type}</span>;
+  return <span style={{background:c.bg,color:c.color,border:`1px solid ${c.border}`,borderRadius:99,fontSize:11,fontWeight:700,letterSpacing:"0.04em",padding:"2px 9px",display:"inline-block",fontFamily:"'DM Sans',sans-serif"}}>{t?.label||type}</span>;
 }
 function tertiary(typeId) {
   const t = TYPES.find(x => x.id === typeId);
@@ -223,58 +188,8 @@ async function readStream(response) {
   return text;
 }
 
-function NewTeamModal({ onSave, onClose }) {
-  const [name, setName] = useState("");
-  const [client, setClient] = useState("");
-  return (
-    <div className="wd-modal-overlay" onClick={onClose}>
-      <div className="wd-modal" onClick={e => e.stopPropagation()}>
-        <div className="wd-modal-title">New Team</div>
-        <div className="wd-modal-sub">Create a team to start adding participants.</div>
-        <div className="wd-form-row"><label className="wd-form-label">Team Name</label><input className="wd-input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Leadership Team, Product Squad" autoFocus /></div>
-        <div className="wd-form-row"><label className="wd-form-label">Client / Company</label><input className="wd-input" value={client} onChange={e => setClient(e.target.value)} placeholder="e.g. Acme Corp" /></div>
-        <div className="wd-modal-actions">
-          <button className="wd-btn wd-btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="wd-btn wd-btn-primary" disabled={!name.trim()} onClick={() => onSave({ id: Date.now().toString(), name: name.trim(), client: client.trim(), participants: [], createdAt: new Date().toISOString() })}>Create Team</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AddParticipantModal({ onSave, onClose }) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState("");
-  const [role, setRole] = useState("");
-  return (
-    <div className="wd-modal-overlay" onClick={onClose}>
-      <div className="wd-modal" onClick={e => e.stopPropagation()}>
-        <div className="wd-modal-title">Add Participant</div>
-        <div className="wd-modal-sub">Enter their name, role, and MindPrint™ profile.</div>
-        <div className="wd-form-row"><label className="wd-form-label">Name</label><input className="wd-input" value={name} onChange={e => setName(e.target.value)} placeholder="Full name" autoFocus /></div>
-        <div className="wd-form-row"><label className="wd-form-label">Role / Title (optional)</label><input className="wd-input" value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. VP of Product" /></div>
-        <div className="wd-form-row">
-          <label className="wd-form-label">MindPrint™ Profile</label>
-          <div className="wd-type-grid">
-            {TYPES.map(t => (
-              <button key={t.id} className={`wd-type-opt${type === t.id ? " selected" : ""}`} onClick={() => setType(t.id)}>
-                <div className="wd-type-opt-label">{t.label}</div>
-                <div className="wd-type-opt-desc">{t.desc}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="wd-modal-actions">
-          <button className="wd-btn wd-btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="wd-btn wd-btn-primary" disabled={!name.trim() || !type} onClick={() => onSave({ id: Date.now().toString(), name: name.trim(), role: role.trim(), type })}>Add Participant</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ModuleCanvas({ participants }) {
-  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No participants yet</div><div className="wd-empty-sub">Add team members to see the canvas.</div></div>;
+  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No completed profiles yet</div><div className="wd-empty-sub">Once team members complete their MindPrint™ assessment, they'll show up here.</div></div>;
   const counts = { WHY: 0, WHAT: 0, HOW: 0 };
   participants.forEach(p => { const t = TYPES.find(x => x.id === p.type); if (t) counts[t.primary]++; });
   const total = participants.length;
@@ -286,12 +201,12 @@ function ModuleCanvas({ participants }) {
         <div className="wd-card-sub">Primary orientation across the team</div>
         {["WHY","WHAT","HOW"].map(b => (
           <div className="wd-dist-row" key={b}>
-            <div className="wd-dist-label" style={{color:ORIENT[b].color,fontFamily:"var(--font-sans)",fontSize:11,fontWeight:700,letterSpacing:"0.06em"}}>{b}</div>
+            <div className="wd-dist-label" style={{color:ORIENT[b].color,fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.06em"}}>{b}</div>
             <div className="wd-dist-bar-bg"><div className="wd-dist-bar-fill" style={{width:total?`${(counts[b]/total)*100}%`:"0%",background:ORIENT[b].color,opacity:0.7}}/></div>
             <div className="wd-dist-count">{counts[b]}</div>
           </div>
         ))}
-        {missing.length > 0 && <div style={{marginTop:16,padding:"10px 14px",background:"var(--how-light)",border:"1px solid var(--how-mid)",borderRadius:"var(--radius)",fontSize:12,color:"var(--how)"}}>⚠ No primary <strong>{missing.join(" or ")}</strong> orientation on this team. This is a structural coverage gap.</div>}
+        {missing.length > 0 && <div style={{marginTop:16,padding:"10px 14px",background:"#FEF3C7",border:"1px solid #FCD34D",borderRadius:8,fontSize:12,color:"#92400E"}}>⚠ No primary <strong>{missing.join(" or ")}</strong> orientation on this team. This is a structural coverage gap.</div>}
       </div>
       <div className="wd-card">
         <div className="wd-card-title">Team Members</div>
@@ -299,11 +214,10 @@ function ModuleCanvas({ participants }) {
         <div className="wd-participant-grid">
           {participants.map(p => (
             <div key={p.id} className="wd-participant-card">
-              <button className="wd-p-remove" onClick={p.onRemove}>×</button>
               <div className="wd-p-name">{p.name}</div>
-              {p.role && <div style={{fontSize:11,color:"var(--text-light)",marginBottom:8}}>{p.role}</div>}
+              {p.role && <div style={{fontSize:11,color:"#94A3B8",marginBottom:8}}>{p.role}</div>}
               <TypeBadge type={p.type} />
-              <div style={{marginTop:8,fontSize:11,color:"var(--text-light)"}}>Tertiary: <strong style={{color:ORIENT[tertiary(p.type)]?.color}}>{tertiary(p.type)}</strong></div>
+              <div style={{marginTop:8,fontSize:11,color:"#94A3B8"}}>Tertiary: <strong style={{color:ORIENT[tertiary(p.type)]?.color}}>{tertiary(p.type)}</strong></div>
             </div>
           ))}
         </div>
@@ -314,7 +228,7 @@ function ModuleCanvas({ participants }) {
 
 function ModuleProblemMatch({ participants }) {
   const [problemType, setProblemType] = useState("exploratory");
-  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No participants yet</div><div className="wd-empty-sub">Add team members to use this module.</div></div>;
+  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No completed profiles yet</div><div className="wd-empty-sub">Once team members complete their MindPrint™ assessment, they'll show up here.</div></div>;
   const pt = PROBLEM_TYPES[problemType];
   const roleFor = p => { if (pt.lead.includes(p.type)) return "lead"; if (pt.support.includes(p.type)) return "support"; if (pt.caution.includes(p.type)) return "caution"; return "avoid"; };
   const roleLabel = { lead: "Lead", support: "Support", caution: "Use with Caution", avoid: "Hold Back" };
@@ -326,7 +240,7 @@ function ModuleProblemMatch({ participants }) {
         <div className="wd-problem-tabs">
           {Object.entries(PROBLEM_TYPES).map(([k,v]) => <button key={k} className={`wd-problem-tab${problemType===k?" active":""}`} onClick={() => setProblemType(k)}>{v.label}</button>)}
         </div>
-        <div style={{fontSize:13,color:"var(--text-mid)",fontStyle:"italic"}}>"{pt.sub}"</div>
+        <div style={{fontSize:13,color:"#475569",fontStyle:"italic"}}>"{pt.sub}"</div>
       </div>
       <div className="wd-card">
         <div className="wd-card-title">Team Composition for {pt.label} Work</div>
@@ -339,7 +253,7 @@ function ModuleProblemMatch({ participants }) {
         <div className="wd-match-grid">
           {participants.map(p => {
             const role = roleFor(p);
-            return <div key={p.id} className={`wd-match-card ${role}`}><div className={`wd-match-role ${role}`}>{roleLabel[role]}</div><div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:4}}>{p.name}</div><TypeBadge type={p.type}/></div>;
+            return <div key={p.id} className={`wd-match-card ${role}`}><div className={`wd-match-role ${role}`}>{roleLabel[role]}</div><div style={{fontSize:13,fontWeight:600,color:"#0F172A",marginBottom:4}}>{p.name}</div><TypeBadge type={p.type}/></div>;
           })}
         </div>
       </div>
@@ -350,7 +264,7 @@ function ModuleProblemMatch({ participants }) {
 function ModuleFriction({ participants }) {
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
-  if (participants.length < 2) return <div className="wd-empty"><div className="wd-empty-title">Need at least 2 participants</div><div className="wd-empty-sub">Add more team members to use the Friction Spotter.</div></div>;
+  if (participants.length < 2) return <div className="wd-empty"><div className="wd-empty-title">Need at least 2 completed profiles</div><div className="wd-empty-sub">Once more team members complete their MindPrint™ assessment, the Friction Spotter will be available.</div></div>;
   const person1 = participants.find(p => p.id === p1);
   const person2 = participants.find(p => p.id === p2);
   const frictionKey = person1 && person2 ? getFrictionKey(person1.type, person2.type) : null;
@@ -361,19 +275,19 @@ function ModuleFriction({ participants }) {
         <div className="wd-card-title">Select Two Team Members</div>
         <div className="wd-card-sub">Choose any pair to surface their likely friction pattern</div>
         <div className="wd-friction-select-row">
-          <div><label className="wd-form-label">Person 1</label><select className="wd-select" value={p1} onChange={e => setP1(e.target.value)}><option value="">Select participant...</option>{participants.filter(p => p.id !== p2).map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}</select></div>
-          <div><label className="wd-form-label">Person 2</label><select className="wd-select" value={p2} onChange={e => setP2(e.target.value)}><option value="">Select participant...</option>{participants.filter(p => p.id !== p1).map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}</select></div>
+          <div><label style={{fontSize:11,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",color:"#065F46",marginBottom:6,display:"block"}}>Person 1</label><select className="wd-select" value={p1} onChange={e => setP1(e.target.value)}><option value="">Select participant...</option>{participants.filter(p => p.id !== p2).map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}</select></div>
+          <div><label style={{fontSize:11,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",color:"#065F46",marginBottom:6,display:"block"}}>Person 2</label><select className="wd-select" value={p2} onChange={e => setP2(e.target.value)}><option value="">Select participant...</option>{participants.filter(p => p.id !== p1).map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}</select></div>
         </div>
       </div>
       {friction && person1 && person2 && (
         <div className="wd-friction-result">
-          <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:20}}><TypeBadge type={person1.type}/><span style={{color:"var(--text-light)",fontSize:14}}>×</span><TypeBadge type={person2.type}/></div>
+          <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:20}}><TypeBadge type={person1.type}/><span style={{color:"#94A3B8",fontSize:14}}>×</span><TypeBadge type={person2.type}/></div>
           <div className="wd-friction-label">Friction Pattern</div>
           <div className="wd-friction-pattern">{friction.pattern}</div>
           <div className="wd-friction-label">Why It Happens</div>
-          <div style={{fontSize:13,color:"var(--text-mid)",lineHeight:1.7,marginBottom:20}}>{friction.tension}</div>
+          <div style={{fontSize:13,color:"#475569",lineHeight:1.7,marginBottom:20}}>{friction.tension}</div>
           <div className="wd-friction-label">How to Work Through It</div>
-          {friction.suggestions.map((s,i) => <div className="wd-friction-item" key={i}><div className="wd-friction-dot"/><div style={{fontSize:13,color:"var(--text-mid)",lineHeight:1.6}}>{s}</div></div>)}
+          {friction.suggestions.map((s,i) => <div className="wd-friction-item" key={i}><div className="wd-friction-dot"/><div style={{fontSize:13,color:"#475569",lineHeight:1.6}}>{s}</div></div>)}
         </div>
       )}
     </div>
@@ -381,7 +295,7 @@ function ModuleFriction({ participants }) {
 }
 
 function ModuleEnergyMap({ participants }) {
-  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No participants yet</div><div className="wd-empty-sub">Add team members to see the energy map.</div></div>;
+  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No completed profiles yet</div><div className="wd-empty-sub">Once team members complete their MindPrint™ assessment, they'll show up here.</div></div>;
   return (
     <div className="wd-card" style={{overflowX:"auto"}}>
       <div className="wd-card-title">Team Energy Map</div>
@@ -395,7 +309,7 @@ function ModuleEnergyMap({ participants }) {
             const profile = ENERGY_PROFILES[p.type];
             return (
               <tr key={p.id}>
-                <td><div style={{fontWeight:600,fontSize:13}}>{p.name}</div>{p.role && <div style={{fontSize:11,color:"var(--text-light)"}}>{p.role}</div>}</td>
+                <td><div style={{fontWeight:600,fontSize:13}}>{p.name}</div>{p.role && <div style={{fontSize:11,color:"#94A3B8"}}>{p.role}</div>}</td>
                 <td><TypeBadge type={p.type}/></td>
                 <td>{profile?.energizes.slice(0,2).map((e,i) => <span key={i} className="wd-pill" style={{background:t?ORIENT[t.primary].light:"#eee",color:t?ORIENT[t.primary].color:"#666"}}>{e}</span>)}</td>
                 <td>{t && <span className="wd-pill" style={{background:ORIENT[t.secondary].light,color:ORIENT[t.secondary].color}}>{t.secondary} work</span>}</td>
@@ -414,7 +328,7 @@ function ModuleCollaboration({ participants }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
-  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No participants yet</div><div className="wd-empty-sub">Add team members to use this module.</div></div>;
+  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No completed profiles yet</div><div className="wd-empty-sub">Once team members complete their MindPrint™ assessment, they'll show up here.</div></div>;
 
   async function analyze() {
     if (!task.trim()) return;
@@ -450,14 +364,14 @@ function ModuleCollaboration({ participants }) {
           <textarea className="wd-input" value={task} onChange={e => setTask(e.target.value)} placeholder="e.g. Redesign the onboarding process, Build the Q3 product roadmap..." rows={3} style={{resize:"vertical"}}/>
           <button className="wd-btn wd-btn-primary" disabled={!task.trim()||loading} onClick={analyze} style={{flexShrink:0,whiteSpace:"nowrap"}}>{loading?"Analyzing...":"Recommend →"}</button>
         </div>
-        {error && <div style={{marginTop:10,fontSize:13,color:"var(--how)",background:"var(--how-light)",padding:"8px 12px",borderRadius:"var(--radius)"}}>{error}</div>}
+        {error && <div style={{marginTop:10,fontSize:13,color:"#92400E",background:"#FEF3C7",padding:"8px 12px",borderRadius:8}}>{error}</div>}
       </div>
       {result && (
         <div className="wd-collab-result">
-          {result.leadType && <div style={{marginBottom:20,padding:"14px 16px",background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",borderLeft:"3px solid var(--why)"}}><div className="wd-collab-label">Recommended Lead</div><div style={{fontFamily:"var(--font-serif)",fontSize:16,fontWeight:500,color:"var(--text)",marginBottom:4}}>{result.leadType}</div><div style={{fontSize:13,color:"var(--text-mid)",lineHeight:1.6}}>{result.leadReason}</div></div>}
+          {result.leadType && <div style={{marginBottom:20,padding:"14px 16px",background:"#fff",border:"1px solid #E2E8F0",borderRadius:8,borderLeft:"3px solid #065F46"}}><div className="wd-collab-label">Recommended Lead</div><div style={{fontFamily:"'Caveat',cursive",fontSize:16,fontWeight:500,color:"#0F172A",marginBottom:4}}>{result.leadType}</div><div style={{fontSize:13,color:"#475569",lineHeight:1.6}}>{result.leadReason}</div></div>}
           <div className="wd-collab-label">Recommended Pairings</div>
-          {result.pairings?.map((pair,i) => <div key={i} className="wd-collab-pair"><div className="wd-collab-pair-names">{pair.person1} + {pair.person2}</div>{pair.role && <div style={{fontSize:11,color:"var(--text-light)",marginBottom:4}}>{pair.role}</div>}<div className="wd-collab-pair-reason">{pair.reason}</div></div>)}
-          {result.watchOut && <div style={{marginTop:16,padding:"12px 14px",background:"var(--how-light)",border:"1px solid var(--how-mid)",borderRadius:"var(--radius)",fontSize:12,color:"var(--how)"}}><strong>Watch:</strong> {result.watchOut}</div>}
+          {result.pairings?.map((pair,i) => <div key={i} className="wd-collab-pair"><div className="wd-collab-pair-names">{pair.person1} + {pair.person2}</div>{pair.role && <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{pair.role}</div>}<div className="wd-collab-pair-reason">{pair.reason}</div></div>)}
+          {result.watchOut && <div style={{marginTop:16,padding:"12px 14px",background:"#FEF3C7",border:"1px solid #FCD34D",borderRadius:8,fontSize:12,color:"#92400E"}}><strong>Watch:</strong> {result.watchOut}</div>}
         </div>
       )}
     </div>
@@ -465,7 +379,7 @@ function ModuleCollaboration({ participants }) {
 }
 
 function ModuleBlindSpots({ participants }) {
-  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No participants yet</div><div className="wd-empty-sub">Add team members to generate the blind spot report.</div></div>;
+  if (!participants.length) return <div className="wd-empty"><div className="wd-empty-title">No completed profiles yet</div><div className="wd-empty-sub">Once team members complete their MindPrint™ assessment, the blind spot report will be available.</div></div>;
   const primaryCounts = { WHY:0, WHAT:0, HOW:0 };
   const tertiaryCounts = { WHY:0, WHAT:0, HOW:0 };
   participants.forEach(p => {
@@ -488,9 +402,9 @@ function ModuleBlindSpots({ participants }) {
       <div className="wd-card">
         <div className="wd-card-title">Team Blind Spot Report</div>
         <div className="wd-card-sub">Structural vulnerabilities based on type composition</div>
-        {missingPrimaries.length===0 && <div style={{padding:"12px 14px",background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:"var(--radius)",fontSize:13,color:"#065F46",marginBottom:20}}>✓ All three orientations are represented on this team.</div>}
+        {missingPrimaries.length===0 && <div style={{padding:"12px 14px",background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:8,fontSize:13,color:"#065F46",marginBottom:20}}>✓ All three orientations are represented on this team.</div>}
         {missingPrimaries.map(b => (
-          <div key={b} style={{padding:20,background:ORIENT[b].light,border:`1px solid ${ORIENT[b].mid}`,borderRadius:"var(--radius-lg)",borderLeft:`3px solid ${ORIENT[b].color}`,marginBottom:16}}>
+          <div key={b} style={{padding:20,background:ORIENT[b].light,border:`1px solid ${ORIENT[b].mid}`,borderRadius:12,borderLeft:`3px solid ${ORIENT[b].color}`,marginBottom:16}}>
             <div style={{fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:ORIENT[b].color,fontWeight:700,marginBottom:4}}>Missing Primary: {b}</div>
             <div className="wd-bs-title">{BLINDSPOTS[b].gap}</div>
             <div className="wd-bs-text" style={{marginBottom:12}}>{BLINDSPOTS[b].risk}</div>
@@ -503,7 +417,7 @@ function ModuleBlindSpots({ participants }) {
         <div className="wd-bs-text" style={{marginBottom:16}}>When multiple people share a tertiary orientation, the team has a collective blind spot in that area.</div>
         {heavyTertiary.filter(([,v]) => v>0).map(([orientation,count]) => (
           <div className="wd-dist-row" key={orientation}>
-            <div className="wd-dist-label" style={{color:ORIENT[orientation].color,fontSize:11,fontWeight:700,letterSpacing:"0.06em",fontFamily:"var(--font-sans)"}}>{orientation}</div>
+            <div className="wd-dist-label" style={{color:ORIENT[orientation].color,fontSize:11,fontWeight:700,letterSpacing:"0.06em",fontFamily:"'DM Sans',sans-serif"}}>{orientation}</div>
             <div className="wd-dist-bar-bg"><div className="wd-dist-bar-fill" style={{width:`${(count/participants.length)*100}%`,background:ORIENT[orientation].color,opacity:0.5}}/></div>
             <div className="wd-dist-count">{count}</div>
           </div>
@@ -523,114 +437,40 @@ const MODULES = [
   { id:"blindspot", label:"Blind Spot Report" },
 ];
 
-export default function WorkshopDashboard() {
-  const [teams, setTeams] = useState([]);
-  const [activeTeamId, setActiveTeamId] = useState(null);
+// teamOptions: [{ id, label, count }] — omitted (or length <= 1) hides the
+// team-switcher row entirely, since a manager (or an owner with a single
+// team) has nothing to toggle between.
+export default function TeamDynamics({ participants, teamOptions, activeTeamId, onTeamChange }) {
   const [activeModule, setActiveModule] = useState("canvas");
-  const [showNewTeam, setShowNewTeam] = useState(false);
-  const [showAddParticipant, setShowAddParticipant] = useState(false);
-
-  useEffect(() => {
-    const loaded = loadTeams();
-    setTeams(loaded);
-    if (loaded.length > 0) setActiveTeamId(loaded[0].id);
-  }, []);
-
-  const activeTeam = teams.find(t => t.id === activeTeamId);
-
-  function updateTeams(updated) { setTeams(updated); saveTeams(updated); }
-
-  function handleNewTeam(team) {
-    const updated = [...teams, team];
-    updateTeams(updated);
-    setActiveTeamId(team.id);
-    setShowNewTeam(false);
-  }
-
-  function handleAddParticipant(participant) {
-    const updated = teams.map(t => t.id === activeTeamId ? { ...t, participants: [...t.participants, participant] } : t);
-    updateTeams(updated);
-    setShowAddParticipant(false);
-  }
-
-  function handleRemoveParticipant(pid) {
-    const updated = teams.map(t => t.id === activeTeamId ? { ...t, participants: t.participants.filter(p => p.id !== pid) } : t);
-    updateTeams(updated);
-  }
-
-  function handleDeleteTeam() {
-    if (!window.confirm(`Delete "${activeTeam?.name}"? This cannot be undone.`)) return;
-    const updated = teams.filter(t => t.id !== activeTeamId);
-    updateTeams(updated);
-    setActiveTeamId(updated[0]?.id || null);
-  }
-
-  const participants = (activeTeam?.participants || []).map(p => ({ ...p, onRemove: () => handleRemoveParticipant(p.id) }));
 
   return (
-    <>
-      <Head>
-        <title>Workshop Dashboard | Curio</title>
-        <meta name="robots" content="noindex, nofollow" />
-      </Head>
-      <style>{CSS}</style>
-      <div className="wd-root">
-        <div className="wd-shell">
-          <div className="wd-sidebar">
-            <div className="wd-logo">
-              <div className="wd-wordmark">Curio<span>.</span></div>
-              <div className="wd-logo-name">Workshop Dashboard</div>
-              <div className="wd-logo-sub">MindPrint™ Framework</div>
-            </div>
-            <div className="wd-teams-section">
-              <div className="wd-section-label">Teams</div>
-              {teams.length === 0 && <div style={{padding:"12px 8px",fontSize:12,color:"var(--text-light)",lineHeight:1.5}}>No teams yet. Create one to get started.</div>}
-              {teams.map(t => (
-                <button key={t.id} className={`wd-team-item${activeTeamId===t.id?" active":""}`} onClick={() => { setActiveTeamId(t.id); setActiveModule("canvas"); }}>
-                  <div className="wd-team-dot"/>
-                  <div className="wd-team-name">{t.name}</div>
-                  <div className="wd-team-count">{t.participants.length}</div>
-                </button>
-              ))}
-            </div>
-            <button className="wd-new-team-btn" onClick={() => setShowNewTeam(true)}>+ New Team</button>
-          </div>
+    <div className="td-root">
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-          <div className="wd-main">
-            {!activeTeam ? (
-              <div className="wd-empty">
-                <div className="wd-empty-title">No team selected</div>
-                <div className="wd-empty-sub">Create a team from the sidebar to begin.</div>
-                <button className="wd-btn wd-btn-primary" style={{marginTop:24}} onClick={() => setShowNewTeam(true)}>Create your first team</button>
-              </div>
-            ) : (
-              <>
-                <div className="wd-page-header">
-                  <div>
-                    <div className="wd-page-title">{activeTeam.name}</div>
-                    <div className="wd-page-meta">{activeTeam.client && <span>{activeTeam.client} · </span>}{activeTeam.participants.length} participant{activeTeam.participants.length!==1?"s":""}</div>
-                  </div>
-                  <div style={{display:"flex",gap:8,flexShrink:0}}>
-                    <button className="wd-btn wd-btn-ghost" style={{fontSize:12}} onClick={handleDeleteTeam}>Delete Team</button>
-                    <button className="wd-btn wd-btn-primary" onClick={() => setShowAddParticipant(true)}>+ Add Participant</button>
-                  </div>
-                </div>
-                <div className="wd-modules">
-                  {MODULES.map(m => <button key={m.id} className={`wd-module-tab${activeModule===m.id?" active":""}`} onClick={() => setActiveModule(m.id)}>{m.label}</button>)}
-                </div>
-                {activeModule==="canvas"    && <ModuleCanvas participants={participants}/>}
-                {activeModule==="problem"   && <ModuleProblemMatch participants={participants}/>}
-                {activeModule==="friction"  && <ModuleFriction participants={participants}/>}
-                {activeModule==="energy"    && <ModuleEnergyMap participants={participants}/>}
-                {activeModule==="collab"    && <ModuleCollaboration participants={participants}/>}
-                {activeModule==="blindspot" && <ModuleBlindSpots participants={participants}/>}
-              </>
-            )}
-          </div>
-        </div>
-        {showNewTeam && <NewTeamModal onSave={handleNewTeam} onClose={() => setShowNewTeam(false)}/>}
-        {showAddParticipant && <AddParticipantModal onSave={handleAddParticipant} onClose={() => setShowAddParticipant(false)}/>}
+      <div className="td-hero">
+        <p style={{ margin: 0, fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: "1.8rem" }}>Dynamics</p>
+        <p>See how your team's MindPrint™ profiles fit together — coverage gaps, friction patterns, energy fit, and who to pair on what.</p>
       </div>
-    </>
+
+      {teamOptions && teamOptions.length > 1 && (
+        <div className="td-team-tabs">
+          {teamOptions.map(t => (
+            <button key={t.id} className={`td-team-tab${activeTeamId===t.id?" active":""}`} onClick={() => onTeamChange(t.id)}>
+              {t.label} ({t.count})
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="wd-modules">
+        {MODULES.map(m => <button key={m.id} className={`wd-module-tab${activeModule===m.id?" active":""}`} onClick={() => setActiveModule(m.id)}>{m.label}</button>)}
+      </div>
+      {activeModule==="canvas"    && <ModuleCanvas participants={participants}/>}
+      {activeModule==="problem"   && <ModuleProblemMatch participants={participants}/>}
+      {activeModule==="friction"  && <ModuleFriction participants={participants}/>}
+      {activeModule==="energy"    && <ModuleEnergyMap participants={participants}/>}
+      {activeModule==="collab"    && <ModuleCollaboration participants={participants}/>}
+      {activeModule==="blindspot" && <ModuleBlindSpots participants={participants}/>}
+    </div>
   );
 }
