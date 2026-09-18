@@ -95,7 +95,7 @@ export default function ResultsPage() {
             <p className="body-text">The profile type "{type}" doesn't exist. Valid types are: why-what, why-how, what-why, what-how, how-why, how-what.</p>
           </div>
         </div>
-        <style>{css}</style>
+        <style dangerouslySetInnerHTML={{ __html: css }} />
       </>
     );
   }
@@ -304,7 +304,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.
         <title>{pageTitle} — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-        <style>{css}</style>
+        <style dangerouslySetInnerHTML={{ __html: css }} />
       </Head>
 
       <nav className="nav">

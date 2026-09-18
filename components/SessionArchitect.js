@@ -1,40 +1,52 @@
 import { useState, useEffect, useRef } from 'react';
+import profiles from '../lib/profiles';
 
 // ── Data ─────────────────────────────────────────────────────────────────
 // Ported verbatim from the approved reference build (session_architect_
 // REFERENCE.html) — copy, orientation data, session templates, and
-// facilitation techniques are the literal source of truth. Do not rephrase.
-
+// facilitation techniques are the literal source of truth for this tool's
+// own facilitation-specific framing (energizedBy/bestUsedFor: how to use
+// this profile in a workshop, which has no equivalent in the canonical
+// profile content). Do not rephrase those two fields independently.
+//
+// watchFor is the exception: it's a factual caution about the profile
+// itself, not a facilitation-specific synthesis, so it's sourced live from
+// each profile's canonical areasToWatch[0] (lib/profiles.js) instead of
+// being hand-authored a third time — this is exactly the class of claim
+// that silently drifted out of sync with lib/mindprint-source-of-truth.md
+// (the "bring them in after the vision is set" line). If either canonical
+// file changes, this updates automatically instead of needing a matching
+// manual edit here.
 const ORIENTATIONS = [
   {id:"WHYWHAT", label:"WHY-WHAT", tag:"The Visionary Strategist", energy:"WHY", badge:"b-WHYWHAT",
     energizedBy:"Framing the problem, painting the future state, questioning whether this is even the right problem to solve.",
     bestUsedFor:"Opening the session. Kicking off ideation with a sharp prompt. Naming the vision the ideas should serve.",
-    watchFor:"May want to skip to solutions before the problem is fully framed, and can lose interest once the group moves into detail."},
+    watchFor: profiles['why-what'].areasToWatch[0]},
   {id:"WHYHOW", label:"WHY-HOW", tag:"The Systems Visionary", energy:"WHY",
     badge:"b-WHYHOW",
     energizedBy:"Finding the pattern across scattered ideas and seeing how the pieces connect into a system.",
     bestUsedFor:"Mid-session synthesis. Clustering ideas into real directions. Naming the insight the room hasn't said out loud yet.",
-    watchFor:"Can over-analyze before committing to a direction, and needs a forcing function to move from insight to output."},
+    watchFor: profiles['why-how'].areasToWatch[0]},
   {id:"WHATWHY", label:"WHAT-WHY", tag:"The Purpose-Driven Driver", energy:"WHAT",
     badge:"b-WHATWHY",
     energizedBy:"Momentum, fast rounds, and pushing the group past the first few obvious ideas.",
     bestUsedFor:"Running the diverge phase. Keeping energy up. Timeboxing rounds and rallying the room.",
-    watchFor:"Can lose patience in long framing or detail discussions, and may rally the room around an idea before it is pressure-tested."},
+    watchFor: profiles['what-why'].areasToWatch[0]},
   {id:"WHATHOW", label:"WHAT-HOW", tag:"The Iterative Executor", energy:"WHAT",
     badge:"b-WHATHOW",
     energizedBy:"Converting an idea into a concrete next step. Zooming into detail and back out fast.",
     bestUsedFor:"Closing the session. Defining the smallest testable version. Assigning owners and dates.",
-    watchFor:"Drains if the session ends without a concrete action, and may push to lock a plan before direction is fully clear."},
+    watchFor: profiles['what-how'].areasToWatch[0]},
   {id:"HOWWHY", label:"HOW-WHY", tag:"The Insightful Optimizer", energy:"HOW",
     badge:"b-HOWWHY",
     energizedBy:"Finding the flaw, the inefficiency, or the better way to do something.",
     bestUsedFor:"The scheduled precision pass. Stress-testing the finalists. Asking what breaks and why.",
-    watchFor:"Can keep digging past the point of diminishing returns, and drains if asked to generate raw volume with nothing concrete yet."},
+    watchFor: profiles['how-why'].areasToWatch[0]},
   {id:"HOWWHAT", label:"HOW-WHAT", tag:"The Operational Architect", energy:"HOW",
     badge:"b-HOWWHAT",
     energizedBy:"Mapping how something would actually run: sequencing, dependencies, structure.",
     bestUsedFor:"Turning the winning idea into a workable structure. Identifying what would break it operationally.",
-    watchFor:"Can over-engineer given open-ended time, and drains in ambiguous, no-agenda ideation with nothing yet to organize."},
+    watchFor: profiles['how-what'].areasToWatch[0]},
 ];
 
 function A(name, purpose, materials, steps, tips, signal){
