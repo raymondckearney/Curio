@@ -12,13 +12,6 @@ export default function PortalTeam() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Invite form
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteName, setInviteName] = useState('');
-  const [inviteRole, setInviteRole] = useState('member');
-  const [inviting, setInviting] = useState(false);
-  const [inviteMsg, setInviteMsg] = useState(null); // { ok, text }
-
   // Remove state
   const [removingId, setRemovingId] = useState(null);
 
@@ -121,26 +114,6 @@ export default function PortalTeam() {
     router.push('/portal/login');
   }
 
-  async function handleInvite(e) {
-    e.preventDefault();
-    setInviteMsg(null); setInviting(true);
-    try {
-      const res = await fetch('/api/portal/team', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail, name: inviteName, memberRole: inviteRole }),
-      });
-      const d = await res.json();
-      if (!res.ok) { setInviteMsg({ ok: false, text: d.error || 'Failed to invite.' }); return; }
-      setInviteMsg({ ok: true, text: `Invite sent to ${inviteEmail}.` });
-      setInviteEmail(''); setInviteName(''); setInviteRole('member');
-      // Refresh
-      const teamRes = await fetch('/api/portal/team');
-      if (teamRes.ok) setData(await teamRes.json());
-    } catch { setInviteMsg({ ok: false, text: 'Network error.' }); }
-    finally { setInviting(false); }
-  }
-
   async function handleRemove(userId, userEmail) {
     if (!confirm(`Remove ${userEmail} from the team? They will lose portal access.`)) return;
     setRemovingId(userId);
@@ -222,42 +195,6 @@ export default function PortalTeam() {
                 </button>
               </div>
               {teamMsg && <p style={{ color: '#DC2626', fontSize: '0.85rem', marginTop: 8 }}>{teamMsg}</p>}
-            </div>
-          )}
-
-          {/* Invite form (owners only) */}
-          {isOwner && (
-            <div style={{ ...s.panel, marginBottom: 24 }}>
-              <h2 style={s.sectionTitle}>Invite a Team Member</h2>
-              <p style={s.sectionSub}>They'll receive an email to set up their portal account.</p>
-              <form onSubmit={handleInvite} style={s.inviteForm}>
-                <div style={s.inviteFields}>
-                  <div style={s.field}>
-                    <label style={s.label}>Email *</label>
-                    <input style={s.input} type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="teammate@company.com" required />
-                  </div>
-                  <div style={s.field}>
-                    <label style={s.label}>Name <span style={s.optional}>(optional)</span></label>
-                    <input style={s.input} value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Alex Smith" />
-                  </div>
-                  <div style={s.field}>
-                    <label style={s.label}>Role</label>
-                    <select style={s.select} value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
-                      <option value="member">Member</option>
-                      <option value="manager">Manager</option>
-                      <option value="owner">Owner</option>
-                    </select>
-                  </div>
-                </div>
-                {inviteMsg && (
-                  <p style={{ color: inviteMsg.ok ? '#059669' : '#DC2626', fontSize: '0.875rem', margin: '8px 0' }}>
-                    {inviteMsg.ok ? '✓ ' : ''}{inviteMsg.text}
-                  </p>
-                )}
-                <button type="submit" style={{ ...s.btn, opacity: inviting ? 0.7 : 1 }} disabled={inviting}>
-                  {inviting ? 'Sending invite…' : 'Send Invite'}
-                </button>
-              </form>
             </div>
           )}
 
@@ -374,13 +311,7 @@ const s = {
   panel: { background: '#fff', borderRadius: 12, padding: 28, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', border: '1px solid #E2E8F0' },
   sectionTitle: { fontSize: '1rem', fontWeight: 700, color: '#0F172A', marginBottom: 2, marginTop: 0 },
   sectionSub: { fontSize: '0.85rem', color: '#64748B', marginBottom: 18 },
-  inviteForm: { display: 'flex', flexDirection: 'column', gap: 12 },
-  inviteFields: { display: 'grid', gridTemplateColumns: '1fr 1fr 160px', gap: 16 },
-  field: { display: 'flex', flexDirection: 'column', gap: 4 },
-  label: { fontSize: '0.8rem', fontWeight: 600, color: '#374151' },
-  optional: { fontWeight: 400, color: '#94A3B8' },
   input: { padding: '9px 12px', border: '1px solid #E2E8F0', borderRadius: 7, fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", outline: 'none', background: '#fff' },
-  select: { padding: '9px 12px', border: '1px solid #E2E8F0', borderRadius: 7, fontSize: '0.875rem', fontFamily: "'DM Sans', sans-serif", background: '#fff' },
   btn: { alignSelf: 'flex-start', padding: '10px 22px', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   tableWrap: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' },

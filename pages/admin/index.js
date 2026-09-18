@@ -1467,6 +1467,12 @@ function EditPanel({ account, onClose, onSave }) {
   const [addTokenMsg, setAddTokenMsg] = useState(null);
   const [users, setUsers] = useState(account.users || []);
   const [roleChanging, setRoleChanging] = useState(null);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserRole, setNewUserRole] = useState('member');
+  const [newUserTeamId, setNewUserTeamId] = useState('');
+  const [addingUser, setAddingUser] = useState(false);
+  const [addUserMsg, setAddUserMsg] = useState(null); // { ok, text }
   const [profileChanging, setProfileChanging] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
   const [selectedProfile, setSelectedProfile] = useState(account.assessmentProfile || '');
@@ -1540,6 +1546,27 @@ function EditPanel({ account, onClose, onSave }) {
       if (res.ok) setUsers(prev => prev.map(u => u.id === user.id ? { ...u, team_id: teamId || null } : u));
     } catch {}
     finally { setRoleChanging(null); }
+  }
+
+  async function addUser() {
+    if (!newUserEmail.trim()) return;
+    setAddingUser(true); setAddUserMsg(null);
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newUserEmail.trim(), name: newUserName.trim(), role: newUserRole, team_id: newUserTeamId || null }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setAddUserMsg({ ok: false, text: d.error || 'Failed to add user.' }); return; }
+      setUsers(prev => [...prev, d.user]);
+      setAddUserMsg({ ok: true, text: `Invite sent to ${newUserEmail.trim()}.` });
+      setNewUserEmail(''); setNewUserName(''); setNewUserRole('member'); setNewUserTeamId('');
+    } catch {
+      setAddUserMsg({ ok: false, text: 'Network error.' });
+    } finally {
+      setAddingUser(false);
+    }
   }
 
   async function updateProfile() {
@@ -1679,10 +1706,10 @@ function EditPanel({ account, onClose, onSave }) {
         </div>
       )}
       {/* Users / Roles */}
-      {users.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Users & Roles</p>
-          {users.map(u => (
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Users & Roles</p>
+        {users.length === 0 && <p style={{ fontSize: '0.82rem', color: '#94A3B8', marginBottom: 8 }}>No portal logins on this account yet.</p>}
+        {users.map(u => (
             <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.82rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '6px 10px' }}>
               <span style={{ flex: 1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.email}</span>
               <span style={{ color: '#64748B', fontSize: '0.78rem', flexShrink: 0 }}>{u.email}</span>
@@ -1706,9 +1733,31 @@ function EditPanel({ account, onClose, onSave }) {
                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
-          ))}
+        ))}
+
+        {/* Add a new portal login — creates the client_users row directly
+            and emails the same "set up your account" link the old
+            owner-facing My Team invite form used, before that was removed
+            in favor of admin-only account creation. */}
+        <div style={{ marginTop: 10, padding: '10px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+            <input style={{ ...s.fieldInput, flex: '1 1 160px' }} value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} placeholder="email@company.com" type="email" />
+            <input style={{ ...s.fieldInput, flex: '1 1 140px' }} value={newUserName} onChange={e => setNewUserName(e.target.value)} placeholder="Name (optional)" />
+            <select style={{ padding: '7px 8px', border: '1px solid #E2E8F0', borderRadius: 5, fontSize: '0.8rem', fontFamily: "'DM Sans', sans-serif", color: '#374151' }} value={newUserRole} onChange={e => setNewUserRole(e.target.value)}>
+              <option value="owner">Owner</option>
+              <option value="manager">Manager</option>
+              <option value="member">Member</option>
+            </select>
+            <select style={{ padding: '7px 8px', border: '1px solid #E2E8F0', borderRadius: 5, fontSize: '0.8rem', fontFamily: "'DM Sans', sans-serif", color: '#374151', maxWidth: 130 }} value={newUserTeamId} onChange={e => setNewUserTeamId(e.target.value)} disabled={!teams.length}>
+              <option value="">No team</option>
+              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+            <button style={s.btnSmall} onClick={addUser} disabled={addingUser || !newUserEmail.trim()}>{addingUser ? 'Adding…' : '+ Add User'}</button>
+          </div>
+          {addUserMsg && <p style={{ fontSize: '0.8rem', color: addUserMsg.ok ? '#059669' : '#DC2626', margin: 0 }}>{addUserMsg.text}</p>}
+          <p style={{ fontSize: '0.75rem', color: '#94A3B8', margin: '6px 0 0' }}>Creates a portal login with no assessment required — they'll get an email to set their password.</p>
         </div>
-      )}
+      </div>
 
       {/* Teams */}
       <div style={{ marginBottom: 16 }}>
