@@ -362,17 +362,22 @@ export default function PortalDashboard() {
 
                   {hasAssessment !== false && (
                     <div className="dash-stats" style={s.statsRow}>
-                      <StatCard label="Assessment Tokens" value={total} sub="total purchased" color="#059669" />
+                      <StatCard label="Assessment Links" value={total} sub="total purchased" color="#059669" />
                       <StatCard label="Completed" value={used} sub="assessments taken" color="#3B82F6" />
-                      <StatCard label="Available" value={available} sub="tokens remaining" color="#D97706" />
+                      <StatCard label="Available" value={available} sub="links remaining" color="#D97706" />
                     </div>
                   )}
 
-                  {data?.recentAssessments?.length > 0 && (
+                  {/* Owner/manager only — a plain member has no Assessment
+                      Results page to drill into any more (see Analytics),
+                      and this preview draws from the whole account/team
+                      regardless of the viewer's own role, which isn't
+                      something a member should see a preview of at all. */}
+                  {me.user.role !== 'member' && data?.recentAssessments?.length > 0 && (
                     <div style={s.section}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                         <h2 style={{ ...s.sectionTitle, marginBottom: 0 }}>Recent Assessments</h2>
-                        <Link href={me.user.role === 'member' ? '/portal/results' : '/portal/analytics'} style={s.viewAll}>View all →</Link>
+                        <Link href="/portal/analytics" style={s.viewAll}>View all →</Link>
                       </div>
                       <div style={s.tableWrap}>
                         <table style={s.table}>

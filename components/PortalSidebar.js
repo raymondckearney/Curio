@@ -8,12 +8,7 @@ const NAV_ITEMS = [
   { key: 'session-architect', href: '/portal/tools/session-architect', label: 'Session Architect', license: 'session_architect' },
   { key: 'dynamics',         href: '/portal/team-dynamics',    label: 'Dynamics',             license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'onboarding-resources', href: '/portal/onboarding-resources', label: 'Onboarding Resources', license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
-  { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',    license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
-  // Owner/manager get the raw results table folded into Analytics below —
-  // this stays a standalone tab only for a plain member, who never sees
-  // Analytics (ownerOnly) or My Team (so it renders top-level, not nested;
-  // see the memberOnly check below).
-  { key: 'results',          href: '/portal/results',          label: 'Assessment Results',   license: 'assessment_tokens', enterpriseOnly: true, groupKey: 'team', memberOnly: true },
+  { key: 'tokens',           href: '/portal/tokens',           label: 'Send Assessment',      license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'analytics',        href: '/portal/analytics',        label: 'Analytics',            license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',        license: 'role_analyzer' },
   { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance Tool', license: 'career_guidance' },
@@ -95,7 +90,6 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
   const visibleItems = NAV_ITEMS.filter(item => {
     if (item.enterpriseOnly && !isTeamAccount) return false;
     if (item.ownerOnly && !isOwner && !isManager) return false;
-    if (item.memberOnly && (isOwner || isManager)) return false;
     if (item.alwaysShow) return true;
     // Tier-agnostic (both basic and premium can see it once they have a
     // completed assessment) — gated on having a profile at all, not on any

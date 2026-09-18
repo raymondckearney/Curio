@@ -25,7 +25,7 @@ export default function TeamDynamicsPage() {
         const meData = await meRes.json();
 
         // Dynamics is an owner/manager tool, same "ownerOnly" convention as
-        // My Team, Assessment Tokens, and Analytics (see PortalSidebar) —
+        // My Team, Send Assessment, and Analytics (see PortalSidebar) —
         // a member hitting this URL directly gets bounced, same as they
         // would from those.
         if (meData.user.role !== 'owner' && meData.user.role !== 'manager') {

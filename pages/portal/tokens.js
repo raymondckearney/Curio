@@ -113,12 +113,12 @@ export default function PortalTokens() {
     : parseBatch().slice(0, 1).map(r => ({ ...r, name: r.name || 'Recipient' }));
   const previewMsg = message
     .replace(/\[Name\]/gi, previewRecipients[0]?.name || 'Recipient')
-    .replace(/\[URL\]/gi, 'https://www.choosecurio.com/go/[token]');
+    .replace(/\[URL\]/gi, 'https://www.choosecurio.com/go/[link-id]');
 
   return (
     <>
       <Head>
-        <title>Tokens — {me.account.name} — Curio</title>
+        <title>Send Assessment — {me.account.name} — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
@@ -126,7 +126,7 @@ export default function PortalTokens() {
         <PortalNav me={me} onLogout={logout} active="tokens" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={!!dash?.isTeamAccount} />
         <main style={s.main} className="portal-main">
         <div style={s.container}>
-          <h1 style={s.pageTitle}>Assessment Tokens</h1>
+          <h1 style={s.pageTitle}>Send Assessment</h1>
 
           {/* Stats row */}
           <div style={s.statsRow}>
@@ -143,16 +143,17 @@ export default function PortalTokens() {
               <span style={s.statLabel}>Completed</span>
             </div>
           </div>
+          <p style={s.statsCaption}>These three never overlap: a link is <strong>Available</strong> until it's sent, then <strong>Sent</strong> until the recipient finishes, then it moves to <strong>Completed</strong> and drops out of Sent.</p>
 
           {tokens?.length === 0 && (
-            <div style={s.emptyState}>No tokens assigned to this account yet. Contact your Curio account manager.</div>
+            <div style={s.emptyState}>No links assigned to this account yet. Contact your Curio account manager.</div>
           )}
 
-          {/* Send tokens panel */}
+          {/* Send links panel */}
           {available.length > 0 && (
             <div style={{ ...s.panel, marginBottom: 24 }}>
               <h2 style={s.sectionTitle}>Send Assessment Links</h2>
-              <p style={s.sectionSub}>{available.length} token{available.length !== 1 ? 's' : ''} available to send</p>
+              <p style={s.sectionSub}>{available.length} link{available.length !== 1 ? 's' : ''} available to send</p>
 
               {/* Single / Batch tabs */}
               <div style={s.miniTabBar}>
@@ -187,7 +188,7 @@ export default function PortalTokens() {
                   {batchText && (
                     <p style={s.batchCount}>
                       {parseBatch().length} valid recipient{parseBatch().length !== 1 ? 's' : ''} parsed
-                      {parseBatch().length > available.length && <span style={{ color: '#DC2626' }}> — exceeds {available.length} available tokens</span>}
+                      {parseBatch().length > available.length && <span style={{ color: '#DC2626' }}> — exceeds {available.length} available links</span>}
                     </p>
                   )}
                 </div>
@@ -221,10 +222,13 @@ export default function PortalTokens() {
             </div>
           )}
 
-          {/* Sent / Completed tokens table */}
+          {/* Everyone a link has ever been sent to, whether or not they've
+              completed it yet — the Status column (and the stat cards
+              above) is what tells you which. */}
           {(sent.length > 0 || completed.length > 0) && (
             <div style={s.panel}>
-              <h2 style={s.sectionTitle}>Sent Tokens</h2>
+              <h2 style={s.sectionTitle}>Recipients</h2>
+              <p style={s.sectionSub}>Everyone a link has been sent to. Once someone completes their assessment, their row moves from <strong>Sent</strong> to <strong>Completed</strong> — the same person never counts as both.</p>
               <div style={s.tableWrap}>
                 <table style={s.table}>
                   <thead>
@@ -267,7 +271,8 @@ const s = {
   main: { marginLeft: 220, padding: '36px 24px' },
   container: { maxWidth: 900, margin: '0 auto' },
   pageTitle: { fontFamily: "'Caveat', cursive", fontSize: '1.8rem', fontWeight: 700, marginBottom: 20 },
-  statsRow: { display: 'flex', gap: 16, marginBottom: 28 },
+  statsRow: { display: 'flex', gap: 16, marginBottom: 10 },
+  statsCaption: { fontSize: '0.8rem', color: '#94A3B8', marginBottom: 28, lineHeight: 1.6 },
   statCard: { flex: 1, background: '#fff', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: 4 },
   statCardGreen: { borderColor: '#D1FAE5' },
   statNum: { fontSize: '1.8rem', fontWeight: 700, color: '#0F172A', lineHeight: 1 },

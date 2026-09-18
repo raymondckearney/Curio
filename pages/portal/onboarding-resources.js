@@ -21,7 +21,7 @@ export default function OnboardingResourcesPage() {
         const meData = await meRes.json();
 
         // Owner/manager tool, same "ownerOnly" convention (owner OR
-        // manager) as My Team, Dynamics, Assessment Tokens, and Analytics
+        // manager) as My Team, Dynamics, Send Assessment, and Analytics
         // — see PortalSidebar. A member hitting this URL directly bounces,
         // same as they would from those.
         if (meData.user.role !== 'owner' && meData.user.role !== 'manager') {

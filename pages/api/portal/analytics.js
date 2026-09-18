@@ -3,11 +3,8 @@ import { dbQuery } from '../../../lib/supabase';
 
 // Owner/manager only: every completed assessment on the account (owner) or
 // on the caller's own team (manager) — backs the Analytics tab's charts,
-// list generator, and (since the /portal/results merge) its raw results
-// table too. Unlike /api/portal/results, this never applies the
-// restrict_results member filter, since plain members can't reach it —
-// they keep using /portal/results directly instead (see PortalSidebar's
-// `memberOnly` flag on that nav item).
+// list generator, and results table. A plain member has no equivalent view
+// (the old /portal/results page was retired — see pages/manual.js).
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 

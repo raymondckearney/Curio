@@ -67,8 +67,7 @@ export default function Manual() {
             <a href="#portal-team" className="nav-link">My Team</a>
             <a href="#portal-dynamics" className="nav-link">Dynamics</a>
             <a href="#portal-onboarding-resources" className="nav-link">Onboarding Resources</a>
-            <a href="#portal-tokens" className="nav-link">Assessment Tokens</a>
-            <a href="#portal-results" className="nav-link">Assessment Results</a>
+            <a href="#portal-tokens" className="nav-link">Send Assessment</a>
             <a href="#portal-analytics" className="nav-link">Analytics</a>
             <a href="#portal-tools" className="nav-link">AI Tools</a>
             <a href="#portal-companions" className="nav-link">AI Companions</a>
@@ -119,13 +118,13 @@ export default function Manual() {
                 <thead><tr><th>Role</th><th>Who</th><th>Can Do</th></tr></thead>
                 <tbody>
                   <tr><td><span className="badge badge-admin">Admin</span></td><td>You (Ray)</td><td>Everything — full admin panel, all accounts, all data, generate tokens, manage roles and licenses.</td></tr>
-                  <tr><td><span className="badge badge-owner">Owner</span></td><td>Enterprise account lead</td><td>Distribute tokens to their team, invite portal members, view all team assessment results, use licensed AI tools.</td></tr>
-                  <tr><td><span className="badge badge-member">Member</span></td><td>Enterprise team member</td><td>View their own profile and (if permitted) team results. Use licensed AI tools. Cannot distribute tokens or invite others.</td></tr>
+                  <tr><td><span className="badge badge-owner">Owner</span></td><td>Enterprise account lead</td><td>Distribute assessment links to their team, invite portal members, view all team assessment results and analytics, use licensed AI tools.</td></tr>
+                  <tr><td><span className="badge badge-member">Member</span></td><td>Enterprise team member</td><td>View their own profile. Use licensed AI tools. Cannot see other team members' results, distribute links, or invite others.</td></tr>
                   <tr><td><span className="badge badge-public">Individual</span></td><td>Self-serve / solo user</td><td>View their own profile, use tools they have licenses for. No team features.</td></tr>
                 </tbody>
               </table>
             </div>
-            <div className="info-block"><strong>Owner vs Member visibility:</strong> If <em>Restrict Results</em> is enabled on an account, members only see their own assessment. Owners always see everyone's results on that account.</div>
+            <div className="info-block"><strong>Owner vs Member visibility:</strong> A member only ever sees their own MindPrint™ profile — they have no page that shows other team members' results. Owners and managers see the whole account's (or their team's) results and analytics together on Analytics. The account-level <code>restrict_results</code> field still exists in the schema but is no longer read anywhere — it only ever gated the member-facing Assessment Results page, which was retired once members had no use for it.</div>
           </section>
 
           {/* ─── Assessment Flow ─── */}
@@ -211,7 +210,7 @@ export default function Manual() {
                 <li><strong>Purchase History</strong> — Stripe purchase records linked to this account.</li>
               </ul>
             </Card>
-            <div className="info-block"><strong>To give an enterprise account their token allocation:</strong> Edit the account → Token Pool → enter quantity → click "Add Tokens". Those tokens immediately appear in the owner's Assessment Tokens page in the portal.</div>
+            <div className="info-block"><strong>To give an enterprise account their token allocation:</strong> Edit the account → Token Pool → enter quantity → click "Add Tokens". Those tokens immediately appear as available links on the owner's Send Assessment page in the portal.</div>
           </section>
 
           <section className="section" id="admin-emails">
@@ -273,9 +272,8 @@ export default function Manual() {
               </ul>
             </Card>
             <Card title="Whose assessment is &quot;mine&quot;?">Resolved by the shared <code>resolveMyProfile()</code> helper in <code>lib/ownProfile.js</code> (also used by <code>/api/portal/ai-delegation-guide</code>), which matches the logged-in user's own completed assessment by email against every token the account has ever issued — never a team-scoped subset, even for a manager, since a manager's own assessment may have been taken on a token from before they were ever assigned to a team. If nothing matches and the account has exactly one assessment total, it falls back to that one (covers a genuine single-person account whose stored assessment email differs slightly from their portal login email). If the account has more than one assessment and none match, <code>myAssessment</code> stays null rather than falling back to some other person's. This same value drives <code>isIndividual</code> (used for this page's own My-Profile-vs-team-overview layout choice, and to gate the AI &amp; Delegation Guide tab) and the tertiary used for the free Companion/Resources defaults below.</Card>
-            <Card title="isTeamAccount and the nav">My Team / Assessment Tokens / Assessment Results / Analytics are gated in <code>components/PortalSidebar.js</code> by <code>isTeamAccount</code> (computed server-side in <code>/api/portal/dashboard.js</code> as "this account has more than one assessment token") together with an owner-only check on My Team, Tokens, and Analytics. A self-serve buyer's account is provisioned with exactly one token (their own), so these tabs correctly stay hidden for them; any account with a real token pool — however it was provisioned — sees them. <code>client_accounts.tier</code> ('basic' | 'premium') is not used for this, since it never holds an 'enterprise' value.</Card>
-            <Card title="My Team accordion">Assessment Tokens and Analytics render as an indented, collapsible group under <strong>My Team</strong> rather than separate top-level tabs. Clicking the label navigates to My Team as normal; clicking the chevron toggles the group open or closed without navigating. It auto-opens when the active page is My Team or one of the grouped pages. Assessment Results is the one exception — see the next card.</Card>
-            <Card title="Assessment Results — member-only tab, folded into Analytics for everyone else">Owners and managers no longer have a separate Assessment Results tab — its raw per-person table now lives inside Analytics (see below), alongside the charts and list generator that used to be Analytics' whole page. A plain member, who never sees My Team or Analytics at all, keeps Assessment Results as their own standalone top-level tab exactly as before (<code>components/PortalSidebar.js</code>'s <code>memberOnly</code> flag on that nav item explicitly hides it once the viewer is an owner or manager, so it doesn't show up a second time nested under My Team). The page and its API (<code>/portal/results</code>, <code>/api/portal/results</code>) are otherwise unchanged, restrict_results scoping included. The dashboard's "Recent Assessments → View all" link also branches on role: a member goes to <code>/portal/results</code>, an owner or manager goes to <code>/portal/analytics</code>.</Card>
+            <Card title="isTeamAccount and the nav">My Team / Send Assessment / Analytics are gated in <code>components/PortalSidebar.js</code> by <code>isTeamAccount</code> (computed server-side in <code>/api/portal/dashboard.js</code> as "this account has more than one assessment token") together with an owner-only check on all three. A self-serve buyer's account is provisioned with exactly one token (their own), so these tabs correctly stay hidden for them; any account with a real token pool — however it was provisioned — sees them. <code>client_accounts.tier</code> ('basic' | 'premium') is not used for this, since it never holds an 'enterprise' value.</Card>
+            <Card title="My Team accordion">Send Assessment and Analytics render as an indented, collapsible group under <strong>My Team</strong> rather than separate top-level tabs. Clicking the label navigates to My Team as normal; clicking the chevron toggles the group open or closed without navigating. It auto-opens when the active page is My Team or one of the grouped pages. A member never sees any of this — My Team, Send Assessment, and Analytics are all owner/manager only, and a member has no assessment-results view of any kind any more (see Roles &amp; Access above).</Card>
             <Card title="Your Communication Field Guide">A card just below the profile hero, shown to any user with a completed assessment, no extra license required. <strong>View Field Guide →</strong> is a plain link to the web page at <code>/portal/library/field-guide/&lt;profile&gt;</code> matching the user's own profile (e.g. <code>why-what</code>) — no signed URL or PDF fetch involved, same as the Resources page's own field guide cards.</Card>
           </section>
 
@@ -325,9 +323,9 @@ export default function Manual() {
             <div className="badges"><span className="badge badge-owner">Owner and Manager</span></div>
             <Card title="Token Pool Summary">Four stat tiles at the top: Total, Available, Sent, and Completed tokens. An owner sees the whole account's pool; a manager sees only their own team's.</Card>
             <Card title="Teams (owner only, self-serve)">Owners can create and delete sub-teams directly from this page without needing admin — enter a name and click "+ Add Team". Deleting a team unassigns its members and tokens (sets <code>team_id</code> to null) rather than deleting them. Every mutation here (<code>/api/portal/teams</code>) verifies the team actually belongs to the caller's own account before acting, since a self-serve owner session — unlike an admin session — is not trusted for other accounts.</Card>
-            <Card title="No self-serve invite">Owners and managers cannot create a brand-new portal login from here. Creating a login with no assessment attached (an owner/manager account that will never take the MindPrint™ assessment) is an admin-only action now — see admin Accounts → Edit Account → Users & Roles. Getting a <em>new</em> person onto the roster self-serve still works two ways: send them an assessment token (Assessment Tokens tab) — completing it auto-creates their account as a <code>member</code> — or promote an existing member to Manager/Owner and assign their team right here in the Team Table below.</Card>
+            <Card title="No self-serve invite">Owners and managers cannot create a brand-new portal login from here. Creating a login with no assessment attached (an owner/manager account that will never take the MindPrint™ assessment) is an admin-only action now — see admin Accounts → Edit Account → Users & Roles. Getting a <em>new</em> person onto the roster self-serve still works two ways: send them an assessment link (Send Assessment tab) — completing it auto-creates their account as a <code>member</code> — or promote an existing member to Manager/Owner and assign their team right here in the Team Table below.</Card>
             <Card title="Team Table">An owner sees every portal user on the account and gets an inline Role dropdown (Owner / Manager / Member) and Team dropdown per row to reassign either instantly — this is how a member becomes a manager and gets attached to a team. An owner cannot change their own role here (a safety guard against accidentally locking themselves out) and cannot remove themselves. A manager sees only the users on their own team, as plain read-only rows with no dropdowns. Columns: name, email, role, team (owner only), assessment status (No Token / Invited / Completed), MindPrint™ profile type, and join date.</Card>
-            <Card title="Manager role and team scoping">A third role, <code>manager</code>, sits alongside owner and member on <code>client_users</code>, backed by a <code>teams</code> table and a <code>team_id</code> column on both <code>client_users</code> and <code>tokens</code> — assignable here by the owner, or in admin Accounts → Edit Account → Teams and Users & Roles. A manager sees the same five tabs as an owner — My Team, Dynamics, Onboarding Resources, Assessment Tokens, Analytics — but every one of them is filtered server-side to the manager's own <code>team_id</code>, including the token pool they can send from on Assessment Tokens (their one write action) and the stats/recent-assessments shown on their own My Profile dashboard. A manager gets no other owner action: no invite/remove, no team creation/deletion, no license or tier changes, no visibility into other teams or the enterprise-wide unassigned token pool. <code>isTeamAccount</code> (which gates whether these tabs appear at all) is still computed from the whole account's token count, not the manager's own team size, so a small or brand-new team doesn't lose the tabs.</Card>
+            <Card title="Manager role and team scoping">A third role, <code>manager</code>, sits alongside owner and member on <code>client_users</code>, backed by a <code>teams</code> table and a <code>team_id</code> column on both <code>client_users</code> and <code>tokens</code> — assignable here by the owner, or in admin Accounts → Edit Account → Teams and Users & Roles. A manager sees the same five tabs as an owner — My Team, Dynamics, Onboarding Resources, Send Assessment, Analytics — but every one of them is filtered server-side to the manager's own <code>team_id</code>, including the link pool they can send from on Send Assessment (their one write action) and the stats/recent-assessments shown on their own My Profile dashboard. A manager gets no other owner action: no invite/remove, no team creation/deletion, no license or tier changes, no visibility into other teams or the enterprise-wide unassigned token pool. <code>isTeamAccount</code> (which gates whether these tabs appear at all) is still computed from the whole account's token count, not the manager's own team size, so a small or brand-new team doesn't lose the tabs.</Card>
           </section>
 
           {/* ─── Dynamics ─── */}
@@ -385,37 +383,21 @@ export default function Manual() {
 
           <section className="section" id="portal-tokens">
             <div className="section-header">
-              <h2 className="section-title">Assessment Tokens</h2>
+              <h2 className="section-title">Send Assessment</h2>
               <span className="section-path">/portal/tokens</span>
             </div>
-            <div className="badges"><span className="badge badge-owner">Owner only</span></div>
-            <Card title="Token Stats">Available / Sent / Completed counts drawn from the account's token pool (set by admin).</Card>
+            <div className="badges"><span className="badge badge-owner">Owner and Manager</span></div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>Renamed from "Assessment Tokens" — the page itself now says <em>link</em> throughout rather than mixing "token" and "link" for the same thing, since the account's underlying <code>tokens</code> table (an admin/inventory concept — see Admin Panel → Tokens) isn't something an owner or manager needs to think in terms of. What they're actually doing is sending someone a link to take the assessment.</p>
+            <Card title="Link Stats">Available / Sent / Completed counts, mutually exclusive by construction: a link is Available until it's sent, then Sent until the recipient finishes, then it moves to Completed and drops out of Sent. The page states this explicitly under the stat row, since the table below (see Recipients) shows Sent and Completed rows together and could otherwise read as if a completed link were still "sent."</Card>
             <Card title="Send Assessment Links">
-              Two modes for distributing tokens from the pool:
+              Two modes for distributing links from the pool:
               <ul>
-                <li><strong>Single Recipient</strong> — name (optional) and email. Assigns one token and sends a personalized email.</li>
-                <li><strong>Batch</strong> — paste recipients as <code>Name, email</code> or just email, one per line. Warns if count exceeds available tokens.</li>
+                <li><strong>Single Recipient</strong> — name (optional) and email. Assigns one link and sends a personalized email.</li>
+                <li><strong>Batch</strong> — paste recipients as <code>Name, email</code> or just email, one per line. Warns if count exceeds available links.</li>
               </ul>
               A customizable email message supports <code>[Name]</code> and <code>[URL]</code> placeholders with a live preview toggle. You receive a BCC of every sent email.
             </Card>
-            <Card title="Sent Tokens Table">All tokens that have been assigned — showing recipient name, email, sent date, completion date, and a copy-link button.</Card>
-          </section>
-
-          <section className="section" id="portal-results">
-            <div className="section-header">
-              <h2 className="section-title">Assessment Results</h2>
-              <span className="section-path">/portal/results</span>
-            </div>
-            <div className="badges">
-              <span className="badge badge-member">Member only</span>
-            </div>
-            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>Owners and managers use the merged Results table on Analytics (below) instead — this standalone tab exists only for a plain member, who never sees My Team or Analytics. Still reachable directly (not just via nav) — e.g. the dashboard's "Recent Assessments → View all" link routes a member here.</p>
-            <Card title="Results Table">
-              Completed assessments for the account — name, email, MindPrint™ profile type (color-coded badge), H/W/Y scores, and submission date. Searchable by name, email, or profile type.
-              <ul>
-                <li>A member sees every result on the account unless <em>Restrict Results</em> is enabled (set by admin), in which case they only see their own row.</li>
-              </ul>
-            </Card>
+            <Card title="Recipients Table">Everyone a link has ever been sent to — name, email, a Status badge (Sent or Completed), sent date, completion date, and a copy-link button. Renamed from "Sent Tokens," which implied only outstanding (not-yet-completed) recipients would appear — completed ones were always included too.</Card>
           </section>
 
           <section className="section" id="portal-analytics">
@@ -424,11 +406,11 @@ export default function Manual() {
               <span className="section-path">/portal/analytics</span>
             </div>
             <div className="badges"><span className="badge badge-owner">Owner and Manager</span></div>
-            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>Combines what used to be two separate My Team tabs — Assessment Results and Analytics — into one, since owners and managers were the only audience for both. A manager's view is scoped to their own team throughout; an owner sees the whole account.</p>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>Combines what used to be two separate My Team tabs, Assessment Results and Analytics, into one — the raw results table, the charts, and the list generator all live here now. Owner/manager only: a member has no assessment-results view at all (the standalone Assessment Results tab it once had was removed as unneeded — a member never saw teammates' scores anywhere else, and the tab's own H/W/Y numbers weren't shown anywhere else in the product either). A manager's view is scoped to their own team throughout; an owner sees the whole account.</p>
             <Card title="Two pie charts">One breaks down every completed assessment by full profile (six slices); the other by primary orientation (WHY/WHAT/HOW, three slices).</Card>
             <Card title="Generate a List">Filter by Profile, Primary Orientation, or Tertiary Orientation, pick a value, and a table appears with name, email, and profile for everyone matching. <strong>Email Group (n) →</strong> opens the caller's own email client via a <code>mailto:</code> link with every matching email address pre-filled on <code>bcc</code>, so recipients don't see each other's addresses.</Card>
-            <Card title="Results table">The former Assessment Results table, now at the bottom of this page — name, email, profile badge, H/W/Y scores, and submission date, with its own name/email/profile text filter (separate from Generate a List's dropdown filters above it).</Card>
-            <Card title="API: /api/portal/analytics">Owner/manager only (403 for members — a member uses <code>/api/portal/results</code> instead, see Assessment Results above). Returns every completed assessment on the account (owner) or the caller's own team (manager), regardless of <em>Restrict Results</em>, since that setting only limits what a member sees, never an owner or manager.</Card>
+            <Card title="Results table">Name, email, profile badge, H/W/Y scores, and submission date, with its own name/email/profile text filter (separate from Generate a List's dropdown filters above it).</Card>
+            <Card title="API: /api/portal/analytics">Owner/manager only (403 for members). Returns every completed assessment on the account (owner) or the caller's own team (manager).</Card>
           </section>
 
           <section className="section" id="portal-tools">
