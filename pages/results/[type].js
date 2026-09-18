@@ -4,6 +4,16 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import profiles from '../../lib/profiles';
 
+// Style guide's "Orientation colors" — used exclusively on dark
+// backgrounds (this page's hero band is navy), distinct from the deeper
+// on-light-surface variant used for e.g. the portal dashboard's hero
+// gradient. See pages/style-guide/index.js's Profiles section.
+const PRIMARY_ORIENTATION_COLOR = { WHY: '#6EE7B7', WHAT: '#93C5FD', HOW: '#FCD34D' };
+function primaryOrientationColor(slug) {
+  const primary = slug.split('-')[0].toUpperCase();
+  return PRIMARY_ORIENTATION_COLOR[primary] || '#fff';
+}
+
 export default function ResultsPage() {
   const router = useRouter();
   const { type, name: urlName, email: urlEmail, token, from } = router.query;
@@ -201,7 +211,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.
   <div class="hero">
     <div class="eyebrow">MindPrint Profile</div>
     ${displayName ? `<div class="hero-name">${esc(displayName)}</div>` : ''}
-    <div class="hero-label">${esc(profile.label)}</div>
+    <div class="hero-label" style="color:${primaryOrientationColor(profile.slug)}">${esc(profile.label)}</div>
     <div class="hero-tagline">${esc(profile.tagline)}</div>
     <div class="signal-box"><span class="signal-prefix">Signal: </span>"${esc(profile.signal)}"</div>
   </div>
@@ -317,7 +327,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.
         <div className="hero">
           <div className="hero-eyebrow">MindPrint Profile</div>
           {displayName_ && <div className="hero-name">{displayName_}</div>}
-          <div className="hero-label">{profile.label}</div>
+          <div className="hero-label" style={{ color: primaryOrientationColor(profile.slug) }}>{profile.label}</div>
           <div className="hero-tagline">{profile.tagline}</div>
           <div className="signal-box">
             <span className="signal-prefix">Signal: </span>"{profile.signal}"
