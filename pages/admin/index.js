@@ -1588,12 +1588,48 @@ function EditPanel({ account, onClose, onSave }) {
     finally { setAddingTokens(false); }
   }
 
-  function addLicense() { setLicenses(prev => [...prev, { type: licType, quantity: licQty || null, expires_at: licExpiry || null }]); setLicQty(''); setLicExpiry(''); }
+  // Licenses are added/removed immediately against the granular
+  // /licenses endpoint rather than batched into local state and sent as a
+  // full replace-all array on Save. A batched "here's the whole array"
+  // PATCH can't tell "the admin removed this" apart from "this browser
+  // tab's snapshot never knew about it" (e.g. a Stripe renewal or another
+  // admin tab granted something since this list last loaded) — treating
+  // the array as the complete truth silently deleted whatever the tab
+  // didn't know about, most visibly assessment_tokens, whose loss hides
+  // the entire My Team nav group. Acting immediately per-license removes
+  // that staleness window entirely.
+  async function addLicense() {
+    if (!licType) return;
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/licenses`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: licType, quantity: licQty || null, expires_at: licExpiry || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to add license.');
+      setLicenses(prev => [...prev, data.license]);
+      setLicQty(''); setLicExpiry('');
+    } catch (e) { setError(e.message); }
+  }
+
+  async function removeLicense(licenseId) {
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/accounts/${account.id}/licenses`, {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to remove license.');
+      setLicenses(prev => prev.filter(l => l.id !== licenseId));
+    } catch (e) { setError(e.message); }
+  }
 
   async function save() {
     setLoading(true); setError('');
     try {
-      const res = await fetch(`/api/admin/accounts/${account.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tier, licenses }) });
+      const res = await fetch(`/api/admin/accounts/${account.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tier }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       onSave();
@@ -1616,11 +1652,11 @@ function EditPanel({ account, onClose, onSave }) {
       <div style={{ marginBottom: 16 }}>
         <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Licenses</p>
         {licenses.map((l, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.82rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '6px 10px' }}>
+          <div key={l.id || i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: '0.82rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '6px 10px' }}>
             <span style={{ flex: 1, fontWeight: 500 }}>{l.type.replace(/_/g, ' ')}</span>
             {l.quantity && <span style={{ color: '#64748B' }}>× {l.quantity}</span>}
             {l.expires_at && <span style={{ color: '#94A3B8', fontSize: '0.78rem' }}>exp {new Date(l.expires_at).toLocaleDateString()}</span>}
-            <button style={{ ...s.closeBtn, fontSize: '0.9rem' }} onClick={() => setLicenses(prev => prev.filter((_, j) => j !== i))}>×</button>
+            <button style={{ ...s.closeBtn, fontSize: '0.9rem' }} onClick={() => removeLicense(l.id)}>×</button>
           </div>
         ))}
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 8 }}>
