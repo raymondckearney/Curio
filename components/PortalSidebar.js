@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
   { key: 'session-architect', href: '/portal/tools/session-architect', label: 'Session Architect', license: 'session_architect' },
   { key: 'dynamics',         href: '/portal/team-dynamics',    label: 'Dynamics',             license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
+  { key: 'onboarding-resources', href: '/portal/onboarding-resources', label: 'Onboarding Resources', license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'tokens',           href: '/portal/tokens',           label: 'Assessment Tokens',    license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'results',          href: '/portal/results',          label: 'Assessment Results',   license: 'assessment_tokens', enterpriseOnly: true, groupKey: 'team' },
   { key: 'analytics',        href: '/portal/analytics',        label: 'Analytics',            license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
