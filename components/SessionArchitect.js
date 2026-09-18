@@ -256,22 +256,12 @@ const SESSION_TYPE_LABELS = {
 };
 
 // ── Deck generation (Generate Session Materials) ────────────────────────
-// Brand palette and character art reused verbatim from the rest of the
-// app (public/images/*-character.png, the same WHY/WHAT/HOW accent tones
-// as sa-bar-* above) so the deck reads as the same product, not a
-// generic export.
+// Brand palette reused verbatim from the rest of the app (the same
+// WHY/WHAT/HOW accent tones as sa-bar-* above) so the deck reads as the
+// same product, not a generic export.
 const DECK_NAVY = "0F172A", DECK_EMERALD = "059669", DECK_DEEP_EMERALD = "065F46",
   DECK_SLATE = "64748B", DECK_INK = "1E293B";
 const DECK_ENERGY_ACCENT = { WHY: "6EE7B7", WHAT: "93C5FD", HOW: "FCD34D", MIX: "6EE7B7" };
-const DECK_ENERGY_IMAGE = {
-  WHY: "/images/why-character.png",
-  WHAT: "/images/what-character.png",
-  HOW: "/images/how-character.png",
-  MIX: "/images/tertiary-boulder.png",
-};
-// Natural aspect ratio of each source image, so it's placed without
-// stretching (why/what are square, how is portrait, the boulder is landscape).
-const DECK_ENERGY_IMAGE_SIZE = { WHY: { w: 3.4, h: 3.4 }, WHAT: { w: 3.4, h: 3.4 }, HOW: { w: 2.55, h: 3.83 }, MIX: { w: 3.83, h: 2.55 } };
 
 function orientationLabel(id) {
   return ORIENTATIONS.find(o => o.id === id).label;
@@ -413,6 +403,288 @@ function ActivitySheet({ block }) {
       <div className="sa-as-signal"><b>You&apos;ll know it worked when:</b> {a.signal}</div>
     </div>
   );
+}
+
+// ── Print-ready material builders (Generate Session Materials) ──────────
+// Same jsPDF instance/margins pattern as the existing Download PDF button,
+// factored out so the bundle below can build three differently-scoped
+// documents from one generated session without repeating the page-layout
+// boilerplate three times.
+const PDF_INK = [15, 23, 42], PDF_SLATE = [100, 116, 139], PDF_EMERALD = [5, 150, 105], PDF_DEEP_EMERALD = [6, 95, 70];
+const PDF_ENERGY_RGB = { WHY: [110, 231, 183], WHAT: [147, 197, 253], HOW: [252, 211, 77], MIX: [110, 231, 183] };
+
+function newPdfDoc(JsPDF) {
+  const doc = new JsPDF({ unit: "pt", format: "letter" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 54;
+  const maxW = pageW - margin * 2;
+  return { doc, pageW, pageH, margin, maxW };
+}
+
+function pdfCoverPage(doc, pageW, pageH, eyebrow, title, subtitle) {
+  doc.setFillColor(15, 23, 42);
+  doc.rect(0, 0, pageW, pageH, "F");
+  doc.setTextColor(110, 231, 183);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.text(eyebrow, 54, 100);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(28);
+  const titleLines = doc.splitTextToSize(title, pageW - 108);
+  doc.text(titleLines, 54, 140);
+  doc.setTextColor(167, 243, 208);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(13);
+  doc.text(subtitle, 54, 140 + titleLines.length * 34 + 10);
+  doc.setTextColor(148, 163, 184);
+  doc.setFontSize(10);
+  doc.text(`Prepared with Curio Session Architect · ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, 54, pageH - 50);
+}
+
+function pdfAgendaOverview(doc, margin, maxW, pageH, result, { showActivity = true } = {}) {
+  let y = 70;
+  doc.setTextColor(...PDF_INK);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.text("Agenda", margin, y);
+  y += 26;
+
+  result.blocks.forEach(b => {
+    if (y + 50 > pageH - margin) { doc.addPage(); y = margin; }
+    const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
+    doc.setFillColor(...PDF_ENERGY_RGB[energyKey]);
+    doc.circle(margin + 4, y - 4, 4, "F");
+    doc.setTextColor(...PDF_INK);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.text(`${b.start}–${b.end} min   ${b.name}`, margin + 16, y);
+    y += 15;
+    if (showActivity) {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      doc.setTextColor(...PDF_EMERALD);
+      doc.text(`Activity: ${b.activity.name}`, margin + 26, y);
+      doc.setTextColor(...PDF_INK);
+      y += 14;
+    }
+    const lines = doc.splitTextToSize(b.purpose, maxW - 26);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.text(lines, margin + 26, y);
+    y += lines.length * 12 + 16;
+  });
+  return y;
+}
+
+// Full detail, facilitator-only: steps, facilitator tips, and the "you'll
+// know it worked" signal. This is the existing Download PDF content with a
+// branded cover and energy-colored agenda markers added.
+function buildFacilitatorGuidePdf(JsPDF, result) {
+  const { doc, pageW, pageH, margin, maxW } = newPdfDoc(JsPDF);
+
+  function pageBreakIfNeeded(y, h) {
+    if (y + h > pageH - margin) { doc.addPage(); return margin; }
+    return y;
+  }
+
+  pdfCoverPage(doc, pageW, pageH, "FACILITATOR GUIDE", result.typeLabel, `${result.totalMin}-minute session`);
+
+  doc.addPage();
+  pdfAgendaOverview(doc, margin, maxW, pageH, result);
+
+  result.blocks.forEach(b => {
+    doc.addPage();
+    let y = margin;
+    const a = b.activity;
+    const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+    doc.setTextColor(...PDF_EMERALD);
+    doc.text("CURIO SESSION ARCHITECT · FACILITATOR GUIDE", margin, y);
+    doc.setTextColor(...PDF_INK);
+    y += 24;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(18);
+    doc.text(a.name, margin, y);
+    y += 22;
+
+    doc.setFont("helvetica", "italic"); doc.setFontSize(11);
+    doc.setTextColor(...PDF_SLATE);
+    const purposeLines = doc.splitTextToSize(a.purpose, maxW);
+    doc.text(purposeLines, margin, y);
+    doc.setTextColor(...PDF_INK);
+    y += purposeLines.length * 14 + 14;
+
+    doc.setFillColor(...PDF_ENERGY_RGB[energyKey]);
+    doc.rect(margin, y - 12, 5, 60, "F");
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(241, 245, 249);
+    const metaLines = doc.splitTextToSize(
+      `Agenda block: ${b.name} (${b.start}–${b.end} min)     Energy: ${energyKey === "MIX" ? "WHY + HOW" : energyKey}     Materials: ${a.materials.join(", ")}`,
+      maxW - 30
+    );
+    const metaH = Math.max(metaLines.length * 13 + 16, 60);
+    doc.rect(margin + 5, y - 12, maxW - 5, metaH, "F");
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.text(metaLines, margin + 20, y);
+    y += metaH + 14;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.setTextColor(...PDF_DEEP_EMERALD);
+    doc.text("STEPS", margin, y);
+    doc.setTextColor(...PDF_INK);
+    y += 18;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10.5);
+    a.steps.forEach((s, i) => {
+      const lines = doc.splitTextToSize(`${i + 1}.  ${s}`, maxW - 10);
+      y = pageBreakIfNeeded(y, lines.length * 13 + 8);
+      doc.text(lines, margin, y);
+      y += lines.length * 13 + 7;
+    });
+    y += 6;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.setTextColor(...PDF_DEEP_EMERALD);
+    y = pageBreakIfNeeded(y, 20);
+    doc.text("FACILITATOR TIPS", margin, y);
+    doc.setTextColor(...PDF_INK);
+    y += 18;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10.5);
+    a.tips.forEach(t => {
+      const lines = doc.splitTextToSize(`•  ${t}`, maxW - 10);
+      y = pageBreakIfNeeded(y, lines.length * 13 + 8);
+      doc.text(lines, margin, y);
+      y += lines.length * 13 + 7;
+    });
+    y += 10;
+
+    const signalLines = doc.splitTextToSize(`YOU'LL KNOW IT WORKED WHEN:  ${a.signal}`, maxW - 24);
+    const signalH = signalLines.length * 13 + 20;
+    y = pageBreakIfNeeded(y, signalH);
+    doc.setDrawColor(233, 216, 166);
+    doc.setFillColor(255, 251, 235);
+    doc.rect(margin, y - 14, maxW, signalH, "FD");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.text(signalLines, margin + 12, y);
+  });
+
+  return doc;
+}
+
+// Participant-facing: same steps as the facilitator guide so the room can
+// follow along, but no facilitator tips and no "signal" callout — those
+// are facilitation notes, not something to hand to the room.
+function buildParticipantHandoutPdf(JsPDF, result) {
+  const { doc, pageW, pageH, margin, maxW } = newPdfDoc(JsPDF);
+
+  function pageBreakIfNeeded(y, h) {
+    if (y + h > pageH - margin) { doc.addPage(); return margin; }
+    return y;
+  }
+
+  pdfCoverPage(doc, pageW, pageH, "PARTICIPANT GUIDE", result.typeLabel, `${result.totalMin}-minute session · here's what we'll be doing today`);
+
+  doc.addPage();
+  pdfAgendaOverview(doc, margin, maxW, pageH, result, { showActivity: false });
+
+  result.blocks.forEach(b => {
+    doc.addPage();
+    let y = margin;
+    const a = b.activity;
+    const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+    doc.setTextColor(...PDF_EMERALD);
+    doc.text("CURIO SESSION ARCHITECT · PARTICIPANT GUIDE", margin, y);
+    doc.setTextColor(...PDF_INK);
+    y += 24;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(18);
+    doc.text(a.name, margin, y);
+    y += 22;
+
+    doc.setFont("helvetica", "italic"); doc.setFontSize(11);
+    doc.setTextColor(...PDF_SLATE);
+    const purposeLines = doc.splitTextToSize(a.purpose, maxW);
+    doc.text(purposeLines, margin, y);
+    doc.setTextColor(...PDF_INK);
+    y += purposeLines.length * 14 + 14;
+
+    doc.setFillColor(...PDF_ENERGY_RGB[energyKey]);
+    doc.rect(margin, y - 12, 5, 44, "F");
+    doc.setFillColor(241, 245, 249);
+    const metaLines = doc.splitTextToSize(`${b.start}–${b.end} min     Materials: ${a.materials.join(", ")}`, maxW - 30);
+    const metaH = Math.max(metaLines.length * 13 + 16, 44);
+    doc.rect(margin + 5, y - 12, maxW - 5, metaH, "F");
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.text(metaLines, margin + 20, y);
+    y += metaH + 18;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.setTextColor(...PDF_DEEP_EMERALD);
+    doc.text("STEPS", margin, y);
+    doc.setTextColor(...PDF_INK);
+    y += 20;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11.5);
+    a.steps.forEach((s, i) => {
+      const lines = doc.splitTextToSize(`${i + 1}.  ${s}`, maxW - 10);
+      y = pageBreakIfNeeded(y, lines.length * 15 + 10);
+      doc.text(lines, margin, y);
+      y += lines.length * 15 + 9;
+    });
+  });
+
+  return doc;
+}
+
+// Condensed, large-type reference cards — one per activity — meant to be
+// printed and kept visible in the room during that block, not read
+// start-to-front like the guide/handout. No numbered steps on purpose:
+// anyone needing the full sequence flips to the handout instead.
+function buildActivityCardsPdf(JsPDF, result) {
+  const { doc, pageW, pageH, margin, maxW } = newPdfDoc(JsPDF);
+
+  result.blocks.forEach((b, i) => {
+    if (i > 0) doc.addPage();
+    const a = b.activity;
+    const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
+
+    doc.setFillColor(...PDF_ENERGY_RGB[energyKey]);
+    doc.rect(0, 0, pageW, 14, "F");
+
+    let y = 90;
+    doc.setTextColor(...PDF_EMERALD);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.text(`ACTIVITY CARD · BLOCK ${i + 1}`, margin, y);
+    y += 40;
+
+    doc.setTextColor(...PDF_INK);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(30);
+    const nameLines = doc.splitTextToSize(a.name, maxW);
+    doc.text(nameLines, margin, y);
+    y += nameLines.length * 36 + 18;
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(13);
+    doc.setTextColor(...PDF_SLATE);
+    doc.text(`${b.start}–${b.end} min   ·   ${energyKey === "MIX" ? "WHY + HOW" : energyKey} energy`, margin, y);
+    y += 34;
+
+    doc.setFont("helvetica", "italic"); doc.setFontSize(15);
+    doc.setTextColor(...PDF_INK);
+    const purposeLines = doc.splitTextToSize(a.purpose, maxW);
+    doc.text(purposeLines, margin, y);
+    y += purposeLines.length * 20 + 30;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.setTextColor(...PDF_DEEP_EMERALD);
+    doc.text("MATERIALS", margin, y);
+    y += 20;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(13);
+    doc.setTextColor(...PDF_INK);
+    const matLines = doc.splitTextToSize(a.materials.join(", "), maxW);
+    doc.text(matLines, margin, y);
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    doc.setTextColor(...PDF_SLATE);
+    doc.text("Full steps: see the facilitator guide or participant handout for this session.", margin, pageH - margin);
+  });
+
+  return doc;
 }
 
 export default function SessionArchitect() {
@@ -613,15 +885,22 @@ export default function SessionArchitect() {
     }
   }
 
-  // Builds a facilitator-ready deck: cover, agenda, then a section-divider
-  // slide + activity-instruction slide for every agenda block, styled off
-  // the same brand palette/fonts as the rest of the portal (and the
-  // Curio_Team_Activation_Day reference deck this was modeled on).
+  // Builds everything needed to run the session: a facilitator-ready deck,
+  // an upgraded facilitator guide, a participant handout, and one-page
+  // activity cards — bundled into a single .zip download. The deck is a
+  // cover, agenda, then a section-divider slide + activity-instruction
+  // slide for every agenda block, styled off the same brand palette/fonts
+  // as the rest of the portal (and the Curio_Team_Activation_Day reference
+  // deck this was modeled on).
   async function handleGenerateDeck() {
     if (!result) return;
     setDeckBuilding(true);
     try {
-      const PptxGenJS = (await import("pptxgenjs")).default;
+      const [{ default: PptxGenJS }, { jsPDF }, { default: JSZip }] = await Promise.all([
+        import("pptxgenjs"),
+        import("jspdf"),
+        import("jszip"),
+      ]);
       const pres = new PptxGenJS();
       pres.layout = "LAYOUT_WIDE";
 
@@ -657,19 +936,21 @@ export default function SessionArchitect() {
       result.blocks.forEach((b, i) => {
         const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
         const accent = DECK_ENERGY_ACCENT[energyKey];
-        const imgSize = DECK_ENERGY_IMAGE_SIZE[energyKey];
 
         let divider = pres.addSlide();
         divider.background = { color: DECK_NAVY };
-        divider.addText(`BLOCK 0${i + 1} · ${energyKey === "MIX" ? "WHY + HOW" : energyKey} ENERGY`, { x: 0.6, y: 0.7, w: 7, h: 0.4, fontFace: "DM Sans", bold: true, fontSize: 12, color: accent, charSpacing: 2, isTextBox: true });
-        divider.addText(b.name, { x: 0.6, y: 1.3, w: 7.4, h: 1.7, fontFace: "Caveat", bold: true, fontSize: 40, color: "FFFFFF", isTextBox: true, fit: "shrink" });
-        divider.addText(b.purpose, { x: 0.6, y: 3.05, w: 7, h: 1.1, fontFace: "DM Sans", fontSize: 16, color: "CBD5E1", isTextBox: true });
+        // Large soft off-slide circle instead of a character illustration —
+        // a visual anchor without needing artwork, and a motif (a circle)
+        // already established by the agenda slide's numbered bullets.
+        divider.addShape(pres.ShapeType.ellipse, { x: 9.3, y: -3.2, w: 7.5, h: 7.5, fill: { color: accent, transparency: 88 }, line: { type: "none" } });
+        divider.addText(`BLOCK 0${i + 1} · ${energyKey === "MIX" ? "WHY + HOW" : energyKey} ENERGY`, { x: 0.6, y: 0.9, w: 11.5, h: 0.4, fontFace: "DM Sans", bold: true, fontSize: 12, color: accent, charSpacing: 2, isTextBox: true });
+        divider.addText(b.name, { x: 0.6, y: 1.5, w: 11.5, h: 1.7, fontFace: "Caveat", bold: true, fontSize: 46, color: "FFFFFF", isTextBox: true, fit: "shrink" });
+        divider.addText(b.purpose, { x: 0.6, y: 3.35, w: 10.5, h: 1.1, fontFace: "DM Sans", fontSize: 18, color: "CBD5E1", isTextBox: true });
         if (b.opener) {
-          divider.addText(`Suggested opener: ${b.opener.name} (${orientationLabel(b.opener.id)})`, { x: 0.6, y: 4.3, w: 7, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 13, color: accent, isTextBox: true });
+          divider.addText(`Suggested opener: ${b.opener.name} (${orientationLabel(b.opener.id)})`, { x: 0.6, y: 4.7, w: 10.5, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 14, color: accent, isTextBox: true });
         } else {
-          divider.addText("No one in this orientation is in the room. Plan to open this block yourself.", { x: 0.6, y: 4.3, w: 7, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 13, color: "FCA5A5", isTextBox: true });
+          divider.addText("No one in this orientation is in the room. Plan to open this block yourself.", { x: 0.6, y: 4.7, w: 10.5, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 14, color: "FCA5A5", isTextBox: true });
         }
-        divider.addImage({ path: DECK_ENERGY_IMAGE[energyKey], x: 13.33 - 0.6 - imgSize.w, y: (7.5 - imgSize.h) / 2, w: imgSize.w, h: imgSize.h });
 
         const a = b.activity;
         let sheet = pres.addSlide();
@@ -715,10 +996,30 @@ export default function SessionArchitect() {
       close.addText("Run it. Then close it out.", { x: 0.6, y: 2.9, w: 11, h: 1.3, fontFace: "Caveat", bold: true, fontSize: 44, color: "FFFFFF", isTextBox: true, fit: "shrink" });
       close.addText("Every block above has an owner and a purpose on purpose. End the session the way it started: on purpose.", { x: 0.6, y: 4.35, w: 9, h: 0.9, fontFace: "DM Sans", fontSize: 15, color: "CBD5E1", isTextBox: true });
 
-      await pres.writeFile({ fileName: `curio-session-${result.typeSlug}-deck.pptx` });
+      const deckBuffer = await pres.write({ outputType: "arraybuffer" });
+      const facilitatorGuideBuffer = buildFacilitatorGuidePdf(jsPDF, result).output("arraybuffer");
+      const participantHandoutBuffer = buildParticipantHandoutPdf(jsPDF, result).output("arraybuffer");
+      const activityCardsBuffer = buildActivityCardsPdf(jsPDF, result).output("arraybuffer");
+
+      const zip = new JSZip();
+      const slug = `curio-session-${result.typeSlug}`;
+      zip.file(`${slug}-deck.pptx`, deckBuffer);
+      zip.file(`${slug}-facilitator-guide.pdf`, facilitatorGuideBuffer);
+      zip.file(`${slug}-participant-handout.pdf`, participantHandoutBuffer);
+      zip.file(`${slug}-activity-cards.pdf`, activityCardsBuffer);
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${slug}-materials.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert("Couldn't build the session deck. Please try again.");
+      alert("Couldn't build the session materials. Please try again.");
     } finally {
       setDeckBuilding(false);
     }
@@ -770,7 +1071,7 @@ export default function SessionArchitect() {
             {pdfBuilding ? "Building PDF…" : "Download PDF"}
           </button>
           <button className="sa-btn sa-btn-primary" onClick={handleGenerateDeck} disabled={!result || deckBuilding}>
-            {deckBuilding ? "Building deck…" : "Generate Session Materials"}
+            {deckBuilding ? "Building materials…" : "Generate Session Materials"}
           </button>
         </div>
       </div>
