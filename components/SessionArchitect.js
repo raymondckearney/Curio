@@ -273,7 +273,7 @@ const SESSION_TYPE_LABELS = {
 // same product, not a generic export.
 const DECK_NAVY = "0F172A", DECK_EMERALD = "059669", DECK_DEEP_EMERALD = "065F46",
   DECK_SLATE = "64748B", DECK_INK = "1E293B";
-const DECK_ENERGY_ACCENT = { WHY: "6EE7B7", WHAT: "93C5FD", HOW: "FCD34D", MIX: "6EE7B7" };
+const DECK_ENERGY_ACCENT = { WHY: "6EE7B7", WHAT: "93C5FD", HOW: "FCD34D", MIX: "6EE7B7", BREAK: "CBD5E1" };
 // Same brain-fingerprint mark used as the dashboard's profile-page
 // watermark (public/images/brain-fingerprint-watermark.webp), pre-tinted
 // per energy and baked down to ~12% opacity (see the PIL script used to
@@ -301,6 +301,19 @@ function findOpener(roster, orientationIds) {
 
 const BREAKOUT_TARGET_GROUP_SIZE = 4;
 const BREAKOUT_MIN_ROOM = 4;
+
+// Full day is the one duration tier that needs real breaks carved out of
+// the total span, not just proportionally-scaled content blocks — 7 hours
+// of back-to-back activities with no lunch isn't a realistic agenda.
+// Thresholds are fractions of *content* time elapsed (i.e. excluding
+// breaks already inserted), so they land after whichever block happens to
+// cross that mark regardless of how many blocks a given session type has.
+const FULL_DAY_MINUTES = 420;
+const FULL_DAY_BREAKS = [
+  { thresholdPct: 0.25, name: "Morning Break", mins: 15 },
+  { thresholdPct: 0.50, name: "Lunch", mins: 60 },
+  { thresholdPct: 0.75, name: "Afternoon Break", mins: 15 },
+];
 
 // Recommends breakout groups for one agenda block. The goal is a spread of
 // energies in every group (a group that's all WHAT-primaries diverges fast
@@ -340,6 +353,16 @@ function recommendBreakoutGroups(roster, block) {
   const groups = Array.from({ length: numGroups }, () => []);
   dealOrder.forEach((person, idx) => groups[idx % numGroups].push(person));
   return groups;
+}
+
+// One-line explanation of the composition logic above, shown wherever
+// breakout groups are shown (on-screen, both bundled PDFs, the deck) so
+// "why was I put in this group" has an answer without reading the code.
+function breakoutRationale(block) {
+  const openerLabel = block.openers && block.openers.length
+    ? block.openers.map(id => orientationLabel(id)).join(" or ")
+    : null;
+  return `Each group mixes WHY, WHAT, and HOW energy rather than clustering by type, so no group is all-momentum with no one to stress-test it, or all-precision with no one pushing it forward.${openerLabel ? ` Groups are seeded with a ${openerLabel} voice first, since that's who this activity is built to open with.` : ""}`;
 }
 
 // The portal's real team data (/api/portal/team) stores each member's
@@ -399,7 +422,10 @@ const SA_CSS = `
   .sa-bar-WHAT{background:#93C5FD;}
   .sa-bar-HOW{background:#FCD34D;}
   .sa-bar-MIX{background:linear-gradient(#6EE7B7,#FCD34D);}
+  .sa-bar-BREAK{background:#CBD5E1;}
   .sa-ab-content{background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+  .sa-ab-content.sa-ab-break{background:#F8FAFC;padding:10px 16px;}
+  .sa-ab-content.sa-ab-break h4{color:#64748B;font-weight:600;margin:0;}
   .sa-ab-content h4{margin:0 0 4px;font-size:1rem;}
   .sa-ab-content .sa-activity-name{font-size:0.83rem;font-weight:600;color:#065F46;margin:0 0 6px;}
   .sa-ab-content .sa-purpose{color:#64748B;font-size:0.86rem;margin:0 0 8px;}
@@ -430,6 +456,7 @@ const SA_CSS = `
   .sa-as-tips li{margin-bottom:5px;}
   .sa-as-signal{margin-top:16px;padding:10px 14px;background:#FFFBEB;border:1px solid #E9D8A6;border-radius:8px;font-size:0.86rem;}
   .sa-as-signal b{color:#065F46;}
+  .sa-as-groups-rationale{font-size:0.82rem;color:#64748B;margin:0 0 10px;line-height:1.5;font-style:italic;}
   .sa-as-groups{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
   @media (max-width:700px){.sa-as-groups{grid-template-columns:1fr;}}
   .sa-as-group{background:#F0FDF4;border:1px solid #DCFCE7;border-radius:8px;padding:8px 12px;font-size:0.84rem;}
@@ -469,6 +496,7 @@ function ActivitySheet({ block }) {
       {block.breakoutGroups && (
         <>
           <p className="sa-as-h">Suggested breakout groups</p>
+          <p className="sa-as-groups-rationale">{block.breakoutRationale}</p>
           <div className="sa-as-groups">
             {block.breakoutGroups.map((g, i) => (
               <div className="sa-as-group" key={i}>
@@ -494,7 +522,7 @@ function ActivitySheet({ block }) {
 // documents from one generated session without repeating the page-layout
 // boilerplate three times.
 const PDF_INK = [15, 23, 42], PDF_SLATE = [100, 116, 139], PDF_EMERALD = [5, 150, 105], PDF_DEEP_EMERALD = [6, 95, 70];
-const PDF_ENERGY_RGB = { WHY: [110, 231, 183], WHAT: [147, 197, 253], HOW: [252, 211, 77], MIX: [110, 231, 183] };
+const PDF_ENERGY_RGB = { WHY: [110, 231, 183], WHAT: [147, 197, 253], HOW: [252, 211, 77], MIX: [110, 231, 183], BREAK: [203, 213, 225] };
 
 function newPdfDoc(JsPDF, orientation = "portrait") {
   const doc = new JsPDF({ orientation, unit: "pt", format: "letter" });
@@ -532,13 +560,15 @@ function pdfAgendaOverview(doc, margin, maxW, pageH, result, { showActivity = tr
 
   result.blocks.forEach(b => {
     if (y + 50 > pageH - margin) { doc.addPage(); y = margin; }
-    const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
+    const energyKey = b.isBreak ? "BREAK" : (b.energy === "MIX" ? "MIX" : b.energy);
     doc.setFillColor(...PDF_ENERGY_RGB[energyKey]);
     doc.circle(margin + 4, y - 4, 4, "F");
-    doc.setTextColor(...PDF_INK);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.setTextColor(...(b.isBreak ? PDF_SLATE : PDF_INK));
+    doc.setFont("helvetica", b.isBreak ? "italic" : "bold"); doc.setFontSize(11);
     doc.text(`${b.start}–${b.end} min   ${b.name}`, margin + 16, y);
+    doc.setTextColor(...PDF_INK);
     y += 15;
+    if (b.isBreak) { y += 8; return; }
     if (showActivity) {
       doc.setFont("helvetica", "normal"); doc.setFontSize(10);
       doc.setTextColor(...PDF_EMERALD);
@@ -566,6 +596,15 @@ function pdfBreakoutGroups(doc, margin, maxW, pageBreakIfNeeded, y, block) {
   doc.text("SUGGESTED BREAKOUT GROUPS", margin, y);
   doc.setTextColor(...PDF_INK);
   y += 18;
+  if (block.breakoutRationale) {
+    doc.setFont("helvetica", "italic"); doc.setFontSize(9.5);
+    doc.setTextColor(...PDF_SLATE);
+    const rationaleLines = doc.splitTextToSize(block.breakoutRationale, maxW);
+    y = pageBreakIfNeeded(y, rationaleLines.length * 12 + 8);
+    doc.text(rationaleLines, margin, y);
+    doc.setTextColor(...PDF_INK);
+    y += rationaleLines.length * 12 + 10;
+  }
   doc.setFont("helvetica", "normal"); doc.setFontSize(10);
   block.breakoutGroups.forEach((g, i) => {
     const line = `Group ${i + 1}:  ${g.map(p => `${p.name} (${orientationLabel(p.id)})`).join(", ")}`;
@@ -593,7 +632,7 @@ function buildFacilitatorGuidePdf(JsPDF, result) {
   doc.addPage();
   pdfAgendaOverview(doc, margin, maxW, pageH, result);
 
-  result.blocks.forEach(b => {
+  result.blocks.filter(b => !b.isBreak).forEach(b => {
     doc.addPage();
     let y = margin;
     const a = b.activity;
@@ -807,7 +846,7 @@ function buildParticipantHandoutPdf(JsPDF, result) {
   doc.addPage();
   pdfAgendaOverview(doc, margin, maxW, pageH, result, { showActivity: false });
 
-  result.blocks.forEach(b => {
+  result.blocks.filter(b => !b.isBreak).forEach(b => {
     doc.addPage();
     let y = margin;
     const a = b.activity;
@@ -866,7 +905,7 @@ function buildParticipantHandoutPdf(JsPDF, result) {
 function buildActivityCardsPdf(JsPDF, result) {
   const { doc, pageW, pageH, margin, maxW } = newPdfDoc(JsPDF, "landscape");
 
-  result.blocks.forEach((b, i) => {
+  result.blocks.filter(b => !b.isBreak).forEach((b, i) => {
     if (i > 0) doc.addPage();
     const a = b.activity;
     const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
@@ -987,15 +1026,34 @@ export default function SessionArchitect() {
   function handleGenerate() {
     const roster = parseRoster(rosterText);
     const blocksData = TEMPLATES[sessionType];
+    const breakPlan = duration === FULL_DAY_MINUTES ? FULL_DAY_BREAKS : [];
+    const totalBreakMins = breakPlan.reduce((sum, br) => sum + br.mins, 0);
+    const contentDuration = duration - totalBreakMins;
+
     let elapsed = 0;
-    const blocks = blocksData.map(b => {
-      let mins = Math.round((b.pct * duration) / 5) * 5;
+    let contentElapsed = 0;
+    let breakIdx = 0;
+    const blocks = [];
+    blocksData.forEach(b => {
+      let mins = Math.round((b.pct * contentDuration) / 5) * 5;
       if (mins < 5) mins = 5;
       const start = elapsed;
       elapsed += mins;
+      contentElapsed += mins;
       const opener = findOpener(roster, b.openers);
       const breakoutGroups = recommendBreakoutGroups(roster, b);
-      return { ...b, start, end: elapsed, opener, breakoutGroups };
+      blocks.push({
+        ...b, start, end: elapsed, opener, breakoutGroups,
+        breakoutRationale: breakoutGroups ? breakoutRationale(b) : null,
+      });
+
+      while (breakIdx < breakPlan.length && contentElapsed >= breakPlan[breakIdx].thresholdPct * contentDuration) {
+        const br = breakPlan[breakIdx];
+        const brStart = elapsed;
+        elapsed += br.mins;
+        blocks.push({ isBreak: true, name: br.name, start: brStart, end: elapsed });
+        breakIdx++;
+      }
     });
     const present = ORIENTATIONS.filter(o => roster[o.id] && roster[o.id].length);
 
@@ -1031,6 +1089,13 @@ export default function SessionArchitect() {
           y = margin;
         }
       }
+      // pdfBreakoutGroups() (shared with the facilitator/participant PDFs)
+      // expects a pure (y, h) => newY page-break check rather than this
+      // function's closure-mutating one — same rule, different shape.
+      function pageBreakPure(yVal, h) {
+        if (yVal + h > pageH - margin) { doc.addPage(); return margin; }
+        return yVal;
+      }
 
       // Cover / agenda overview page
       doc.setTextColor(15, 23, 42);
@@ -1048,9 +1113,12 @@ export default function SessionArchitect() {
 
       result.blocks.forEach(b => {
         pageBreakIfNeeded(50);
-        doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+        doc.setFont("helvetica", b.isBreak ? "italic" : "bold"); doc.setFontSize(11);
+        doc.setTextColor(b.isBreak ? 100 : 15, b.isBreak ? 116 : 23, b.isBreak ? 139 : 42);
         doc.text(`${b.start}–${b.end} min   ${b.name}`, margin, y);
+        doc.setTextColor(15, 23, 42);
         y += 15;
+        if (b.isBreak) { y += 8; return; }
         doc.setFont("helvetica", "normal"); doc.setFontSize(10);
         doc.setTextColor(5, 150, 105);
         doc.text(`Activity: ${b.activity.name}`, margin + 10, y);
@@ -1062,7 +1130,7 @@ export default function SessionArchitect() {
       });
 
       // One page per activity
-      result.blocks.forEach(b => {
+      result.blocks.filter(b => !b.isBreak).forEach(b => {
         doc.addPage();
         y = margin;
         const a = b.activity;
@@ -1095,6 +1163,8 @@ export default function SessionArchitect() {
         doc.setFont("helvetica", "normal"); doc.setFontSize(10);
         doc.text(metaLines, margin + 10, y);
         y += metaH + 14;
+
+        y = pdfBreakoutGroups(doc, margin, maxW, pageBreakPure, y, b);
 
         doc.setFont("helvetica", "bold"); doc.setFontSize(11);
         doc.setTextColor(6, 95, 70);
@@ -1178,21 +1248,32 @@ export default function SessionArchitect() {
       agenda.addText("Agenda", { x: 0.6, y: 0.4, w: 8, h: 0.7, fontFace: "Caveat", bold: true, fontSize: 34, color: DECK_DEEP_EMERALD, isTextBox: true });
       let ay = 1.35;
       result.blocks.forEach((b, i) => {
-        const accent = DECK_ENERGY_ACCENT[b.energy] || DECK_ENERGY_ACCENT.MIX;
+        const accent = b.isBreak ? DECK_ENERGY_ACCENT.BREAK : (DECK_ENERGY_ACCENT[b.energy] || DECK_ENERGY_ACCENT.MIX);
         agenda.addShape(pres.ShapeType.ellipse, { x: 0.6, y: ay, w: 0.42, h: 0.42, fill: { color: accent }, line: { type: "none" } });
         agenda.addText(String(i + 1), { x: 0.6, y: ay, w: 0.42, h: 0.42, align: "center", valign: "middle", fontFace: "DM Sans", bold: true, fontSize: 14, color: DECK_INK, isTextBox: true });
         agenda.addText(`${b.start}–${b.end} min`, { x: 1.25, y: ay, w: 1.35, h: 0.42, valign: "middle", fontFace: "DM Sans", fontSize: 11, color: DECK_SLATE, isTextBox: true });
         agenda.addText(
-          [
-            { text: b.name, options: { bold: true, fontSize: 14, color: DECK_INK, breakLine: true } },
-            { text: `Activity: ${b.activity.name}`, options: { fontSize: 11, color: DECK_EMERALD } },
-          ],
+          b.isBreak
+            ? [{ text: b.name, options: { bold: true, italic: true, fontSize: 14, color: DECK_SLATE } }]
+            : [
+                { text: b.name, options: { bold: true, fontSize: 14, color: DECK_INK, breakLine: true } },
+                { text: `Activity: ${b.activity.name}`, options: { fontSize: 11, color: DECK_EMERALD } },
+              ],
           { x: 2.75, y: ay - 0.06, w: 9.9, h: 0.55, valign: "top", fontFace: "DM Sans", isTextBox: true }
         );
         ay += 0.78;
       });
 
-      result.blocks.forEach((b, i) => {
+      let contentBlockNum = 0;
+      result.blocks.forEach((b) => {
+        if (b.isBreak) {
+          let breakSlide = pres.addSlide();
+          breakSlide.background = { color: DECK_NAVY };
+          breakSlide.addText(`${b.start}–${b.end} min`, { x: 0.6, y: 2.9, w: 11.5, h: 0.5, fontFace: "DM Sans", bold: true, fontSize: 14, color: DECK_ENERGY_ACCENT.BREAK, charSpacing: 2, isTextBox: true });
+          breakSlide.addText(b.name, { x: 0.6, y: 3.35, w: 11.5, h: 1.5, fontFace: "Caveat", bold: true, fontSize: 46, color: "FFFFFF", isTextBox: true, fit: "shrink" });
+          return;
+        }
+        contentBlockNum += 1;
         const energyKey = b.energy === "MIX" ? "MIX" : b.energy;
         const accent = DECK_ENERGY_ACCENT[energyKey];
 
@@ -1201,7 +1282,7 @@ export default function SessionArchitect() {
         // Same brain-fingerprint watermark as the dashboard's profile page,
         // pre-tinted per energy, bleeding off the top-right corner.
         divider.addImage({ path: DECK_ENERGY_WATERMARK[energyKey], x: 9.3, y: -3.2, w: 7.5, h: 7.5 });
-        divider.addText(`BLOCK 0${i + 1} · ${energyKey === "MIX" ? "WHY + HOW" : energyKey} ENERGY`, { x: 0.6, y: 0.9, w: 11.5, h: 0.4, fontFace: "DM Sans", bold: true, fontSize: 12, color: accent, charSpacing: 2, isTextBox: true });
+        divider.addText(`BLOCK 0${contentBlockNum} · ${energyKey === "MIX" ? "WHY + HOW" : energyKey} ENERGY`, { x: 0.6, y: 0.9, w: 11.5, h: 0.4, fontFace: "DM Sans", bold: true, fontSize: 12, color: accent, charSpacing: 2, isTextBox: true });
         divider.addText(b.name, { x: 0.6, y: 1.5, w: 11.5, h: 1.7, fontFace: "Caveat", bold: true, fontSize: 46, color: "FFFFFF", isTextBox: true, fit: "shrink" });
         divider.addText(b.purpose, { x: 0.6, y: 3.35, w: 10.5, h: 1.1, fontFace: "DM Sans", fontSize: 18, color: "CBD5E1", isTextBox: true });
         if (b.opener) {
@@ -1210,10 +1291,11 @@ export default function SessionArchitect() {
           divider.addText("No one in this orientation is in the room. Plan to open this block yourself.", { x: 0.6, y: 4.7, w: 10.5, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 14, color: "FCA5A5", isTextBox: true });
         }
         if (b.breakoutGroups) {
-          divider.addText("BREAKOUT GROUPS", { x: 0.6, y: 5.5, w: 10.5, h: 0.3, fontFace: "DM Sans", bold: true, fontSize: 11, color: accent, charSpacing: 2, isTextBox: true });
+          divider.addText("BREAKOUT GROUPS", { x: 0.6, y: 5.45, w: 10.5, h: 0.3, fontFace: "DM Sans", bold: true, fontSize: 11, color: accent, charSpacing: 2, isTextBox: true });
+          divider.addText(b.breakoutRationale, { x: 0.6, y: 5.75, w: 11.5, h: 0.5, fontFace: "DM Sans", italic: true, fontSize: 10.5, color: "94A3B8", isTextBox: true, fit: "shrink" });
           divider.addText(
             b.breakoutGroups.map((g, gi) => `Group ${gi + 1}: ${g.map(p => p.name).join(", ")}`).join("    ·    "),
-            { x: 0.6, y: 5.85, w: 11.5, h: 1.2, fontFace: "DM Sans", fontSize: 13, color: "E2E8F0", isTextBox: true, fit: "shrink" }
+            { x: 0.6, y: 6.3, w: 11.5, h: 0.9, fontFace: "DM Sans", fontSize: 13, color: "E2E8F0", isTextBox: true, fit: "shrink" }
           );
         }
 
@@ -1323,10 +1405,10 @@ export default function SessionArchitect() {
           <div>
             <label className="sa-label" htmlFor="sa-duration">Total time</label>
             <select id="sa-duration" className="sa-select" value={duration} onChange={e => setDuration(parseInt(e.target.value, 10))}>
-              <option value={30}>30 minutes</option>
               <option value={60}>60 minutes</option>
               <option value={90}>90 minutes</option>
               <option value={180}>Half day (~3 hours)</option>
+              <option value={FULL_DAY_MINUTES}>Full day (~7 hours, with breaks)</option>
             </select>
           </div>
         </div>
@@ -1349,17 +1431,23 @@ export default function SessionArchitect() {
             {result.blocks.map((b, i) => (
               <div className="sa-agenda-block" key={i}>
                 <div className="sa-ab-time">{b.start}&ndash;{b.end} min</div>
-                <div className={`sa-ab-bar sa-bar-${b.energy}`} />
-                <div className="sa-ab-content">
-                  <h4>{b.name}</h4>
-                  <p className="sa-activity-name">Activity: {b.activity.name}</p>
-                  <p className="sa-purpose">{b.purpose}</p>
-                  {b.opener ? (
-                    <span className="sa-opener sa-opener-set">Suggested opener: {b.opener.name} ({orientationLabel(b.opener.id)})</span>
-                  ) : (
-                    <span className="sa-opener sa-opener-missing">No one in this orientation is in the room. Plan to open this block yourself, deliberately.</span>
-                  )}
-                </div>
+                <div className={`sa-ab-bar ${b.isBreak ? "sa-bar-BREAK" : `sa-bar-${b.energy}`}`} />
+                {b.isBreak ? (
+                  <div className="sa-ab-content sa-ab-break">
+                    <h4>{b.name}</h4>
+                  </div>
+                ) : (
+                  <div className="sa-ab-content">
+                    <h4>{b.name}</h4>
+                    <p className="sa-activity-name">Activity: {b.activity.name}</p>
+                    <p className="sa-purpose">{b.purpose}</p>
+                    {b.opener ? (
+                      <span className="sa-opener sa-opener-set">Suggested opener: {b.opener.name} ({orientationLabel(b.opener.id)})</span>
+                    ) : (
+                      <span className="sa-opener sa-opener-missing">No one in this orientation is in the room. Plan to open this block yourself, deliberately.</span>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1384,7 +1472,7 @@ export default function SessionArchitect() {
           <h3 className="sa-section-title">4. Activity sheets</h3>
           <p className="sa-section-sub">One page per block, included in the PDF download for whoever&apos;s running each part of the session.</p>
           <div>
-            {result.blocks.map((b, i) => <ActivitySheet block={b} key={i} />)}
+            {result.blocks.filter(b => !b.isBreak).map((b, i) => <ActivitySheet block={b} key={i} />)}
           </div>
         </div>
       )}

@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { client } from '../../sanity/lib/client'
 import { postsQuery } from '../../sanity/lib/queries'
+import { urlFor } from '../../sanity/lib/image'
+import { insightThumbTheme } from '../../lib/insightThumb'
 import Nav from '../../components/Nav'
 import Footer from '../../components/Footer'
 
@@ -53,8 +55,20 @@ export default function InsightsPage({ posts }) {
               <p className="insights-empty">No posts yet — check back soon.</p>
             ) : (
               <div className="insights-grid">
-                {posts.filter(post => post.slug?.current).map((post) => (
+                {posts.filter(post => post.slug?.current).map((post, i) => {
+                  const thumbUrl = post.mainImage
+                    ? urlFor(post.mainImage).width(600).height(340).fit('crop').url()
+                    : null
+                  const theme = insightThumbTheme(i)
+                  return (
                   <Link key={post.slug.current} href={embed ? `/insights/${post.slug.current}?embed=1` : `/insights/${post.slug.current}`} className="insight-card">
+                    {thumbUrl ? (
+                      <div className="insight-thumb" style={{ backgroundImage: `url(${thumbUrl})` }} />
+                    ) : (
+                      <div className="insight-thumb insight-thumb-fallback" style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}>
+                        <img src={theme.mark} alt="" className="insight-thumb-mark" />
+                      </div>
+                    )}
                     <div className="insight-card-inner">
                       {post.categories && post.categories.length > 0 && (
                         <span className="insight-category">{post.categories[0].title}</span>
@@ -71,7 +85,8 @@ export default function InsightsPage({ posts }) {
                       </div>
                     </div>
                   </Link>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
