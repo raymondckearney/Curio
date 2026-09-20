@@ -1280,8 +1280,11 @@ export default function SessionArchitect() {
         let divider = pres.addSlide();
         divider.background = { color: DECK_NAVY };
         // Same brain-fingerprint watermark as the dashboard's profile page,
-        // pre-tinted per energy, bleeding off the top-right corner.
-        divider.addImage({ path: DECK_ENERGY_WATERMARK[energyKey], x: 9.3, y: -3.2, w: 7.5, h: 7.5 });
+        // pre-tinted per energy, bleeding off the top-right corner — same
+        // ~35% bleed / 65% visible ratio as the dashboard hero's own
+        // watermark (see heroWatermark in pages/portal/dashboard.js),
+        // rather than the ~45-50% bleed this originally shipped with.
+        divider.addImage({ path: DECK_ENERGY_WATERMARK[energyKey], x: 8.4, y: -2.6, w: 7.5, h: 7.5 });
         divider.addText(`BLOCK 0${contentBlockNum} · ${energyKey === "MIX" ? "WHY + HOW" : energyKey} ENERGY`, { x: 0.6, y: 0.9, w: 11.5, h: 0.4, fontFace: "DM Sans", bold: true, fontSize: 12, color: accent, charSpacing: 2, isTextBox: true });
         divider.addText(b.name, { x: 0.6, y: 1.5, w: 11.5, h: 1.7, fontFace: "Caveat", bold: true, fontSize: 46, color: "FFFFFF", isTextBox: true, fit: "shrink" });
         divider.addText(b.purpose, { x: 0.6, y: 3.35, w: 10.5, h: 1.1, fontFace: "DM Sans", fontSize: 18, color: "CBD5E1", isTextBox: true });
