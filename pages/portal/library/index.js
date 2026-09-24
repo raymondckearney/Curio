@@ -34,6 +34,7 @@ export default function LibraryPage() {
   const [me, setMe] = useState(null);
   const [licenses, setLicenses] = useState([]);
   const [isIndividual, setIsIndividual] = useState(false);
+  const [isTeamAccount, setIsTeamAccount] = useState(false);
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,7 @@ export default function LibraryPage() {
         setMe(meData);
         setLicenses(dashData?.licenses || []);
         setIsIndividual(!!dashData?.myAssessment);
+        setIsTeamAccount(!!dashData?.isTeamAccount);
         if (!libRes.ok) { setError(libRes.d.error || 'The Client Library is not available on your account.'); return; }
         setData(libRes.d);
         setFilter(libRes.d.defaultCollection);
@@ -96,7 +98,7 @@ export default function LibraryPage() {
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <div style={s.layout}>
-        <PortalSidebar me={me} onLogout={logout} active="library" licenses={licenses} isIndividual={isIndividual} />
+        <PortalSidebar me={me} onLogout={logout} active="library" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
         <main style={s.main} className="portal-main">
           <div style={s.hero}>
             <div style={s.pill}>Resources</div>

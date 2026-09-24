@@ -338,6 +338,7 @@ export default function PortalFitPage() {
   const [licensed, setLicensed] = useState(null);
   const [licenses, setLicenses] = useState([]);
   const [isIndividual, setIsIndividual] = useState(false);
+  const [isTeamAccount, setIsTeamAccount] = useState(false);
   const [myProfile, setMyProfile] = useState(null);
 
   useEffect(() => {
@@ -352,6 +353,7 @@ export default function PortalFitPage() {
             setLicensed(has);
             setLicenses(dash?.licenses || []);
             setIsIndividual(!!dash?.myAssessment);
+            setIsTeamAccount(!!dash?.isTeamAccount);
             if (dash?.myAssessment?.type) {
               setMyProfile(dash.myAssessment.type.toUpperCase().replace(/\s/g, '-'));
             }
@@ -374,7 +376,7 @@ export default function PortalFitPage() {
         <meta name="robots" content="noindex, nofollow" />
         <style>{fitCss}</style>
       </Head>
-      <PortalSidebar me={me} onLogout={logout} active="fit" licenses={licenses} isIndividual={isIndividual} />
+      <PortalSidebar me={me} onLogout={logout} active="fit" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
       <main className="portal-main" style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
         {!licensed ? (
           <div style={{ maxWidth: 820, margin: '80px auto', padding: '0 24px' }}>

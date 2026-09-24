@@ -14,6 +14,7 @@ export async function getServerSideProps({ req }) {
       me: result.me,
       licenses: result.licenses,
       isIndividual: result.isIndividual,
+      isTeamAccount: result.isTeamAccount,
     },
   };
 }

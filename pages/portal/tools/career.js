@@ -531,7 +531,7 @@ export default function CareerGuidance() {
         <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' }}>
-        <PortalNav me={me} onLogout={logout} active="career" licenses={dash?.licenses} isIndividual={isIndividual} />
+        <PortalNav me={me} onLogout={logout} active="career" licenses={dash?.licenses} isIndividual={isIndividual} isTeamAccount={!!dash?.isTeamAccount} />
         <main className="portal-main" style={{ marginLeft: 220, flex: 1, padding: '48px 48px 0', maxWidth: 'calc(100vw - 220px)' }}>
 
           <div style={{ marginBottom: 36 }}>

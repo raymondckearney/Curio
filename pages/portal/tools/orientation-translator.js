@@ -29,11 +29,12 @@ export async function getServerSideProps({ req }) {
       me: result.me,
       licenses: result.licenses,
       isIndividual: result.isIndividual,
+      isTeamAccount: result.isTeamAccount,
     },
   };
 }
 
-export default function LanguageToolsPage({ initialProfile, me, licenses, isIndividual }) {
+export default function LanguageToolsPage({ initialProfile, me, licenses, isIndividual, isTeamAccount }) {
   const router = useRouter();
   // People translate to others, not to themselves: their own profile is a
   // valid choice, but listed last rather than defaulted or up front.
@@ -176,7 +177,7 @@ export default function LanguageToolsPage({ initialProfile, me, licenses, isIndi
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
-      <PortalSidebar me={me} onLogout={logout} active="translator" licenses={licenses} isIndividual={isIndividual} />
+      <PortalSidebar me={me} onLogout={logout} active="translator" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
 
       <main className="portal-main" style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
 

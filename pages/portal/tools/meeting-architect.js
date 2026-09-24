@@ -15,13 +15,14 @@ export async function getServerSideProps({ req }) {
       me: result.me,
       licenses: result.licenses,
       isIndividual: result.isIndividual,
+      isTeamAccount: result.isTeamAccount,
       profile: result.profile,
       templates,
     },
   };
 }
 
-export default function MeetingArchitectPage({ me, licenses, isIndividual, profile, templates }) {
+export default function MeetingArchitectPage({ me, licenses, isIndividual, isTeamAccount, profile, templates }) {
   const router = useRouter();
 
   async function logout() {
@@ -35,7 +36,7 @@ export default function MeetingArchitectPage({ me, licenses, isIndividual, profi
         <title>Meeting Architect | Curio</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <PortalSidebar me={me} onLogout={logout} active="meeting-architect" licenses={licenses} isIndividual={isIndividual} />
+      <PortalSidebar me={me} onLogout={logout} active="meeting-architect" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
       <style>{`@media (max-width: 768px) { .ma-main { padding: 72px 16px 40px !important; } }`}</style>
       <main className="portal-main ma-main" style={{ marginLeft: 220, flex: 1, minWidth: 0, padding: '48px 48px 60px' }}>
         <MeetingArchitect templates={templates} profile={profile} />

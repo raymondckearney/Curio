@@ -13,11 +13,12 @@ export async function getServerSideProps({ req }) {
       me: result.me,
       licenses: result.licenses,
       isIndividual: result.isIndividual,
+      isTeamAccount: result.isTeamAccount,
     },
   };
 }
 
-export default function SessionArchitectPage({ me, licenses, isIndividual }) {
+export default function SessionArchitectPage({ me, licenses, isIndividual, isTeamAccount }) {
   const router = useRouter();
 
   async function logout() {
@@ -31,7 +32,7 @@ export default function SessionArchitectPage({ me, licenses, isIndividual }) {
         <title>Session Architect — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <PortalSidebar me={me} onLogout={logout} active="session-architect" licenses={licenses} isIndividual={isIndividual} />
+      <PortalSidebar me={me} onLogout={logout} active="session-architect" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
       <main className="portal-main" style={{ marginLeft: 220, flex: 1, padding: '48px 48px 60px', maxWidth: 'calc(100vw - 220px)' }}>
         <SessionArchitect />
       </main>

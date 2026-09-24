@@ -225,6 +225,7 @@ export default function PortalJDPage() {
   const [licensed, setLicensed] = useState(null);
   const [licenses, setLicenses] = useState([]);
   const [isIndividual, setIsIndividual] = useState(false);
+  const [isTeamAccount, setIsTeamAccount] = useState(false);
 
   useEffect(() => {
     fetch('/api/portal/me')
@@ -238,6 +239,7 @@ export default function PortalJDPage() {
             setLicensed(has);
             setLicenses(dash?.licenses || []);
             setIsIndividual(!!dash?.myAssessment);
+            setIsTeamAccount(!!dash?.isTeamAccount);
           });
       })
       .catch(() => router.replace('/portal/login'));
@@ -257,7 +259,7 @@ export default function PortalJDPage() {
         <meta name="robots" content="noindex, nofollow" />
         <style>{jdCss}</style>
       </Head>
-      <PortalSidebar me={me} onLogout={logout} active="jd" licenses={licenses} isIndividual={isIndividual} />
+      <PortalSidebar me={me} onLogout={logout} active="jd" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
       <main className="portal-main" style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
         {!licensed ? (
           <div style={{ maxWidth: 860, margin: '80px auto', padding: '0 24px' }}>

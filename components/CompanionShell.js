@@ -14,7 +14,7 @@ const INK = '#1E293B';
 const RULE = '#E2E8F0';
 const ALL_PROFILES = Object.keys(TERTIARY_BY_PROFILE);
 
-export default function CompanionShell({ companionKey, initialProfile, initialTertiary, isAdmin, hasProfile, me, licenses, isIndividual }) {
+export default function CompanionShell({ companionKey, initialProfile, initialTertiary, isAdmin, hasProfile, me, licenses, isIndividual, isTeamAccount }) {
   const router = useRouter();
   const companion = COMPANIONS_UI[companionKey];
   const modeKeys = Object.keys(companion.modes);
@@ -114,7 +114,7 @@ export default function CompanionShell({ companionKey, initialProfile, initialTe
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
-      <PortalSidebar me={me} onLogout={logout} active={companionKey} licenses={licenses} isIndividual={isIndividual} />
+      <PortalSidebar me={me} onLogout={logout} active={companionKey} licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
 
       <main className="portal-main" style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
 
