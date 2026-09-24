@@ -17,7 +17,7 @@ import profiles from '../lib/profiles';
 // (the "bring them in after the vision is set" line). If either canonical
 // file changes, this updates automatically instead of needing a matching
 // manual edit here.
-const ORIENTATIONS = [
+export const ORIENTATIONS = [
   {id:"WHYWHAT", label:"WHY-WHAT", tag: profiles['why-what'].tagline, energy:"WHY", badge:"b-WHYWHAT",
     energizedBy:"Framing the problem, painting the future state, questioning whether this is even the right problem to solve.",
     bestUsedFor:"Opening the session. Kicking off ideation with a sharp prompt. Naming the vision the ideas should serve.",
@@ -372,7 +372,7 @@ function breakoutRationale(block) {
 // This is the only adapter needed to auto-fill the roster from the
 // account's actual team, instead of asking the user to retype names the
 // portal already has.
-function rosterTextFromParticipants(participants) {
+export function rosterTextFromParticipants(participants) {
   const grouped = {};
   ORIENTATIONS.forEach(o => { grouped[o.id] = []; });
   (participants || []).forEach(p => {
@@ -384,7 +384,7 @@ function rosterTextFromParticipants(participants) {
   return text;
 }
 
-function parseRoster(rosterText) {
+export function parseRoster(rosterText) {
   const roster = {};
   ORIENTATIONS.forEach(o => {
     const val = (rosterText[o.id] || '').trim();
@@ -393,7 +393,7 @@ function parseRoster(rosterText) {
   return roster;
 }
 
-const SA_CSS = `
+export const SA_CSS = `
   .sa-root{font-family:"DM Sans",-apple-system,sans-serif;color:#1E293B;}
   .sa-hero{background:#0F172A;color:#fff;padding:28px 24px;border-radius:8px;margin-bottom:28px;}
   .sa-hero p{margin:8px 0 0;color:#A7F3D0;font-size:0.92rem;max-width:640px;line-height:1.5;}
@@ -464,7 +464,7 @@ const SA_CSS = `
   .sa-empty-note{color:#64748B;font-size:0.88rem;}
 `;
 
-function RosterRow({ o, value, onChange }) {
+export function RosterRow({ o, value, onChange }) {
   const inputId = `sa-roster-${o.id}`;
   return (
     <div className="sa-roster-row">
@@ -521,8 +521,8 @@ function ActivitySheet({ block }) {
 // factored out so the bundle below can build three differently-scoped
 // documents from one generated session without repeating the page-layout
 // boilerplate three times.
-const PDF_INK = [15, 23, 42], PDF_SLATE = [100, 116, 139], PDF_EMERALD = [5, 150, 105], PDF_DEEP_EMERALD = [6, 95, 70];
-const PDF_ENERGY_RGB = { WHY: [110, 231, 183], WHAT: [147, 197, 253], HOW: [252, 211, 77], MIX: [110, 231, 183], BREAK: [203, 213, 225] };
+export const PDF_INK = [15, 23, 42], PDF_SLATE = [100, 116, 139], PDF_EMERALD = [5, 150, 105], PDF_DEEP_EMERALD = [6, 95, 70];
+export const PDF_ENERGY_RGB = { WHY: [110, 231, 183], WHAT: [147, 197, 253], HOW: [252, 211, 77], MIX: [110, 231, 183], BREAK: [203, 213, 225] };
 
 function newPdfDoc(JsPDF, orientation = "portrait") {
   const doc = new JsPDF({ orientation, unit: "pt", format: "letter" });
