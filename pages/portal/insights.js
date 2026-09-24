@@ -27,6 +27,10 @@ export default function PortalInsights() {
   if (loading) return <div style={s.loading}>Loading…</div>;
   if (!me) return null;
 
+  // ?article=<slug> (used by the Curio Assistant) opens one article directly.
+  const article = typeof router.query.article === 'string' && /^[a-z0-9-]+$/i.test(router.query.article) ? router.query.article : null;
+  const articleSrc = article ? `/insights/${article}?embed=1` : '/insights?embed=1';
+
   return (
     <>
       <Head>
@@ -36,7 +40,7 @@ export default function PortalInsights() {
       <div style={s.page}>
         <PortalNav me={me} onLogout={logout} active="insights" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={!!dash?.isTeamAccount} />
         <main style={s.main} className="portal-main">
-          <iframe src="/insights?embed=1" title="Recent Articles" style={s.frame} />
+          <iframe src={articleSrc} title="Recent Articles" style={s.frame} />
         </main>
       </div>
     </>

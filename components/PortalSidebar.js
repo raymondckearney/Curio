@@ -1,26 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-const NAV_ITEMS = [
-  { key: 'dashboard',        href: '/portal/dashboard',        label: 'My Profile',           alwaysShow: true },
-  { key: 'ai-delegation-guide', href: '/portal/tools/ai-delegation-guide', label: 'AI & Delegation Guide', requiresProfile: true },
-  { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
-  { key: 'session-architect', href: '/portal/tools/session-architect', label: 'Session Architect', license: 'session_architect' },
-  { key: 'meeting-architect', href: '/portal/tools/meeting-architect', label: 'Meeting Architect', license: 'meeting_architect' },
-  { key: 'dynamics',         href: '/portal/team-dynamics',    label: 'Dynamics',             license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
-  { key: 'onboarding-resources', href: '/portal/onboarding-resources', label: 'Onboarding Resources', license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
-  { key: 'tokens',           href: '/portal/tokens',           label: 'Send Assessment',      license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
-  { key: 'analytics',        href: '/portal/analytics',        label: 'Analytics',            license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
-  { key: 'fit',              href: '/portal/tools/fit',        label: 'Role Analyzer',        license: 'role_analyzer' },
-  { key: 'career',           href: '/portal/tools/career',     label: 'Career Guidance Tool', license: 'career_guidance' },
-  { key: 'jd',               href: '/portal/tools/jd',        label: 'Job Description Analyzer', license: 'jd_analyzer' },
-  { key: 'precision',        href: '/portal/tools/precision-companion', label: 'Precision Companion', license: 'precision_companion' },
-  { key: 'purpose',          href: '/portal/tools/purpose-companion',   label: 'Purpose Companion',   license: 'purpose_companion' },
-  { key: 'progress',         href: '/portal/tools/progress-companion',  label: 'Progress Companion',  license: 'progress_companion' },
-  { key: 'translator',       href: '/portal/tools/orientation-translator', label: 'Orientation Translator', license: 'orientation_translator' },
-  { key: 'library',          href: '/portal/library',          label: 'Resources',            alwaysShow: true },
-  { key: 'insights',         href: '/portal/insights',         label: 'Recent Articles',      alwaysShow: true },
-];
+import { NAV_ITEMS, navLockReason, assistantEnabled } from '../lib/portalNav';
+import CurioAssistant from './CurioAssistant';
 
 const TEAM_CHILD_KEYS = NAV_ITEMS.filter(i => i.groupKey === 'team').map(i => i.key);
 
@@ -63,8 +44,6 @@ const MOBILE_CSS = `
 
 export default function PortalSidebar({ me, onLogout, active, licenses = [], isIndividual = false, isTeamAccount = false }) {
   const licenseTypes = new Set(licenses.map(l => l.type));
-  const isOwner = me?.user?.role === 'owner';
-  const isManager = me?.user?.role === 'manager';
   const [teamOpen, setTeamOpen] = useState(active === 'team' || TEAM_CHILD_KEYS.includes(active));
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -88,18 +67,8 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
     return () => { if (typeof document !== 'undefined') document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  const visibleItems = NAV_ITEMS.filter(item => {
-    if (item.enterpriseOnly && !isTeamAccount) return false;
-    if (item.ownerOnly && !isOwner && !isManager) return false;
-    if (item.alwaysShow) return true;
-    // Tier-agnostic (both basic and premium can see it once they have a
-    // completed assessment) — gated on having a profile at all, not on any
-    // license row or account tier. Terminal check: unlike the license-gated
-    // items below, this one has no `license` field to fall through to.
-    if (item.requiresProfile) return isIndividual;
-    if (item.licenseAny) return item.licenseAny.some(t => licenseTypes.has(t));
-    return licenseTypes.has(item.license);
-  });
+  const navCtx = { licenseTypes, isTeamAccount, role: me?.user?.role, hasProfile: isIndividual };
+  const visibleItems = NAV_ITEMS.filter(item => navLockReason(item, navCtx) === null);
 
   const visibleKeys = new Set(visibleItems.map(i => i.key));
   const teamVisible = visibleKeys.has('team');
@@ -178,6 +147,7 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
           <button style={sb.signOut} onClick={onLogout}>Sign out</button>
         </div>
       </div>
+      {me?.user && assistantEnabled(licenseTypes, isTeamAccount) && <CurioAssistant userId={me.user.id} />}
     </>
   );
 }

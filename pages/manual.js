@@ -70,6 +70,7 @@ export default function Manual() {
             <a href="#portal-tokens" className="nav-link">Send Assessment</a>
             <a href="#portal-analytics" className="nav-link">Analytics</a>
             <a href="#portal-meeting-architect" className="nav-link">Meeting Architect</a>
+            <a href="#portal-assistant" className="nav-link">Curio Assistant</a>
             <a href="#portal-tools" className="nav-link">AI Tools</a>
             <a href="#portal-companions" className="nav-link">AI Companions</a>
             <a href="#portal-translator" className="nav-link">MindPrint Language Tools</a>
@@ -199,7 +200,7 @@ export default function Manual() {
               <span className="badge badge-admin">Admin</span>
             </div>
             <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, last login, and an Expiry column showing the soonest upcoming license expiration date (shown in red if already past due, "No expiry" if none set). Filterable by type, tier, and name/email search.</Card>
-            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, Session Architect, Meeting Architect, the Team account flag that turns on My Team, extra Resources collections beyond the free default) at creation time.</Card>
+            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, Session Architect, Meeting Architect, the Team account flag that turns on My Team, the Curio Assistant, extra Resources collections beyond the free default) at creation time.</Card>
             <Card title="Edit Account">
               Click <strong>Edit</strong> on any account to expand a panel with these sections:
               <ul>
@@ -404,6 +405,27 @@ export default function Manual() {
             <Card title="Access">Gated on the <code>meeting_architect</code> license, the same per-account license mechanism as Session Architect (listed in <code>lib/licenseTypes.js</code>). Grant it either by adding it to an account directly (admin Accounts → Edit Account → Tier &amp; Licenses) or by ticking it on a token in Generate Tokens, which applies it when the recipient completes their assessment. Because licenses are account-wide, a token redeemed onto an existing team account gives Meeting Architect to everyone on that account, not just the recipient. Without the license, the sidebar item is hidden entirely (not shown locked), and direct navigation to the URL redirects to the dashboard server-side. Admin sessions bypass the check, same as every other licensed tool.</Card>
             <Card title="Sidebar placement">Directly under Session Architect.</Card>
             <Card title="Report history">Successful generations are saved to the <code>meeting_architect_reports</code> table (<code>supabase/migrations/0011_meeting_architect_reports.sql</code>, run by hand like the other migrations). Unlike <code>career_guidance_reports</code>, each row records who generated it (<code>account_id</code>, <code>user_id</code>, <code>user_email</code>), plus the user's own profile at generation time, or null if they hadn't completed an assessment. Failed or malformed generations are never saved; a failed database write is logged and doesn't block the user's result.</Card>
+          </section>
+
+          {/* ─── Curio Assistant ─── */}
+          <section className="section" id="portal-assistant">
+            <div className="section-header">
+              <h2 className="section-title">Curio Assistant</h2>
+              <span className="section-path">pop-up on every portal page</span>
+            </div>
+            <div className="badges">
+              <span className="badge badge-owner">Owner</span>
+              <span className="badge badge-member">Member</span>
+            </div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>An "Ask Curio" button at the bottom right of every portal page. It opens a panel ("How can Curio help you today?") where a user types what they're working on or a question about MindPrint&trade;, and gets a short answer plus up to three recommended tools or resources they can open directly, or request access to.</p>
+            <Card title="Who gets it">Needs the <code>curio_assistant</code> license <strong>and</strong> a team account (<code>lib/teamAccount.js</code>: more than one token, or the <code>team_account</code> license). Both are checked by the server on every request, not just by hiding the button. The button is rendered by <code>components/PortalSidebar.js</code> itself, so it appears on every page that has the sidebar with no per-page wiring.</Card>
+            <Card title="What it can recommend">Everything in <code>lib/assistantCatalog.js</code>: every sidebar tool and page (with a plain-language description in <code>TOOL_DESCRIPTIONS</code>; keep these accurate when a tool changes, they drive matching), all 43 Resources library tools, the six Communication Field Guides, and every Insights article from Sanity (cached 10 minutes; opens in the portal via <code>/portal/insights?article=&lt;slug&gt;</code>).</Card>
+            <Card title="Access decided by code, not the AI">For each item the server works out whether this user can open it, using the same rules the rest of the portal uses: sidebar items through the shared <code>lib/portalNav.js</code> (the sidebar itself uses it too), library tools and field guides through <code>lib/libraryAccess.js</code>. A locked item comes back with no link, only a reason: not licensed, needs a team account, owner/manager only, or needs a completed assessment (that last one links to My Profile instead of offering a request).</Card>
+            <Card title="Grounded answers">Claude Haiku 4.5 (<code>claude-haiku-4-5</code>, raw <code>fetch</code>), with the full MindPrint&trade; Source of Truth as a cached system block and the user's catalog (with availability) and profile in a second block. It may only state what the Source of Truth or a catalog description supports, and says so when they don't cover a question. JSON structured output restricts recommendations to real catalog ids, and the server re-checks them anyway, drops duplicates, caps at three, and removes em dashes. Up to three earlier exchanges are sent for follow-up questions. The conversation is kept in the browser tab (<code>sessionStorage</code>, per user) so it survives moving between pages.</Card>
+            <Card title="Limits and logging">30 questions per user per day (resets at midnight UTC). Every question, answer, and set of recommendations is logged to <code>assistant_logs</code>, which is also the daily counter.</Card>
+            <Card title="Request access">"Request access" on a locked card calls <code>/api/portal/assistant/request-access</code>, which re-checks the item really is locked, skips duplicates (one pending request per person per item), saves it to <code>access_requests</code> with the license that would unlock it, and fires the <em>Curio Assistant access request</em> email trigger: <em>Access Request (to Curio)</em> goes to hello@choosecurio.com as the approver, and <em>Access Request (FYI to account owner)</em> goes to the account's owner(s), except when the owner is the one asking. Both templates are editable in Admin → Emails. Anything the user typed is HTML-escaped before it goes into an email.</Card>
+            <Card title="Admin → Assistant">Two tabs. <strong>Access requests</strong>: newest first, with a Grant button that adds the unlocking license to the account and marks the request granted, or Dismiss. Owner/manager-only items and other-profile field guides can't be granted with one click ("Change in Accounts"), since they need a role change or a broader library grant. <strong>Recent searches</strong>: the latest 200 questions with who asked and what was recommended.</Card>
+            <Card title="Setup">Run <code>supabase/migrations/0012_curio_assistant.sql</code> once (creates <code>assistant_logs</code> and <code>access_requests</code>). Until then the assistant returns an error.</Card>
           </section>
 
           <section className="section" id="portal-tokens">

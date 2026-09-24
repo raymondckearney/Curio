@@ -21,6 +21,7 @@ const TOOL_LABELS = {
   session_architect: 'Session Architect',
   meeting_architect: 'Meeting Architect',
   team_account: 'Team account (shows My Team)',
+  curio_assistant: 'Curio Assistant',
   library_full: 'Client Library (Full)', library_a: 'Client Library — Collection A', library_b: 'Client Library — Collection B',
   library_c: 'Client Library — Collection C', library_d: 'Client Library — Collection D', library_e: 'Client Library — Collection E',
   library_match: 'Client Library — matches their profile',
@@ -70,6 +71,7 @@ const NAV = [
   ]},
   { section: 'MANAGE', items: [
     { id: 'accounts',     label: 'Accounts' },
+    { id: 'assistant',    label: 'Assistant' },
     { id: 'emails',       label: 'Emails' },
   ]},
   { section: 'LANGUAGE TOOLS', items: [
@@ -1297,6 +1299,115 @@ function CareerReportsSection() {
         <p style={{ fontSize: '0.875rem', color: '#64748B' }}>All generated career guidance reports, newest first.</p>
       </div>
       <ReportsList onView={setViewing} />
+    </div>
+  );
+}
+
+// ─── Assistant Section ────────────────────────────────────────────────────────
+
+const REQUEST_REASON = { license: 'Not licensed', team: 'Needs team account', role: 'Owner/manager only' };
+
+function AssistantSection() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const [tab, setTab] = useState('requests');
+  const [busy, setBusy] = useState('');
+
+  async function load() {
+    setError('');
+    try {
+      const res = await fetch('/api/admin/assistant');
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || `Error ${res.status}`);
+      setData(d);
+    } catch (e) { setError(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function act(requestId, action) {
+    setBusy(requestId + action); setError('');
+    try {
+      const res = await fetch('/api/admin/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, action }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || `Error ${res.status}`);
+      await load();
+    } catch (e) { setError(e.message); } finally { setBusy(''); }
+  }
+
+  const fmt = iso => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const requests = data?.requests || [];
+  const pending = requests.filter(r => r.status === 'pending');
+  const tabBtn = id => ({ ...s.actionBtn, padding: '6px 14px', background: tab === id ? '#0F172A' : '#fff', color: tab === id ? '#fff' : '#374151' });
+
+  return (
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 0 80px' }}>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2rem', fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Curio Assistant</h1>
+        <p style={{ fontSize: '0.875rem', color: '#64748B' }}>Access requests from the in-portal assistant, and what people have been asking it. Turn the assistant on per account with the Curio Assistant license (team accounts only).</p>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <button style={tabBtn('requests')} onClick={() => setTab('requests')}>Access requests{pending.length ? ` (${pending.length} pending)` : ''}</button>
+        <button style={tabBtn('searches')} onClick={() => setTab('searches')}>Recent searches</button>
+      </div>
+      {error && <p style={{ color: '#B91C1C', fontSize: '0.85rem', marginBottom: 12 }}>{error}</p>}
+      {!data && !error && <p style={{ color: '#94A3B8' }}>Loading…</p>}
+      {data && tab === 'requests' && (
+        requests.length === 0 ? <p style={{ color: '#64748B', fontSize: '0.9rem' }}>No access requests yet.</p> : (
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead><tr>{['When', 'Person', 'Account', 'Requested', 'Why locked', 'They asked', 'Status'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {requests.map(r => (
+                  <tr key={r.id}>
+                    <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{fmt(r.created_at)}</td>
+                    <td style={s.td}>{r.user_name || r.user_email}<div style={{ color: '#94A3B8', fontSize: '0.75rem' }}>{r.user_email}</div></td>
+                    <td style={s.td}>{r.account_name}</td>
+                    <td style={s.td}>{r.item_name}</td>
+                    <td style={s.td}>{REQUEST_REASON[r.lock_reason] || r.lock_reason}</td>
+                    <td style={{ ...s.td, maxWidth: 240, color: '#475569' }}>{r.query || '—'}</td>
+                    <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
+                      {r.status !== 'pending' ? (
+                        <span style={r.status === 'granted' ? s.badgeUsed : s.badgeBasic}>{r.status === 'granted' ? 'Granted' : 'Dismissed'}</span>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          {r.grant_license ? (
+                            <button style={{ ...s.actionBtn, color: '#059669', borderColor: '#BBF7D0' }} disabled={!!busy} onClick={() => act(r.id, 'grant')} title={`Adds the ${r.grant_license} license to ${r.account_name}`}>
+                              {busy === r.id + 'grant' ? '…' : 'Grant'}
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', color: '#92400E' }} title="Needs a manual change in Accounts → Edit Account, e.g. their role">Change in Accounts</span>
+                          )}
+                          <button style={s.actionBtn} disabled={!!busy} onClick={() => act(r.id, 'dismiss')}>{busy === r.id + 'dismiss' ? '…' : 'Dismiss'}</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
+      {data && tab === 'searches' && (
+        data.searches.length === 0 ? <p style={{ color: '#64748B', fontSize: '0.9rem' }}>No searches yet.</p> : (
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead><tr>{['When', 'Person', 'Account', 'They asked', 'Recommended'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {data.searches.map(q => (
+                  <tr key={q.id}>
+                    <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{fmt(q.created_at)}</td>
+                    <td style={s.td}>{q.user_name}</td>
+                    <td style={s.td}>{q.account_name}</td>
+                    <td style={{ ...s.td, maxWidth: 320 }}>{q.query}</td>
+                    <td style={{ ...s.td, fontSize: '0.78rem', color: '#475569' }}>{(q.recommended_ids || []).join(', ') || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
     </div>
   );
 }
@@ -3493,6 +3604,7 @@ export default function AdminDashboard() {
           {active === 'engagements' && <EngagementsPanel onGenerateMore={handleGenerateMore} />}
           {active === 'career' && <CareerReportsSection />}
           {active === 'accounts' && <AccountsSection />}
+          {active === 'assistant' && <AssistantSection />}
           {active === 'emails' && <EmailsPanel />}
           {active === 'detection-feedback' && <DetectionFeedbackPanel />}
           {active === 'mirror-tokens' && <MirrorTokensPanel />}
