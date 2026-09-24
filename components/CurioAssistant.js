@@ -16,12 +16,12 @@ const LOCK_TEXT = {
 };
 
 const CSS = `
-  .ca-fab{position:fixed;right:20px;bottom:20px;z-index:300;display:flex;align-items:center;gap:8px;background:#FCD34D;color:#111827;border:none;border-radius:999px;padding:13px 20px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;box-shadow:0 6px 24px rgba(15,23,42,0.28);transition:transform 0.15s ease,box-shadow 0.15s ease;}
-  .ca-fab:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(15,23,42,0.32);}
+  .ca-fab{position:fixed;right:20px;bottom:20px;z-index:300;display:flex;align-items:center;gap:8px;background:#0F172A;color:#fff;border:none;border-radius:999px;padding:13px 20px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;box-shadow:0 6px 24px rgba(15,23,42,0.28);transition:transform 0.15s ease,box-shadow 0.15s ease;}
+  .ca-fab:hover{background:#1E293B;transform:translateY(-2px);box-shadow:0 10px 28px rgba(15,23,42,0.32);}
   .ca-fab:focus-visible{outline:3px solid #111827;outline-offset:3px;}
-  .ca-fab-icon{width:18px;height:18px;flex-shrink:0;}
-  .ca-fab-pulse::after{content:'';position:absolute;inset:0;border-radius:999px;box-shadow:0 0 0 0 rgba(252,211,77,0.75);animation:ca-pulse 1.8s ease-out 0.6s 3;pointer-events:none;}
-  @keyframes ca-pulse{0%{box-shadow:0 0 0 0 rgba(252,211,77,0.75);}100%{box-shadow:0 0 0 16px rgba(252,211,77,0);}}
+  .ca-fab-icon{width:18px;height:18px;flex-shrink:0;color:#34D399;}
+  .ca-fab-pulse::after{content:'';position:absolute;inset:0;border-radius:999px;box-shadow:0 0 0 0 rgba(52,211,153,0.6);animation:ca-pulse 1.8s ease-out 0.6s 3;pointer-events:none;}
+  @keyframes ca-pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,0.6);}100%{box-shadow:0 0 0 16px rgba(52,211,153,0);}}
   @media (prefers-reduced-motion:reduce){.ca-fab-pulse::after{animation:none;}.ca-fab{transition:none;}.ca-fab:hover{transform:none;}}
   .ca-panel{position:fixed;right:20px;bottom:20px;z-index:301;width:390px;height:min(620px,calc(100vh - 40px));display:flex;flex-direction:column;background:#fff;border:1px solid #E2E8F0;border-radius:16px;box-shadow:0 12px 48px rgba(15,23,42,0.25);font-family:'DM Sans',sans-serif;color:#0F172A;overflow:hidden;}
   @media (max-width:768px){.ca-panel{inset:0;width:auto;height:auto;border-radius:0;border:none;}.ca-fab{right:14px;bottom:14px;}}
