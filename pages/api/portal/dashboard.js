@@ -1,6 +1,7 @@
 import { getPortalSession } from '../../../lib/portalSession';
 import { dbQuery, dbGet } from '../../../lib/supabase';
 import { resolveMyProfile } from '../../../lib/ownProfile';
+import { isTeamAccount as isTeamAccountRule } from '../../../lib/teamAccount';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -41,15 +42,12 @@ export default async function handler(req, res) {
     // not gated behind a license row.
     const hasLibrary = true;
 
-    // isTeamAccount reflects the whole account's shape (does it look like an
-    // enterprise pool at all), not a single manager's own team size — a
-    // small or brand-new team must not lose access to the team-only nav
-    // just because its own token count happens to be 1. A self-serve
-    // buyer's account is provisioned with exactly one assessment token
-    // (their own); a team/enterprise pool always has more than one. `tier`
+    // isTeamAccount reflects the whole account's shape (all of its tokens,
+    // plus the team_account license), not a single manager's own team size,
+    // so a small or brand-new team doesn't lose the team-only nav. `tier`
     // ('basic' | 'premium') never holds an 'enterprise' value, so it can't
-    // be used for this.
-    const isTeamAccount = allTokens.length > 1;
+    // be used for this. See lib/teamAccount.js.
+    const isTeamAccount = isTeamAccountRule(allTokens, activeLicenses);
 
     // A manager's own stats, recent-assessments, and "my pending token"
     // lookup below are scoped to their own team only, never the rest of

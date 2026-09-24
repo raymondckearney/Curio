@@ -20,6 +20,7 @@ const TOOL_LABELS = {
   orientation_translator: 'Orientation Translator',
   session_architect: 'Session Architect',
   meeting_architect: 'Meeting Architect',
+  team_account: 'Team account (shows My Team)',
   library_full: 'Client Library (Full)', library_a: 'Client Library — Collection A', library_b: 'Client Library — Collection B',
   library_c: 'Client Library — Collection C', library_d: 'Client Library — Collection D', library_e: 'Client Library — Collection E',
   library_match: 'Client Library — matches their profile',
@@ -1896,7 +1897,7 @@ function EditPanel({ account, onClose, onSave }) {
 }
 
 function accountType(acc) {
-  if ((acc.users || []).length > 1) return 'enterprise';
+  if ((acc.users || []).length > 1 || (acc.licenses || []).some(l => l.type === 'team_account')) return 'enterprise';
   if ((acc.purchases || []).length > 0) return 'paid';
   return 'free';
 }

@@ -6,6 +6,7 @@ import { resolveMyProfile } from '../../../lib/ownProfile';
 import { buildCandidateTools } from '../../../lib/aiDelegationCandidates';
 import { extractSection, extractProfileFromSection4, extractSection8Layer1 } from '../../../lib/mindprintSections';
 import { AI_DELEGATION_GUIDE } from '../../../lib/aiDelegationGuide';
+import { isTeamAccount as isTeamAccountRule } from '../../../lib/teamAccount';
 
 const VALID_PROFILES = ['WHY-WHAT', 'WHY-HOW', 'WHAT-WHY', 'WHAT-HOW', 'HOW-WHY', 'HOW-WHAT'];
 const VALID_ROUTES = ['AI', 'DELEGATE', 'COLLABORATE'];
@@ -37,10 +38,11 @@ export default async function handler(req, res) {
   const { accountId, userId, role } = session;
 
   try {
-    const [accountRows, tokens, userRows] = await Promise.all([
+    const [accountRows, tokens, userRows, licenses] = await Promise.all([
       dbGet('client_accounts', { id: accountId }),
       dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token' }),
       dbGet('client_users', { id: userId }),
+      dbGet('account_licenses', { account_id: accountId }),
     ]);
 
     // Premium gate — a basic account gets a flat 403 here regardless of what
@@ -61,7 +63,7 @@ export default async function handler(req, res) {
     // currently have selected in the phase 2 switcher). A solo owner or
     // plain member cannot — any client-supplied profileCode is ignored for
     // them, never trusted at face value.
-    const isTeamAccount = tokens.length > 1;
+    const isTeamAccount = isTeamAccountRule(tokens, licenses);
     const canSwitch = role === 'manager' || (role === 'owner' && isTeamAccount);
 
     let profileCode = myProfileCode;

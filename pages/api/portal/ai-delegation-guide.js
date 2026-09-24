@@ -2,6 +2,7 @@ import { getPortalSession } from '../../../lib/portalSession';
 import { dbQuery, dbGet } from '../../../lib/supabase';
 import { resolveMyProfile } from '../../../lib/ownProfile';
 import { AI_DELEGATION_GUIDE } from '../../../lib/aiDelegationGuide';
+import { isTeamAccount as isTeamAccountRule } from '../../../lib/teamAccount';
 
 // Server-side access rule (never just hidden client-side): an individual
 // contributor — including a solo self-serve "owner" with no one to coach —
@@ -20,9 +21,10 @@ export default async function handler(req, res) {
   const { accountId, userId, role } = session;
 
   try {
-    const [tokens, userRows] = await Promise.all([
+    const [tokens, userRows, licenses] = await Promise.all([
       dbQuery('tokens', { account_id: `eq.${accountId}`, select: 'token' }),
       dbGet('client_users', { id: userId }),
+      dbGet('account_licenses', { account_id: accountId }),
     ]);
     const user = userRows[0];
     const tokenIds = tokens.map(t => t.token).filter(Boolean);
@@ -34,10 +36,8 @@ export default async function handler(req, res) {
 
     const myProfileCode = myAssessment.type.toUpperCase();
 
-    // Mirrors /api/portal/dashboard's isTeamAccount: a self-serve solo
-    // buyer's account has exactly one token ever issued; a real
-    // team/enterprise pool always has more than one.
-    const isTeamAccount = tokens.length > 1;
+    // Same rule as /api/portal/dashboard's isTeamAccount (lib/teamAccount.js).
+    const isTeamAccount = isTeamAccountRule(tokens, licenses);
     const canSwitch = role === 'manager' || (role === 'owner' && isTeamAccount);
 
     const { meta, universalSupports, profiles } = AI_DELEGATION_GUIDE;
