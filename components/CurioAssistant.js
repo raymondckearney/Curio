@@ -26,7 +26,7 @@ const CSS = `
   .ca-sub{margin:4px 0 0;color:#A7F3D0;font-size:0.8rem;}
   .ca-iconbtn{background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:0.78rem;font-family:inherit;padding:4px 6px;}
   .ca-iconbtn:hover{color:#fff;}
-  .ca-body{flex:1;overflow-y:auto;padding:16px;background:#F8FAFC;}
+  .ca-body{flex:1;overflow-y:auto;padding:16px;background:#F8FAFC;position:relative;}
   .ca-starters{display:flex;flex-direction:column;gap:8px;}
   .ca-starter{text-align:left;background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:0.86rem;color:#0F172A;cursor:pointer;}
   .ca-starter:hover{border-color:#059669;}
@@ -34,7 +34,7 @@ const CSS = `
   .ca-user{margin:0 0 10px auto;max-width:85%;background:#059669;color:#fff;border-radius:12px 12px 2px 12px;padding:9px 12px;font-size:0.88rem;line-height:1.45;width:fit-content;}
   .ca-answer{background:#fff;border:1px solid #E2E8F0;border-radius:12px 12px 12px 2px;padding:10px 12px;font-size:0.88rem;line-height:1.55;margin:0 0 10px;}
   .ca-card{background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin:0 0 8px;}
-  .ca-kind{display:inline-block;font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#059669;margin-bottom:2px;}
+  .ca-kind{display:inline-block;font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#713F12;background:#FDE047;border-radius:999px;padding:2px 8px;margin-bottom:6px;}
   .ca-name{font-weight:600;font-size:0.9rem;margin:0 0 3px;}
   .ca-why{font-size:0.82rem;color:#475569;margin:0 0 8px;line-height:1.45;}
   .ca-lock{font-size:0.78rem;color:#92400E;margin:0 0 8px;}
@@ -65,6 +65,7 @@ export default function CurioAssistant({ userId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const bodyRef = useRef(null);
+  const lastTurnRef = useRef(null);
   const inputRef = useRef(null);
 
   // The sidebar (and this widget with it) remounts on every page change, so
@@ -84,9 +85,17 @@ export default function CurioAssistant({ userId }) {
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 50);
   }, [open]);
+  // While waiting, show the "Thinking…" line at the bottom. Once the answer
+  // arrives, scroll so the question and the start of its answer sit at the
+  // top, rather than landing on the last card. Keyed on the turn count and
+  // pending state only, so clicking Request access doesn't move the view.
+  const lastPending = !!turns[turns.length - 1]?.pending;
   useEffect(() => {
-    bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' });
-  }, [turns, loading]);
+    const body = bodyRef.current;
+    if (!body || !turns.length) return;
+    if (lastPending) body.scrollTo({ top: body.scrollHeight, behavior: 'smooth' });
+    else if (lastTurnRef.current) body.scrollTo({ top: lastTurnRef.current.offsetTop - 12, behavior: 'smooth' });
+  }, [turns.length, lastPending, open]);
   useEffect(() => {
     if (!open) return;
     const onKey = e => { if (e.key === 'Escape') setOpen(false); };
@@ -174,7 +183,7 @@ export default function CurioAssistant({ userId }) {
           )}
 
           {turns.map((t, ti) => (
-            <div key={ti}>
+            <div key={ti} ref={ti === turns.length - 1 ? lastTurnRef : null}>
               <div className="ca-user">{t.query}</div>
               {t.pending ? <p className="ca-typing">Thinking…</p> : (
                 <>
