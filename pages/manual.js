@@ -69,6 +69,7 @@ export default function Manual() {
             <a href="#portal-onboarding-resources" className="nav-link">Onboarding Resources</a>
             <a href="#portal-tokens" className="nav-link">Send Assessment</a>
             <a href="#portal-analytics" className="nav-link">Analytics</a>
+            <a href="#portal-meeting-architect" className="nav-link">Meeting Architect</a>
             <a href="#portal-tools" className="nav-link">AI Tools</a>
             <a href="#portal-companions" className="nav-link">AI Companions</a>
             <a href="#portal-translator" className="nav-link">MindPrint Language Tools</a>
@@ -198,7 +199,7 @@ export default function Manual() {
               <span className="badge badge-admin">Admin</span>
             </div>
             <Card title="Account List">All client accounts with type (free / paid / enterprise), tier (basic / premium), login provider, status, last login, and an Expiry column showing the soonest upcoming license expiration date (shown in red if already past due, "No expiry" if none set). Filterable by type, tier, and name/email search.</Card>
-            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, Session Architect, extra Resources collections beyond the free default) at creation time.</Card>
+            <Card title="Invite New Account">Creates a portal account and sends a setup email. Set tier and attach licenses (assessment tokens, role analyzer, career guidance, JD analyzer, the three AI Companions, the Orientation Translator, Session Architect, Meeting Architect, extra Resources collections beyond the free default) at creation time.</Card>
             <Card title="Edit Account">
               Click <strong>Edit</strong> on any account to expand a panel with these sections:
               <ul>
@@ -380,6 +381,22 @@ export default function Manual() {
             </Card>
             <Card title="Suggested breakout groups">Shown per activity (in the on-screen Activity Sheets, and carried into all four generated materials above) once a session has at least 4 named people in the roster. Splits the room into groups of about 4, dealt round-robin across the WHY/WHAT/HOW energy buckets so no group ends up stacked with a single energy type, with a mild bias toward seeding each group with someone from that block's own preferred opener orientation(s) first. Computed once per block in <code>recommendBreakoutGroups()</code> and attached to the generated result — not recomputed separately by each output format. A one-line rationale (<code>breakoutRationale()</code>) is shown directly above the group list everywhere it appears — on-screen, both bundled PDFs, the deck divider slide, and now the standalone Download PDF too (which previously didn't show breakout groups at all) — explaining the energy-mix logic in plain language rather than leaving it unexplained.</Card>
             <div className="info-block"><strong>Pilot access:</strong> the <code>session_architect</code> license supports an expiry date like any other license (admin Accounts → Edit Account → Tier &amp; Licenses). Once it passes, access reverts to locked automatically — the same expiry-as-gate mechanism used everywhere else in the portal, not a separate reminder-only timer.</div>
+          </section>
+
+          {/* ─── Meeting Architect ─── */}
+          <section className="section" id="portal-meeting-architect">
+            <div className="section-header">
+              <h2 className="section-title">Meeting Architect</h2>
+              <span className="section-path">/portal/tools/meeting-architect</span>
+            </div>
+            <div className="badges">
+              <span className="badge badge-owner">Owner</span>
+              <span className="badge badge-member">Member</span>
+            </div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>In progress. A customized, timed redesign of a recurring meeting (seven meeting types), built around the manager's stated objectives and challenges, their team's orientation makeup where relevant, and their own MindPrint&trade; profile. The page currently shows a placeholder; the form, AI generation, and PDF are the next build stage.</p>
+            <Card title="Access">Gated on the <code>meeting_architect</code> license, the same per-account license mechanism as Session Architect (listed in <code>lib/licenseTypes.js</code>). Grant it either by adding it to an account directly (admin Accounts → Edit Account → Tier &amp; Licenses) or by ticking it on a token in Generate Tokens, which applies it when the recipient completes their assessment. Because licenses are account-wide, a token redeemed onto an existing team account gives Meeting Architect to everyone on that account, not just the recipient. Without the license, the sidebar item is hidden entirely (not shown locked), and direct navigation to the URL redirects to the dashboard server-side. Admin sessions bypass the check, same as every other licensed tool.</Card>
+            <Card title="Sidebar placement">Directly under Session Architect.</Card>
+            <Card title="Report history">Successful generations will be saved to the <code>meeting_architect_reports</code> table (<code>supabase/migrations/0011_meeting_architect_reports.sql</code>, run by hand like the other migrations). Unlike <code>career_guidance_reports</code>, each row records who generated it (<code>account_id</code>, <code>user_id</code>, <code>user_email</code>), plus the user's own profile at generation time, or null if they hadn't completed an assessment.</Card>
           </section>
 
           <section className="section" id="portal-tokens">

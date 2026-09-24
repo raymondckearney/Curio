@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { key: 'ai-delegation-guide', href: '/portal/tools/ai-delegation-guide', label: 'AI & Delegation Guide', requiresProfile: true },
   { key: 'team',             href: '/portal/team',             label: 'My Team',              license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true },
   { key: 'session-architect', href: '/portal/tools/session-architect', label: 'Session Architect', license: 'session_architect' },
+  { key: 'meeting-architect', href: '/portal/tools/meeting-architect', label: 'Meeting Architect', license: 'meeting_architect' },
   { key: 'dynamics',         href: '/portal/team-dynamics',    label: 'Dynamics',             license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'onboarding-resources', href: '/portal/onboarding-resources', label: 'Onboarding Resources', license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
   { key: 'tokens',           href: '/portal/tokens',           label: 'Send Assessment',      license: 'assessment_tokens', enterpriseOnly: true, ownerOnly: true, groupKey: 'team' },
