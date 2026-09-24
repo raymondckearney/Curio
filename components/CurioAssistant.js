@@ -22,7 +22,16 @@ const CSS = `
   .ca-fab-icon{width:18px;height:18px;flex-shrink:0;}
   .ca-fab-pulse::after{content:'';position:absolute;inset:0;border-radius:999px;box-shadow:0 0 0 0 rgba(252,211,77,0.75);animation:ca-pulse 1.8s ease-out 0.6s 3;pointer-events:none;}
   @keyframes ca-pulse{0%{box-shadow:0 0 0 0 rgba(252,211,77,0.75);}100%{box-shadow:0 0 0 16px rgba(252,211,77,0);}}
-  @media (prefers-reduced-motion:reduce){.ca-fab-pulse::after{animation:none;}.ca-fab{transition:none;}.ca-fab:hover{transform:none;}}
+  .ca-hint{position:fixed;right:20px;bottom:84px;z-index:300;width:264px;background:#fff;border:1px solid #E2E8F0;border-radius:14px;box-shadow:0 10px 32px rgba(15,23,42,0.22);font-family:'DM Sans',sans-serif;animation:ca-hint-in 0.3s ease-out;}
+  .ca-hint::after{content:'';position:absolute;right:40px;bottom:-7px;width:12px;height:12px;background:#fff;border-right:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;transform:rotate(45deg);}
+  .ca-hint-body{display:block;width:100%;text-align:left;background:none;border:none;padding:14px 34px 14px 16px;cursor:pointer;font-family:inherit;color:#0F172A;border-radius:14px;}
+  .ca-hint-body strong{display:block;font-size:0.92rem;margin-bottom:3px;}
+  .ca-hint-body span{display:block;font-size:0.8rem;color:#475569;line-height:1.45;}
+  .ca-hint-close{position:absolute;top:6px;right:6px;background:none;border:none;color:#94A3B8;cursor:pointer;font-size:0.8rem;padding:4px 6px;font-family:inherit;}
+  .ca-hint-close:hover{color:#0F172A;}
+  @keyframes ca-hint-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @media (max-width:768px){.ca-hint{right:14px;bottom:76px;}}
+  @media (prefers-reduced-motion:reduce){.ca-fab-pulse::after{animation:none;}.ca-fab{transition:none;}.ca-fab:hover{transform:none;}.ca-hint{animation:none;}}
   .ca-panel{position:fixed;right:20px;bottom:20px;z-index:301;width:390px;height:min(620px,calc(100vh - 40px));display:flex;flex-direction:column;background:#fff;border:1px solid #E2E8F0;border-radius:16px;box-shadow:0 12px 48px rgba(15,23,42,0.25);font-family:'DM Sans',sans-serif;color:#0F172A;overflow:hidden;}
   @media (max-width:768px){.ca-panel{inset:0;width:auto;height:auto;border-radius:0;border:none;}.ca-fab{right:14px;bottom:14px;}}
   .ca-head{background:#0F172A;color:#fff;padding:16px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
@@ -77,6 +86,24 @@ export default function CurioAssistant({ userId }) {
   // until the saved copy has been restored, or the empty initial state would
   // overwrite it.
   const [restored, setRestored] = useState(false);
+  // One-time intro bubble, remembered per person on this device. It counts
+  // as seen once they close it, open the assistant, or it has been on
+  // screen for 12 seconds, so leaving the page instantly doesn't use it up.
+  const hintKey = `${STORAGE_KEY}:hint-seen:${userId || 'anon'}`;
+  const [hint, setHint] = useState(false);
+  function dismissHint() {
+    setHint(false);
+    try { localStorage.setItem(hintKey, '1'); } catch {}
+  }
+  useEffect(() => {
+    let seen = true;
+    try { seen = !!localStorage.getItem(hintKey); } catch {}
+    if (seen || !restored || open) return;
+    const show = setTimeout(() => setHint(true), 1200);
+    const hide = setTimeout(dismissHint, 1200 + 12000);
+    return () => { clearTimeout(show); clearTimeout(hide); };
+  }, [hintKey, restored, open]);
+
   // Pulse the button the first time it appears in a browser session only,
   // not again on every page change.
   const [pulse, setPulse] = useState(false);
@@ -165,7 +192,16 @@ export default function CurioAssistant({ userId }) {
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
-        <button className={`ca-fab${pulse ? ' ca-fab-pulse' : ''}`} onClick={() => setOpen(true)} aria-label="Open the Curio Assistant">
+        {hint && (
+          <div className="ca-hint" role="status">
+            <button className="ca-hint-body" onClick={() => { dismissHint(); setOpen(true); }}>
+              <strong>Need help finding something?</strong>
+              <span>Tell Curio what you&apos;re working on and it&apos;ll point you to the right tool.</span>
+            </button>
+            <button className="ca-hint-close" onClick={dismissHint} aria-label="Dismiss">✕</button>
+          </div>
+        )}
+        <button className={`ca-fab${pulse ? ' ca-fab-pulse' : ''}`} onClick={() => { dismissHint(); setOpen(true); }} aria-label="Open the Curio Assistant">
           <svg className="ca-fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z" />
             <path d="M9 11.5h.01M12 11.5h.01M15 11.5h.01" strokeWidth="3" />
