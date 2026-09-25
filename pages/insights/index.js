@@ -41,6 +41,7 @@ export default function InsightsPage({ posts }) {
       {!embed && <Nav />}
       <main className="insights-main">
         <section className="insights-hero">
+          <img src="/images/brain-fingerprint-watermark.webp" alt="" aria-hidden="true" className="insights-hero-mark" />
           <div className="container">
             <h1 className="insights-heading">Insights</h1>
             <p className="insights-subhead">

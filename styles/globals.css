@@ -961,6 +961,27 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
 .insights-hero {
   background: #059669;
   padding: 120px var(--pad-x) 72px;
+  position: relative;
+  overflow: hidden;
+}
+
+.insights-hero .container { position: relative; z-index: 1; }
+
+/* Same brain-fingerprint mark, size, and ~35% right-edge bleed as the
+   profile page's hero watermark. The image is dark lines on a white-filled
+   silhouette; multiply drops the white fill into the emerald so only the
+   lines show, as they do on the profile page's light band. */
+.insights-hero-mark {
+  position: absolute;
+  top: 50%;
+  right: -224px;
+  transform: translateY(-50%);
+  width: 640px;
+  max-width: none;
+  opacity: 0.15;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .insights-heading {
@@ -1201,5 +1222,6 @@ footer { background: #111827; border-top: none; padding: 72px 0 40px; }
 @media (max-width: 560px) {
   .insights-grid { grid-template-columns: 1fr; }
   .insights-hero { padding: 100px 24px 48px; }
+  .insights-hero-mark { width: 420px; right: -150px; }
   .insights-grid-section { padding: 48px 24px 72px; }
 }
