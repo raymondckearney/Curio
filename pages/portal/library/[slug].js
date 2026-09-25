@@ -4,11 +4,11 @@ import { useRouter } from 'next/router';
 import { GUIDES } from '../../../lib/guideContent';
 
 const COLLECTION_META = {
-  A: { label: 'Collection A · Tertiary HOW', accent: '#FCD34D', text: '#92400E', bg: '#FFFBEB' },
-  B: { label: 'Collection B · Tertiary WHAT', accent: '#93C5FD', text: '#1E40AF', bg: '#EFF6FF' },
-  C: { label: 'Collection C · Tertiary WHY', accent: '#6EE7B7', text: '#065F46', bg: '#F0FDF4' },
-  D: { label: 'Collection D · Universal', accent: '#14B8A6', text: '#0F5C52', bg: '#F0FDFA' },
-  E: { label: 'Collection E · Teams', accent: '#059669', text: '#065F46', bg: '#F0FDF4' },
+  A: { label: 'Tertiary HOW', accent: '#FCD34D', text: '#92400E', bg: '#FFFBEB' },
+  B: { label: 'Tertiary WHAT', accent: '#93C5FD', text: '#1E40AF', bg: '#EFF6FF' },
+  C: { label: 'Tertiary WHY', accent: '#6EE7B7', text: '#065F46', bg: '#F0FDF4' },
+  D: { label: 'Universal', accent: '#14B8A6', text: '#0F5C52', bg: '#F0FDFA' },
+  E: { label: 'Teams', accent: '#059669', text: '#065F46', bg: '#F0FDF4' },
 };
 
 export default function GuidePage() {
@@ -38,6 +38,9 @@ export default function GuidePage() {
   );
 
   const meta = COLLECTION_META[guide.collection];
+  // supportLine always opens with the support approach, e.g. "SCAFFOLD
+  // SUPPORTS TERTIARY HOW FOR ..."; only that first word is shown.
+  const mode = guide.supportLine.trim().split(/\s+/)[0];
 
   // The template file is served through a short-lived signed URL, and
   // /api/portal/library-file re-checks the user's collection access.
@@ -84,14 +87,9 @@ export default function GuidePage() {
           <div style={{ ...s.header, background: meta.bg, borderBottom: `3px solid ${meta.accent}` }}>
             <div style={s.headerMeta}>
               <span style={{ ...s.collectionBadge, background: meta.accent + '33', color: meta.text }}>
-                {meta.label}
+                {mode} · {meta.label}
               </span>
-              <span style={{ ...s.collectionBadge, background: '#0F172A11', color: '#0F172A' }}>
-                Tool {guide.num}
-              </span>
-              <span style={{ ...s.collectionBadge, background: meta.accent + '22', color: meta.text }}>
-                {guide.supportLine}
-              </span>
+              <span style={s.toolNum}>Tool {guide.num}</span>
             </div>
             <h1 style={s.title}>{guide.title}</h1>
             <p style={s.tagline1}>{guide.tagline1}</p>
@@ -211,7 +209,8 @@ const s = {
   printBtn: { padding: '7px 16px', background: '#059669', color: '#fff', border: 'none', borderRadius: 7, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   container: { maxWidth: 800, margin: '32px auto', padding: '0 24px 64px', animation: 'fadeIn 0.3s ease' },
   header: { borderRadius: '12px 12px 0 0', padding: '32px 36px 28px', marginBottom: 0 },
-  headerMeta: { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 },
+  headerMeta: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 },
+  toolNum: { fontSize: '0.75rem', fontWeight: 500, color: '#94A3B8', whiteSpace: 'nowrap' },
   collectionBadge: { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '3px 10px', borderRadius: 99 },
   title: { fontFamily: "'Caveat', cursive", fontSize: '2.4rem', fontWeight: 700, color: '#0F172A', margin: '0 0 10px', lineHeight: 1.2 },
   tagline1: { fontSize: '1rem', color: '#374151', lineHeight: 1.6, margin: '0 0 10px' },
