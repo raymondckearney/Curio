@@ -39,7 +39,6 @@ export default function LibraryPage() {
   const [filter, setFilter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -63,24 +62,6 @@ export default function LibraryPage() {
   async function logout() {
     await fetch('/api/portal/logout', { method: 'POST' });
     router.push('/portal/login');
-  }
-
-  // "guide"/"template" here map to the onepager/kit PDFs stored under those
-  // names in library_items; kept as the API's internal vocabulary since
-  // nothing outside this page depends on it.
-  async function openFile(toolNum, kind) {
-    setDownloading(`${toolNum}-${kind}`);
-    try {
-      const apiKind = kind === 'template' ? 'kit' : 'onepager';
-      const res = await fetch(`/api/portal/library-file?toolNum=${toolNum}&kind=${apiKind}`);
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Failed to open file');
-      window.open(d.url, '_blank', 'noopener');
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setDownloading(null);
-    }
   }
 
   if (loading) return <div style={s.loading}>Loading…</div>;
@@ -151,16 +132,7 @@ export default function LibraryPage() {
                           <div style={s.cardTitle}>{item.title}</div>
                           {item.summary && <p style={s.cardSummary}>{item.summary}</p>}
                           <div style={s.cardActions}>
-                            {TOOL_NUM_TO_SLUG[item.tool_num] ? (
-                              <a href={`/portal/library/${TOOL_NUM_TO_SLUG[item.tool_num]}`} style={s.cardBtnLink}>View Guide</a>
-                            ) : (
-                              <button style={s.cardBtn} disabled={downloading === `${item.tool_num}-guide`} onClick={() => openFile(item.tool_num, 'guide')}>
-                                {downloading === `${item.tool_num}-guide` ? 'Opening…' : 'Download Guide'}
-                              </button>
-                            )}
-                            <button style={s.cardBtnSecondary} disabled={downloading === `${item.tool_num}-template`} onClick={() => openFile(item.tool_num, 'template')}>
-                              {downloading === `${item.tool_num}-template` ? 'Opening…' : 'Download Template'}
-                            </button>
+                            <a href={`/portal/library/${TOOL_NUM_TO_SLUG[item.tool_num]}`} style={s.cardBtnLink}>View Resource</a>
                           </div>
                         </div>
                       );
@@ -224,8 +196,6 @@ const s = {
   cardTitle: { fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', marginBottom: 8, lineHeight: 1.4 },
   cardSummary: { fontSize: '0.825rem', color: '#64748B', lineHeight: 1.6, marginBottom: 16 },
   cardActions: { display: 'flex', gap: 8 },
-  cardBtn: { flex: 1, padding: '8px 12px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
-  cardBtnSecondary: { flex: 1, padding: '8px 12px', background: '#fff', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   cardBtnLink: { flex: 1, display: 'block', padding: '8px 12px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', textAlign: 'center' },
   emptyState: { background: '#fff', borderRadius: 12, padding: '40px 28px', textAlign: 'center', color: '#64748B', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' },
 

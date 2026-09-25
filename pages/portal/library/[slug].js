@@ -16,6 +16,7 @@ export default function GuidePage() {
   const { slug } = router.query;
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [template, setTemplate] = useState({ opening: false, error: '' });
 
   useEffect(() => {
     fetch('/api/portal/me')
@@ -37,6 +38,21 @@ export default function GuidePage() {
   );
 
   const meta = COLLECTION_META[guide.collection];
+
+  // The template file is served through a short-lived signed URL, and
+  // /api/portal/library-file re-checks the user's collection access.
+  async function openTemplate() {
+    setTemplate({ opening: true, error: '' });
+    try {
+      const res = await fetch(`/api/portal/library-file?toolNum=${guide.num}&kind=kit`);
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(res.status === 403 ? "This template isn't included in your account yet." : (d.error || 'Could not open the template.'));
+      window.open(d.url, '_blank', 'noopener');
+      setTemplate({ opening: false, error: '' });
+    } catch (e) {
+      setTemplate({ opening: false, error: e.message });
+    }
+  }
 
   return (
     <>
@@ -84,6 +100,13 @@ export default function GuidePage() {
                 {guide.tagline2}
               </p>
             )}
+            <div className="no-print" style={s.templateRow}>
+              <button onClick={openTemplate} disabled={template.opening} style={s.templateBtn}>
+                {template.opening ? 'Opening…' : 'Download Template'}
+              </button>
+              <span style={s.templateHint}>The ready-to-use template for this tool (PDF)</span>
+            </div>
+            {template.error && <p className="no-print" style={s.templateError}>{template.error}</p>}
           </div>
 
           <div className="guide-card" style={s.body}>
@@ -135,6 +158,9 @@ export default function GuidePage() {
                       <li key={i} style={s.kitItem}>{item}</li>
                     ))}
                   </ul>
+                  <button className="no-print" onClick={openTemplate} disabled={template.opening} style={{ ...s.kitLink, color: meta.text }}>
+                    {template.opening ? 'Opening…' : 'Download the template →'}
+                  </button>
                 </div>
                 <div>
                   <h3 style={{ ...s.sectionLabel, color: meta.text }}>Pairs Well With</h3>
@@ -177,6 +203,11 @@ const s = {
   topNav: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 32px', background: '#0F172A', position: 'sticky', top: 0, zIndex: 100 },
   backLink: { color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500 },
   navActions: { display: 'flex', gap: 10 },
+  templateRow: { display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 20 },
+  templateBtn: { padding: '11px 22px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
+  templateHint: { fontSize: '0.82rem', color: '#64748B' },
+  templateError: { fontSize: '0.85rem', color: '#92400E', margin: '10px 0 0' },
+  kitLink: { marginTop: 14, background: 'none', border: 'none', padding: 0, fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textDecoration: 'underline' },
   printBtn: { padding: '7px 16px', background: '#059669', color: '#fff', border: 'none', borderRadius: 7, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   container: { maxWidth: 800, margin: '32px auto', padding: '0 24px 64px', animation: 'fadeIn 0.3s ease' },
   header: { borderRadius: '12px 12px 0 0', padding: '32px 36px 28px', marginBottom: 0 },
