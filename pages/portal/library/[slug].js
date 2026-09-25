@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { GUIDES } from '../../../lib/guideContent';
+import { GUIDES, TOOL_NUM_TO_SLUG } from '../../../lib/guideContent';
 
 const COLLECTION_META = {
   A: { label: 'Tertiary HOW', accent: '#FCD34D', text: '#92400E', bg: '#FFFBEB' },
@@ -163,9 +163,18 @@ export default function GuidePage() {
                 <div>
                   <h3 style={{ ...s.sectionLabel, color: meta.text }}>Pairs Well With</h3>
                   <ul style={s.kitList}>
-                    {guide.pairItems.map((item, i) => (
-                      <li key={i} style={s.kitItem}>{item.trim()}</li>
-                    ))}
+                    {guide.pairItems.map((item, i) => {
+                      // Entries read "Tool 11 Good-Enough Threshold"; link by
+                      // number and show the resource's own title.
+                      const num = item.trim().match(/^Tool\s+(\d+)\b/)?.[1];
+                      const pairSlug = num && TOOL_NUM_TO_SLUG[num];
+                      const pair = pairSlug && GUIDES[pairSlug];
+                      return (
+                        <li key={i} style={s.kitItem}>
+                          {pair ? <a href={`/portal/library/${pairSlug}`} style={{ ...s.pairLink, color: meta.text }}>{pair.title}</a> : item.trim()}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>
@@ -205,6 +214,7 @@ const s = {
   templateBtn: { padding: '11px 22px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   templateHint: { fontSize: '0.82rem', color: '#64748B' },
   templateError: { fontSize: '0.85rem', color: '#92400E', margin: '10px 0 0' },
+  pairLink: { fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: 3 },
   kitLink: { marginTop: 14, background: 'none', border: 'none', padding: 0, fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textDecoration: 'underline' },
   printBtn: { padding: '7px 16px', background: '#059669', color: '#fff', border: 'none', borderRadius: 7, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' },
   container: { maxWidth: 800, margin: '32px auto', padding: '0 24px 64px', animation: 'fadeIn 0.3s ease' },
