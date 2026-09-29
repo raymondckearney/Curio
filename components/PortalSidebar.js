@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { NAV_ITEMS, navLockReason, assistantEnabled } from '../lib/portalNav';
 import CurioAssistant from './CurioAssistant';
+import { recordToolVisit } from '../lib/toolRecents';
 
 const TEAM_CHILD_KEYS = NAV_ITEMS.filter(i => i.groupKey === 'team').map(i => i.key);
 
@@ -55,6 +56,11 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
     el.textContent = MOBILE_CSS;
     document.head.appendChild(el);
   }, []);
+
+  // Remember tool visits for the Tools page's "Recently used" row.
+  useEffect(() => {
+    if (me?.user?.id && NAV_ITEMS.find(i => i.key === active)?.inTools) recordToolVisit(me.user.id, active);
+  }, [active, me?.user?.id]);
 
   // Close drawer on route change
   useEffect(() => { setMobileOpen(false); }, [active]);

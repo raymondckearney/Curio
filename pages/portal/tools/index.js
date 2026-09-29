@@ -1,13 +1,19 @@
 import Head from 'next/head';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { loadCompanionProps } from '../../../lib/companionAuth';
-import { NAV_ITEMS, TOOL_SECTIONS, navLockReason, toolThumb } from '../../../lib/portalNav';
+import { dbQuery } from '../../../lib/supabase';
+import { NAV_ITEMS, TOOL_SECTIONS, navLockReason } from '../../../lib/portalNav';
+import { getRecentTools } from '../../../lib/toolRecents';
 import PortalSidebar from '../../../components/PortalSidebar';
+import ToolCard, { LockedToolCard, TOOL_CARD_CSS } from '../../../components/ToolCard';
 
 export async function getServerSideProps({ req }) {
   const result = await loadCompanionProps(req, null);
   if (result.redirect) return { redirect: { destination: '/portal/login', permanent: false } };
+  const pending = result.me?.user?.id
+    ? await dbQuery('access_requests', { user_id: `eq.${result.me.user.id}`, status: 'eq.pending', select: 'item_id' }).catch(() => [])
+    : [];
   return {
     props: {
       me: result.me,
@@ -15,40 +21,52 @@ export async function getServerSideProps({ req }) {
       isIndividual: result.isIndividual,
       isTeamAccount: result.isTeamAccount,
       tertiary: result.tertiary,
+      tier: result.tier,
+      requestedIds: pending.map(p => p.item_id),
     },
   };
 }
 
 const CSS = `
-  .tl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
-  .tl-card{display:flex;flex-direction:column;background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;text-decoration:none;color:#0F172A;transition:transform 0.15s ease,box-shadow 0.15s ease,border-color 0.15s ease;}
-  .tl-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(15,23,42,0.12);border-color:#CBD5E1;}
-  .tl-card:focus-visible{outline:3px solid #059669;outline-offset:2px;}
-  .tl-thumb{position:relative;aspect-ratio:16/10;background:#F1F5F9;border-bottom:1px solid #E2E8F0;overflow:hidden;}
-  .tl-thumb img{width:100%;height:100%;object-fit:cover;object-position:top left;display:block;}
-  .tl-badge{position:absolute;top:10px;left:10px;background:#FCD34D;color:#111827;font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;padding:3px 9px;border-radius:999px;}
-  .tl-body{padding:16px 18px 18px;display:flex;flex-direction:column;flex:1;}
-  .tl-name{font-weight:700;font-size:1.02rem;margin:0 0 6px;}
-  .tl-blurb{font-size:0.86rem;color:#475569;line-height:1.5;margin:0 0 14px;flex:1;}
-  .tl-open{font-size:0.84rem;font-weight:700;color:#059669;}
-  .tl-section{margin-bottom:40px;}
-  .tl-section-title{font-family:'Caveat',cursive;font-size:1.8rem;font-weight:700;color:#0F172A;margin:0 0 2px;}
-  .tl-section-sub{font-size:0.88rem;color:#64748B;margin:0 0 16px;}
-  @media (prefers-reduced-motion:reduce){.tl-card{transition:none;}.tl-card:hover{transform:none;}}
+  .tl-section{margin-bottom:36px;}
+  .tl-section-title{font-family:'Caveat',cursive;font-size:1.7rem;font-weight:700;color:#0F172A;margin:0 0 2px;}
+  .tl-section-sub{font-size:0.86rem;color:#64748B;margin:0 0 14px;}
+  .tl-more{margin-top:12px;padding-top:28px;border-top:1px solid #E2E8F0;}
   @media (max-width:768px){.tl-main{padding:72px 16px 40px !important;}}
 `;
 
-export default function ToolsPage({ me, licenses, isIndividual, isTeamAccount, tertiary }) {
+export default function ToolsPage({ me, licenses, isIndividual, isTeamAccount, tertiary, tier, requestedIds }) {
   const router = useRouter();
+  const [recentKeys, setRecentKeys] = useState([]);
+  const [requests, setRequests] = useState(() => Object.fromEntries((requestedIds || []).map(id => [id, { requested: true }])));
+
+  useEffect(() => { setRecentKeys(getRecentTools(me?.user?.id)); }, [me?.user?.id]);
 
   async function logout() {
     await fetch('/api/portal/logout', { method: 'POST' });
     router.push('/portal/login');
   }
 
+  async function requestAccess(tool) {
+    const id = `tool:${tool.key}`;
+    setRequests(r => ({ ...r, [id]: { sending: true } }));
+    try {
+      const res = await fetch('/api/portal/request-access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: id }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Could not send the request.');
+      setRequests(r => ({ ...r, [id]: { requested: true } }));
+    } catch (e) {
+      setRequests(r => ({ ...r, [id]: { error: e.message } }));
+    }
+  }
+
   // Same visibility rule the sidebar used when these were sidebar items.
-  const ctx = { licenseTypes: new Set((licenses || []).map(l => l.type)), isTeamAccount, role: me?.user?.role, hasProfile: isIndividual };
-  const mine = NAV_ITEMS.filter(i => i.inTools && navLockReason(i, ctx) === null);
+  const ctx = { licenseTypes: new Set((licenses || []).map(l => l.type)), isTeamAccount, role: me?.user?.role, hasProfile: isIndividual, tier, tertiary };
+  const tools = NAV_ITEMS.filter(i => i.inTools).map(t => ({ ...t, lock: navLockReason(t, ctx) }));
+  const mine = tools.filter(t => !t.lock);
+  const locked = tools.filter(t => t.lock);
+  const recent = recentKeys.map(k => mine.find(t => t.key === k)).filter(Boolean).slice(0, 4);
+  const badgeFor = t => (t.tertiary && t.tertiary === tertiary ? 'Built for your tertiary' : null);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' }}>
@@ -56,42 +74,52 @@ export default function ToolsPage({ me, licenses, isIndividual, isTeamAccount, t
         <title>Tools | Curio</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <style dangerouslySetInnerHTML={{ __html: TOOL_CARD_CSS + CSS }} />
       <PortalSidebar me={me} onLogout={logout} active="tools" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
-      <main className="portal-main tl-main" style={{ marginLeft: 220, flex: 1, minWidth: 0, padding: '52px 48px 60px' }}>
-        <div style={{ marginBottom: 32 }}>
+      <main className="portal-main tl-main" style={{ marginLeft: 220, flex: 1, minWidth: 0, padding: '48px 48px 60px' }}>
+        <div style={{ marginBottom: 28 }}>
           <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#059669', marginBottom: 10 }}>Tools</div>
           <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2.6rem', fontWeight: 700, margin: '0 0 6px' }}>Your Curio tools</h1>
           <p style={{ fontSize: '0.95rem', color: '#475569', maxWidth: 680, lineHeight: 1.6, margin: 0 }}>Everything included in your account, in one place. Pick a tool to open it.</p>
         </div>
 
-        {mine.length === 0 ? (
-          <p style={{ color: '#64748B' }}>No tools are included in your account yet.</p>
-        ) : TOOL_SECTIONS.map(sec => {
+        {recent.length > 0 && (
+          <section className="tl-section">
+            <h2 className="tl-section-title">Recently used</h2>
+            <p className="tl-section-sub">Pick up where you left off.</p>
+            <div className="tc-grid">
+              {recent.map(t => <ToolCard key={t.key} tool={t} badge={badgeFor(t)} />)}
+            </div>
+          </section>
+        )}
+
+        {mine.length === 0 && <p style={{ color: '#64748B', marginBottom: 32 }}>No tools are included in your account yet.</p>}
+
+        {TOOL_SECTIONS.map(sec => {
           const items = mine.filter(i => i.section === sec.key);
           if (!items.length) return null;
           return (
             <section key={sec.key} className="tl-section">
               <h2 className="tl-section-title">{sec.label}</h2>
               <p className="tl-section-sub">{sec.sub}</p>
-              <div className="tl-grid">
-                {items.map(t => (
-                  <Link key={t.key} href={t.href} className="tl-card">
-                    <div className="tl-thumb">
-                      <img src={toolThumb(t)} alt="" loading="lazy" />
-                      {t.tertiary && t.tertiary === tertiary && <span className="tl-badge">Built for your tertiary</span>}
-                    </div>
-                    <div className="tl-body">
-                      <p className="tl-name">{t.label}</p>
-                      <p className="tl-blurb">{t.blurb}</p>
-                      <span className="tl-open">Open →</span>
-                    </div>
-                  </Link>
-                ))}
+              <div className="tc-grid">
+                {items.map(t => <ToolCard key={t.key} tool={t} badge={badgeFor(t)} />)}
               </div>
             </section>
           );
         })}
+
+        {locked.length > 0 && (
+          <section className="tl-section tl-more">
+            <h2 className="tl-section-title">More from Curio</h2>
+            <p className="tl-section-sub">Tools that aren&apos;t in your account yet. Request one and Curio will follow up.</p>
+            <div className="tc-grid">
+              {locked.map(t => (
+                <LockedToolCard key={t.key} tool={t} lock={t.lock} state={requests[`tool:${t.key}`]} onRequest={() => requestAccess(t)} />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );

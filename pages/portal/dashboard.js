@@ -4,12 +4,35 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import profiles from '../../lib/profiles';
 import PortalSidebar from '../../components/PortalSidebar';
+import ToolCard, { TOOL_CARD_CSS } from '../../components/ToolCard';
+import { NAV_ITEMS, navLockReason } from '../../lib/portalNav';
+import { getRecentTools } from '../../lib/toolRecents';
 
-const COMPANION_META = [
-  { key: 'precision', tertiary: 'HOW', label: 'Precision Companion', href: '/portal/tools/precision-companion', desc: 'Detail-level thinking: decomposition, pre-flight checklists, gap review, edge cases, definition of done.' },
-  { key: 'purpose', tertiary: 'WHY', label: 'Purpose Companion', href: '/portal/tools/purpose-companion', desc: 'Purpose-level framing: the Purpose Brief interview, North Star, So-What Translator, opening lines.' },
-  { key: 'progress', tertiary: 'WHAT', label: 'Progress Companion', href: '/portal/tools/progress-companion', desc: 'Progress-level thinking: shipping thresholds, milestone backplans, progress broadcasts, closing cards.' },
-];
+// Up to three of the person's tools: recently used first, then the
+// Companion matching their tertiary, then the rest in Tools-page order.
+function pickYourTools(available, recentKeys, tertiary) {
+  const ordered = [
+    ...recentKeys.map(k => available.find(t => t.key === k)).filter(Boolean),
+    ...available.filter(t => t.tertiary && t.tertiary === tertiary),
+    ...available,
+  ];
+  return [...new Map(ordered.map(t => [t.key, t])).values()].slice(0, 3);
+}
+
+function YourTools({ tools, tertiary, color }) {
+  if (!tools.length) return null;
+  return (
+    <div style={s.contentCard}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 14 }}>
+        <div style={{ ...s.cardLabel, color, marginBottom: 0 }}>Your tools</div>
+        <Link href="/portal/tools" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#047857', textDecoration: 'none' }}>See all tools →</Link>
+      </div>
+      <div className="tc-grid">
+        {tools.map(t => <ToolCard key={t.key} tool={t} badge={t.tertiary && t.tertiary === tertiary ? 'Built for your tertiary' : null} />)}
+      </div>
+    </div>
+  );
+}
 
 export default function PortalDashboard() {
   const router = useRouter();
@@ -18,6 +41,8 @@ export default function PortalDashboard() {
   const [loading, setLoading] = useState(true);
   const [resendState, setResendState] = useState('idle'); // 'idle' | 'sending' | 'sent' | 'error'
   const [renewalLoading, setRenewalLoading] = useState(false);
+  const [recentKeys, setRecentKeys] = useState([]);
+  useEffect(() => { if (me?.user?.id) setRecentKeys(getRecentTools(me.user.id)); }, [me?.user?.id]);
 
   useEffect(() => {
     Promise.all([
@@ -63,13 +88,10 @@ export default function PortalDashboard() {
   const assessment = data?.myAssessment;
   const isIndividual = !!assessment;
   const isTeamAccount = !!data?.isTeamAccount;
-  const hasRoleAnalyzer = data?.hasRoleAnalyzer;
   const hasAssessment = data?.hasAssessment;
   const tertiary = data?.tertiary;
-  const companionFlags = { precision: data?.hasPrecisionCompanion, purpose: data?.hasPurposeCompanion, progress: data?.hasProgressCompanion };
-  const matchingCompanions = COMPANION_META.filter(c => companionFlags[c.key] && c.tertiary === tertiary);
-  const otherCompanions = COMPANION_META.filter(c => companionFlags[c.key] && c.tertiary !== tertiary);
-  const companionCards = [...matchingCompanions, ...otherCompanions];
+  const navCtx = { licenseTypes: new Set(licenses.map(l => l.type)), isTeamAccount, role: me.user?.role, hasProfile: isIndividual, tier: data?.tier, tertiary };
+  const yourTools = pickYourTools(NAV_ITEMS.filter(i => i.inTools && navLockReason(i, navCtx) === null), recentKeys, tertiary);
   const hasLibrary = data?.hasLibrary;
   const { total = 0, used = 0, available = 0 } = data?.tokenStats || {};
   const typeKey = assessment?.type?.toLowerCase();
@@ -95,8 +117,8 @@ export default function PortalDashboard() {
             .dash-cta { flex-direction: column !important; align-items: flex-start !important; }
             .dash-cta-btn { width: 100% !important; text-align: center !important; box-sizing: border-box; }
             .dash-stats { flex-direction: column !important; }
-            .dash-companion-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
           }
+          ${TOOL_CARD_CSS}
         `}</style>
       </Head>
       <div style={s.layout}>
@@ -170,6 +192,7 @@ export default function PortalDashboard() {
                     View Field Guide →
                   </Link>
                 </div>
+                <YourTools tools={yourTools} tertiary={tertiary} color={color} />
                 <div style={s.contentCard}>
                   <div style={{ ...s.cardLabel, color }}>Who You Are</div>
                   <p style={s.prose}>{profile.whoYouAre}</p>
@@ -273,43 +296,6 @@ export default function PortalDashboard() {
                   />
                 </div>
 
-                {hasRoleAnalyzer && (
-                  <div className="dash-cta" style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
-                    <div>
-                      <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>See how your profile fits specific roles</div>
-                      <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Use the Role Alignment Analyzer to explore what energizes you, what drains you, and how you collaborate best — for any role you enter.</div>
-                    </div>
-                    <Link href="/portal/tools/fit" className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color }}>Open Analyzer →</Link>
-                  </div>
-                )}
-
-                {companionCards.length > 0 && (
-                  <div style={s.contentCard}>
-                    <div style={{ ...s.cardLabel, color }}>Your AI Companions</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {companionCards.map(c => (
-                        <div key={c.key} className="dash-companion-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 16px', borderRadius: 10, border: `1px solid ${c.tertiary === tertiary ? color + '40' : '#E2E8F0'}`, background: c.tertiary === tertiary ? `${color}08` : '#FAFAFA' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.925rem' }}>{c.label}{c.tertiary === tertiary && <span style={{ marginLeft: 8, fontSize: '0.65rem', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Matches your tertiary</span>}</div>
-                            <div style={{ fontSize: '0.825rem', color: '#64748B', marginTop: 2 }}>{c.desc}</div>
-                          </div>
-                          <Link href={c.href} className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color, flexShrink: 0 }}>Open →</Link>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {data?.hasOrientationTranslator && (
-                  <div className="dash-cta" style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
-                    <div>
-                      <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '1rem' }}>Orientation Translator</div>
-                      <div style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>Translate a message to WHY-speak, WHAT-speak, HOW-speak, or a specific person's profile. Universal, works for any profile.</div>
-                    </div>
-                    <Link href="/portal/tools/orientation-translator" className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color }}>Open Translator →</Link>
-                  </div>
-                )}
-
                 {hasLibrary && (
                   <div className="dash-cta" style={{ ...s.analyzerCta, borderColor: `${color}40`, background: `${color}08` }}>
                     <div>
@@ -359,6 +345,8 @@ export default function PortalDashboard() {
                       <Link href="/portal/library" className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color }}>Open Resources →</Link>
                     </div>
                   )}
+
+                  <div style={{ marginBottom: 24 }}><YourTools tools={yourTools} tertiary={tertiary} color={color} /></div>
 
                   {hasAssessment !== false && (
                     <div className="dash-stats" style={s.statsRow}>
