@@ -5,11 +5,11 @@ import { COMPANIONS_UI } from '../lib/companion-ui';
 import { TERTIARY_BY_PROFILE } from '../lib/tertiary';
 import MD from './CompanionMarkdown';
 import PortalSidebar from './PortalSidebar';
+import ToolHeader from './ToolHeader';
 
 const NAVY = '#0F172A';
 const EMERALD = '#059669';
 const DEEP = '#065F46';
-const TEAL = '#14B8A6';
 const INK = '#1E293B';
 const RULE = '#E2E8F0';
 const ALL_PROFILES = Object.keys(TERTIARY_BY_PROFILE);
@@ -118,34 +118,25 @@ export default function CompanionShell({ companionKey, initialProfile, initialTe
 
       <main className="portal-main" style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
 
-      <div style={{ background: NAVY, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: 34, color: '#fff', lineHeight: 1 }}>
-            Curio<span style={{ color: TEAL }}>.</span>
-          </span>
-          <div>
-            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#A7F3D0' }}>MindPrint&trade; AI Companion</div>
-            <div style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: 20, color: '#fff' }}>{companion.label}</div>
+      <div className="tool-page-col" style={{ maxWidth: 768, margin: '0 auto', padding: '40px 16px 24px' }}>
+        <ToolHeader
+          toolKey={companionKey}
+          aside={isAdmin && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: '#64748B' }}>Profile override (admin)</span>
+              <select value={profile} onChange={(e) => setProfile(e.target.value)}
+                style={{ borderRadius: 6, padding: '6px 8px', fontSize: '0.875rem', fontWeight: 500, background: '#fff', color: INK, border: `1px solid ${RULE}`, outline: 'none' }}>
+                {ALL_PROFILES.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </label>
+          )}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: soft, border: `1px solid ${accent}` }}>
+            <span style={{ borderRadius: 9999, padding: '4px 12px', fontSize: 9, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', background: EMERALD, color: '#fff' }}>Replace</span>
+            <span style={{ borderRadius: 9999, padding: '4px 12px', fontSize: 9, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', border: `1px solid ${accent}`, color: accentText }}>Supports Tertiary {companion.supports}</span>
+            <span style={{ fontSize: 12.5 }}>{tertiary === companion.supports ? companion.banner.match : companion.banner.other}</span>
           </div>
-        </div>
-        {isAdmin && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: '#94A3B8' }}>Profile override (admin)</span>
-            <select value={profile} onChange={(e) => setProfile(e.target.value)}
-              style={{ borderRadius: 6, padding: '6px 8px', fontSize: '0.875rem', fontWeight: 500, background: '#1E293B', color: '#fff', border: '1px solid #334155', outline: 'none' }}>
-              {ALL_PROFILES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
-        )}
-      </div>
-
-      <div style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: soft, borderBottom: `1px solid ${accent}` }}>
-        <span style={{ borderRadius: 9999, padding: '4px 12px', fontSize: 9, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', background: EMERALD, color: '#fff' }}>Replace</span>
-        <span style={{ borderRadius: 9999, padding: '4px 12px', fontSize: 9, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', border: `1px solid ${accent}`, color: accentText }}>Supports Tertiary {companion.supports}</span>
-        <span style={{ fontSize: 12.5 }}>{tertiary === companion.supports ? companion.banner.match : companion.banner.other}</span>
-      </div>
-
-      <div style={{ maxWidth: 768, margin: '0 auto', padding: '24px 16px' }}>
+        </ToolHeader>
         {!hasProfile && !isAdmin ? (
           <div style={{ borderRadius: 12, background: '#fff', border: `1px solid ${RULE}`, padding: 32, textAlign: 'center' }}>
             <p style={{ fontSize: '0.95rem', color: '#475569', lineHeight: 1.7 }}>

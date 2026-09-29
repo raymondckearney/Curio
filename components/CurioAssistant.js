@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 const STORAGE_KEY = 'curio-assistant-v1';
+export const OPEN_ASSISTANT_EVENT = 'curio-assistant:open';
 const STARTERS = [
   "I'm preparing for a tough 1:1",
   'My team meetings run long',
@@ -103,6 +104,14 @@ export default function CurioAssistant({ userId }) {
     const hide = setTimeout(dismissHint, 1200 + 12000);
     return () => { clearTimeout(show); clearTimeout(hide); };
   }, [hintKey, restored, open]);
+
+  // Other parts of the portal (e.g. the Tools page's "Ask Curio" prompt)
+  // open the panel with window.dispatchEvent(new Event(OPEN_ASSISTANT_EVENT)).
+  useEffect(() => {
+    const onOpen = () => { dismissHint(); setOpen(true); };
+    window.addEventListener(OPEN_ASSISTANT_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_ASSISTANT_EVENT, onOpen);
+  }, [hintKey]);
 
   // Pulse the button the first time it appears in a browser session only,
   // not again on every page change.

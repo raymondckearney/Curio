@@ -5,10 +5,10 @@ import { toolThumb } from '../lib/portalNav';
 // Render TOOL_CARD_CSS once on any page that uses it.
 export const TOOL_CARD_CSS = `
   .tc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;}
-  .tc-card{display:flex;flex-direction:column;background:#ECFDF5;border:2px solid #6EE7B7;border-radius:14px;overflow:hidden;text-decoration:none;color:#0F172A;box-shadow:0 1px 2px rgba(15,23,42,0.04);transition:transform 0.15s ease,box-shadow 0.15s ease,border-color 0.15s ease;}
-  a.tc-card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(6,95,70,0.16);border-color:#059669;}
+  .tc-card{display:flex;flex-direction:column;background:#ECFDF5;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;text-decoration:none;color:#0F172A;box-shadow:0 1px 2px rgba(15,23,42,0.04);transition:transform 0.15s ease,box-shadow 0.15s ease,border-color 0.15s ease;}
+  a.tc-card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(15,23,42,0.12);border-color:#CBD5E1;}
   a.tc-card:focus-visible{outline:3px solid #059669;outline-offset:3px;}
-  .tc-thumb{position:relative;aspect-ratio:16/10;background:#fff;border-bottom:2px solid #6EE7B7;overflow:hidden;}
+  .tc-thumb{position:relative;aspect-ratio:16/10;background:#fff;border-bottom:1px solid #E2E8F0;overflow:hidden;}
   .tc-thumb img{width:100%;height:100%;object-fit:cover;object-position:top left;display:block;}
   .tc-badge{position:absolute;top:8px;left:8px;background:#FCD34D;color:#111827;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;padding:3px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(15,23,42,0.18);}
   .tc-body{padding:13px 15px 15px;display:flex;flex-direction:column;flex:1;}

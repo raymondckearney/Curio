@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { PortalNav } from '../dashboard';
+import ToolHeader from '../../../components/ToolHeader';
 
 const PROFILES = [
   { id: 'WHY-WHAT', label: 'WHY – WHAT', tagline: 'Purpose-Driven, Progress-Oriented', primary: 'WHY' },
@@ -532,15 +533,16 @@ export default function CareerGuidance() {
       </Head>
       <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' }}>
         <PortalNav me={me} onLogout={logout} active="career" licenses={dash?.licenses} isIndividual={isIndividual} isTeamAccount={!!dash?.isTeamAccount} />
-        <main className="portal-main" style={{ marginLeft: 220, flex: 1, padding: '48px 48px 0', maxWidth: 'calc(100vw - 220px)' }}>
+        <main className="portal-main tool-main" style={{ marginLeft: 220, flex: 1, minWidth: 0, padding: '48px 48px 0' }}>
 
-          <div style={{ marginBottom: 36 }}>
-            <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2.2rem', fontWeight: 700, color: '#0F172A', marginBottom: 4, lineHeight: 1.1 }}>Career Guidance Tool</h1>
-            <p style={{ fontFamily: "'Caveat', cursive", fontSize: '1.3rem', fontWeight: 700, color: '#059669', marginBottom: 12, lineHeight: 1.2 }}>Find a role that ENERGIZES you!</p>
-            <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.7, maxWidth: 680 }}>
-              The more detail you provide below, the more customized the output. We'll generate a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think. You can even add your results from any other assessments you've taken to provide a more comprehensive output.
+          <ToolHeader
+            toolKey="career"
+            subtitle={<><strong style={{ color: '#059669' }}>Find a role that ENERGIZES you!</strong> Get a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.</>}
+          >
+            <p style={{ fontSize: '0.86rem', color: '#64748B', lineHeight: 1.6, maxWidth: 680, margin: 0 }}>
+              The more detail you provide below, the more customized the output. You can even add your results from any other assessments you've taken to provide a more comprehensive output.
             </p>
-          </div>
+          </ToolHeader>
 
           {!loading && !displayReport && (
             <>

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import PortalSidebar from '../../../components/PortalSidebar';
+import ToolHeader from '../../../components/ToolHeader';
 
 // Mirrors /jd.js but with portal session auth instead of token gate
 
@@ -189,10 +190,10 @@ function JDAnalyzer() {
 
   return (
     <div className="page">
-      <div className="page-label">Job Description Analyzer</div>
-      <h1 className="page-title">Which MindPrint profiles<br />fit this role?</h1>
-      <p className="page-subtitle">Paste a job description or enter a URL. Get the cognitive demand breakdown and a ranked analysis of every profile.</p>
-      <div className="page-rule" />
+      <ToolHeader
+        toolKey="jd"
+        subtitle="Which MindPrint profiles fit this role? Paste a job description or enter a URL to get the cognitive demand breakdown and a ranked analysis of every profile."
+      />
       <div className="input-tabs">
         <button className={`input-tab${inputMode==='text'?' input-tab--active':''}`} onClick={()=>setInputMode('text')}>Paste text</button>
         <button className={`input-tab${inputMode==='url'?' input-tab--active':''}`} onClick={()=>setInputMode('url')}>Enter URL</button>
@@ -286,11 +287,6 @@ const jdCss = `
   .nav-back { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #78716C; text-decoration: none; }
   .nav-back:hover { color: #059669; }
   .page { max-width: 860px; margin: 0 auto; padding: 56px clamp(24px,5vw,72px) 100px; }
-  .page-label { display: inline-flex; align-items: center; gap: 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.17em; text-transform: uppercase; color: #059669; margin-bottom: 20px; }
-  .page-label::before { content: ''; display: block; width: 36px; height: 1px; background: #059669; flex-shrink: 0; }
-  .page-title { font-family: 'Caveat', cursive; font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 700; color: #1C1917; line-height: 1.12; margin-bottom: 16px; }
-  .page-subtitle { font-size: 1rem; color: #78716C; max-width: 580px; line-height: 1.75; margin-bottom: 48px; }
-  .page-rule { width: 100%; height: 1px; background: #E7E5E4; margin-bottom: 40px; }
   .input-tabs { display: flex; margin-bottom: 12px; border-bottom: 1px solid #E7E5E4; }
   .input-tab { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; color: #78716C; cursor: pointer; margin-bottom: -1px; transition: all 0.15s; }
   .input-tab--active { color: #059669; border-bottom-color: #059669; font-weight: 600; }
@@ -348,5 +344,5 @@ const jdCss = `
   .reset-btn { width: 100%; padding: 16px 24px; background: transparent; border: 1px solid #E7E5E4; border-radius: 6px; color: #A8A29E; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; }
   .reset-btn:hover { border-color: #A8A29E; color: #1C1917; }
   @media (max-width: 680px) { .other-grid { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr; } .profile-card-header { flex-direction: column-reverse; align-items: flex-start; gap: 16px; } }
-  @media print { .nav, .input-tabs, .jd-input, .url-input, .error-box, .analyze-btn, .results-rule, .expand-btn, .result-actions, .page-rule { display: none !important; } .page { padding: 0; max-width: 100%; } .profile-detail--hidden { display: block !important; } }
+  @media print { .nav, .input-tabs, .jd-input, .url-input, .error-box, .analyze-btn, .results-rule, .expand-btn, .result-actions { display: none !important; } .page { padding: 0; max-width: 100%; } .profile-detail--hidden { display: block !important; } }
 `;

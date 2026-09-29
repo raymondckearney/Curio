@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import profiles from '../lib/profiles';
+import ToolHeader from './ToolHeader';
 
 // ── Data ─────────────────────────────────────────────────────────────────
 // Ported verbatim from the approved reference build (session_architect_
@@ -395,8 +396,6 @@ export function parseRoster(rosterText) {
 
 export const SA_CSS = `
   .sa-root{font-family:"DM Sans",-apple-system,sans-serif;color:#1E293B;}
-  .sa-hero{background:#0F172A;color:#fff;padding:28px 24px;border-radius:8px;margin-bottom:28px;}
-  .sa-hero p{margin:8px 0 0;color:#A7F3D0;font-size:0.92rem;max-width:640px;line-height:1.5;}
   .sa-section-title{font-family:"Caveat",cursive;font-weight:700;font-size:1.7rem;color:#065F46;margin:32px 0 4px;}
   .sa-section-sub{color:#64748B;font-size:0.88rem;margin:0 0 16px;line-height:1.5;}
   .sa-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:20px;margin-bottom:14px;}
@@ -1379,10 +1378,7 @@ export default function SessionArchitect() {
     <div className="sa-root">
       <style dangerouslySetInnerHTML={{ __html: SA_CSS }} />
 
-      <div className="sa-hero">
-        <p style={{ margin: 0, fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: "1.8rem" }}>Session Architect</p>
-        <p>Build a facilitated session sequenced through all three orientations on purpose, with a specific, runnable activity for every block.</p>
-      </div>
+      <ToolHeader toolKey="session-architect" subtitle={"Build a facilitated session sequenced through all three orientations on purpose, with a specific, runnable activity for every block."} />
 
       <h3 className="sa-section-title">1. Room composition</h3>
       <p className="sa-section-sub">Enter attendee names under their primary-secondary orientation. Leave a field blank if no one in that orientation is in the room, the tool will flag where you need to open a block yourself.</p>

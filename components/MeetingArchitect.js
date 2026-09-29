@@ -4,6 +4,7 @@ import {
   SA_CSS, PDF_INK, PDF_SLATE, PDF_EMERALD, PDF_DEEP_EMERALD, PDF_ENERGY_RGB,
 } from './SessionArchitect';
 import { durationsFor, INPUT_MODE_LABELS } from '../lib/meetingArchitect';
+import ToolHeader from './ToolHeader';
 
 const MA_CSS = `
   .ma-textarea{min-height:84px;resize:vertical;line-height:1.5;}
@@ -136,10 +137,7 @@ export default function MeetingArchitect({ templates, profile }) {
     <div className="sa-root">
       <style dangerouslySetInnerHTML={{ __html: SA_CSS + MA_CSS }} />
 
-      <div className="sa-hero">
-        <p style={{ margin: 0, fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: '1.8rem' }}>Meeting Architect</p>
-        <p>Redesign a recurring meeting around what you need it to do, what&apos;s going wrong today, and how the people in it are wired, with a timed agenda you can run next week.</p>
-      </div>
+      <ToolHeader toolKey="meeting-architect" subtitle={"Redesign a recurring meeting around what you need it to do, what's going wrong today, and how the people in it are wired, with a timed agenda you can run next week."} />
 
       {!profile && (
         <div className="ma-note">

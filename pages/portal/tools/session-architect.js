@@ -33,7 +33,7 @@ export default function SessionArchitectPage({ me, licenses, isIndividual, isTea
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <PortalSidebar me={me} onLogout={logout} active="session-architect" licenses={licenses} isIndividual={isIndividual} isTeamAccount={isTeamAccount} />
-      <main className="portal-main" style={{ marginLeft: 220, flex: 1, padding: '48px 48px 60px', maxWidth: 'calc(100vw - 220px)' }}>
+      <main className="portal-main tool-main" style={{ marginLeft: 220, flex: 1, minWidth: 0, padding: '48px 48px 60px' }}>
         <SessionArchitect />
       </main>
     </div>

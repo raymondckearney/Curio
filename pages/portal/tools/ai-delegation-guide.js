@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import PortalSidebar from '../../../components/PortalSidebar';
+import ToolHeader from '../../../components/ToolHeader';
 
-const ORIENTATION_COLORS = { WHY: '#6EE7B7', WHAT: '#93C5FD', HOW: '#FCD34D' };
+const ORIENTATION_COLORS = { WHY: '#059669', WHAT: '#2563EB', HOW: '#B45309' };
 const ROUTE_BADGE = {
   AI: { label: 'Utilize AI', background: '#D1FAE5', color: '#065F46' },
   DELEGATE: { label: 'Delegate', background: '#1E3A5F', color: '#fff' },
@@ -74,7 +75,7 @@ export default function AiDelegationGuide() {
 
   const isIndividual = !!dash?.myAssessment;
   const profile = guide?.profiles.find(p => p.code === selectedCode) || guide?.profiles[0];
-  const orientationColor = profile ? ORIENTATION_COLORS[profile.primary] : '#6EE7B7';
+  const orientationColor = profile ? ORIENTATION_COLORS[profile.primary] : '#059669';
   // Server-side re-checks this on every classify call — this only controls
   // whether the module renders at all, matching the "absent entirely for
   // basic, not just disabled" requirement.
@@ -96,27 +97,24 @@ export default function AiDelegationGuide() {
             </div>
           ) : (
             <>
-              <div style={{ ...s.headerBand }}>
-                <div style={s.headerInner}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+              <div className="tool-page-col" style={s.container}>
+                <ToolHeader
+                  toolKey="ai-delegation-guide"
+                  aside={guide.canSwitch && (
                     <div>
-                      <span style={s.eyebrow}>MINDPRINT™ PROFILE</span>
-                      <h1 style={{ ...s.profileCode, color: orientationColor }}>{profile.code}</h1>
-                      <p style={s.tagline}>{profile.tagline}</p>
+                      <label style={s.switcherLabel}>Viewing profile</label>
+                      <select style={s.switcherSelect} value={selectedCode} onChange={e => setSelectedCode(e.target.value)}>
+                        {guide.profiles.map(p => <option key={p.code} value={p.code}>{p.code}</option>)}
+                      </select>
                     </div>
-                    {guide.canSwitch && (
-                      <div>
-                        <label style={s.switcherLabel}>Viewing profile</label>
-                        <select style={s.switcherSelect} value={selectedCode} onChange={e => setSelectedCode(e.target.value)}>
-                          {guide.profiles.map(p => <option key={p.code} value={p.code}>{p.code}</option>)}
-                        </select>
-                      </div>
-                    )}
+                  )}
+                >
+                  <div style={s.profileRow}>
+                    <span style={s.eyebrow}>MindPrint™ profile</span>
+                    <span style={{ ...s.profileCode, color: orientationColor }}>{profile.code}</span>
+                    <span style={s.tagline}>{profile.tagline}</span>
                   </div>
-                </div>
-              </div>
-
-              <div style={s.container}>
+                </ToolHeader>
                 <div style={s.contextRow}>
                   <div style={s.contextCard}>
                     <h2 style={s.contextTitle}>Tertiary drain, in practice</h2>
@@ -237,15 +235,14 @@ const s = {
   page: { minHeight: '100vh', background: '#F8FAFC', fontFamily: "'DM Sans', sans-serif", color: '#0F172A' },
   loading: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#94A3B8', fontFamily: 'sans-serif' },
   main: { marginLeft: 220 },
-  container: { maxWidth: 1000, margin: '0 auto', padding: '32px 24px' },
+  container: { maxWidth: 1000, margin: '0 auto', padding: '44px 24px 32px' },
   emptyState: { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '40px 24px', textAlign: 'center', color: '#64748B', fontSize: '0.95rem' },
-  headerBand: { background: '#0F172A', padding: '44px 24px' },
-  headerInner: { maxWidth: 1000, margin: '0 auto' },
-  eyebrow: { display: 'block', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em', color: '#6EE7B7', marginBottom: 10 },
-  profileCode: { fontFamily: "'Caveat', cursive", fontSize: '3rem', fontWeight: 700, lineHeight: 1, margin: '0 0 8px' },
-  tagline: { fontSize: '1rem', color: '#CBD5E1', fontWeight: 500, margin: 0 },
-  switcherLabel: { display: 'block', fontSize: '0.72rem', fontWeight: 600, color: '#94A3B8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' },
-  switcherSelect: { padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif" },
+  profileRow: { display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' },
+  eyebrow: { fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#64748B' },
+  profileCode: { fontFamily: "'Caveat', cursive", fontSize: '1.9rem', fontWeight: 700, lineHeight: 1 },
+  tagline: { fontSize: '0.92rem', color: '#475569', fontWeight: 500 },
+  switcherLabel: { display: 'block', fontSize: '0.68rem', fontWeight: 700, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' },
+  switcherSelect: { padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#fff', color: '#0F172A', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif" },
   contextRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 },
   contextCard: { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' },
   contextTitle: { fontSize: '0.85rem', fontWeight: 700, color: '#0F172A', marginBottom: 8, marginTop: 0 },

@@ -5,11 +5,11 @@ import { loadCompanionProps } from '../../../lib/companionAuth';
 import { TERTIARY_BY_PROFILE } from '../../../lib/tertiary';
 import MD from '../../../components/CompanionMarkdown';
 import PortalSidebar from '../../../components/PortalSidebar';
+import ToolHeader from '../../../components/ToolHeader';
 
 const NAVY = '#0F172A';
 const EMERALD = '#059669';
 const DEEP = '#065F46';
-const TEAL = '#14B8A6';
 const INK = '#1E293B';
 const RULE = '#E2E8F0';
 const ACCENT = '#14B8A6';
@@ -173,7 +173,7 @@ export default function LanguageToolsPage({ initialProfile, me, licenses, isIndi
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#FAFAF8', fontFamily: "'DM Sans', sans-serif", color: INK }}>
       <Head>
-        <title>MindPrint Language Tools — Curio</title>
+        <title>Orientation Translator — Curio</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
@@ -181,48 +181,41 @@ export default function LanguageToolsPage({ initialProfile, me, licenses, isIndi
 
       <main className="portal-main" style={{ marginLeft: 220, flex: 1, minHeight: '100vh' }}>
 
-      <div style={{ background: NAVY, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <span style={{ fontFamily: "'Caveat', cursive", fontWeight: 700, fontSize: 34, color: '#fff', lineHeight: 1 }}>
-            Curio<span style={{ color: TEAL }}>.</span>
-          </span>
-          <div>
-            <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: '#A7F3D0' }}>MindPrint&trade; Language Tools</div>
-            <div style={{ fontFamily: "'Caveat', cursive", fontWeight: 600, fontSize: 20, color: '#fff' }}>
-              {tool === 'translate' ? 'Orientation Translator' : 'Profile Detector'}
+      <div className="tool-page-col" style={{ maxWidth: 768, margin: '0 auto', padding: '40px 16px 24px' }}>
+        <ToolHeader
+          toolKey="translator"
+          subtitle={tool === 'translate'
+            ? "Rewrite a message for a WHY, WHAT, or HOW reader, or for a specific person's profile."
+            : "Profile Detector: paste writing samples and get a hypothesis about the writer's orientation. Never for hiring decisions."}
+          aside={(
+            <div style={{ display: 'flex', borderRadius: 9999, padding: 4, background: '#F1F5F9', border: `1px solid ${RULE}` }}>
+              {[['translate', 'Translate'], ['detect', 'Detect']].map(([k, label]) => (
+                <button key={k} onClick={() => switchTool(k)}
+                  style={{
+                    borderRadius: 9999, padding: '6px 16px', fontSize: 11, fontWeight: 600, border: 'none', cursor: 'pointer',
+                    background: tool === k ? NAVY : 'transparent', color: tool === k ? '#fff' : '#475569',
+                  }}>
+                  {label}{k === 'detect' ? ' · beta' : ''}
+                </button>
+              ))}
             </div>
+          )}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: SOFT, border: `1px solid ${ACCENT}` }}>
+            {tool === 'detect' ? (
+              <span style={{ borderRadius: 9999, padding: '4px 12px', fontSize: 9, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', background: '#FEF3C7', border: '1px solid #FCD34D', color: '#92400E' }}>
+                Beta &middot; Hypothesis Engine
+              </span>
+            ) : (
+              <span style={{ borderRadius: 9999, padding: '4px 12px', fontSize: 9, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', border: `1px solid ${ACCENT}`, color: ACCENT_TEXT }}>Universal &middot; All Six Profiles</span>
+            )}
+            <span style={{ fontSize: 12.5 }}>
+              {tool === 'translate'
+                ? "Same facts, re-answered for the reader's signature question. People wired differently talk past each other; this closes the gap."
+                : 'Writing carries a signature: two orientations spent, one quietly skipped. The Detector reads it and offers a hypothesis. Your confirmations are what teach it.'}
+            </span>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', borderRadius: 9999, padding: 4, background: '#1E293B' }}>
-          {[['translate', 'Translate'], ['detect', 'Detect']].map(([k, label]) => (
-            <button key={k} onClick={() => switchTool(k)}
-              style={{
-                borderRadius: 9999, padding: '6px 16px', fontSize: 11, fontWeight: 600, border: 'none', cursor: 'pointer',
-                background: tool === k ? TEAL : 'transparent', color: tool === k ? NAVY : '#CBD5E1',
-              }}>
-              {label}{k === 'detect' ? ' · beta' : ''}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: SOFT, borderBottom: `1px solid ${ACCENT}` }}>
-        {tool === 'detect' ? (
-          <span style={{ borderRadius: 9999, padding: '4px 12px', fontSize: 9, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', background: '#FEF3C7', border: '1px solid #FCD34D', color: '#92400E' }}>
-            Beta &middot; Hypothesis Engine
-          </span>
-        ) : (
-          <span style={{ borderRadius: 9999, padding: '4px 12px', fontSize: 9, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', border: `1px solid ${ACCENT}`, color: ACCENT_TEXT }}>Universal &middot; All Six Profiles</span>
-        )}
-        <span style={{ fontSize: 12.5 }}>
-          {tool === 'translate'
-            ? "Same facts, re-answered for the reader's signature question. People wired differently talk past each other; this closes the gap."
-            : 'Writing carries a signature: two orientations spent, one quietly skipped. The Detector reads it and offers a hypothesis. Your confirmations are what teach it.'}
-        </span>
-      </div>
-
-      <div style={{ maxWidth: 768, margin: '0 auto', padding: '24px 16px' }}>
+        </ToolHeader>
         <div style={{ borderRadius: 12, background: '#fff', border: `1px solid ${RULE}`, padding: 20 }}>
           {tool === 'translate' ? (
             <div>
