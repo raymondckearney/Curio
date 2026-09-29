@@ -63,6 +63,7 @@ export default function Manual() {
           <div className="nav-group">
             <div className="nav-group-label">Client Portal</div>
             <a href="#portal-dashboard" className="nav-link">Dashboard</a>
+            <a href="#portal-tools-page" className="nav-link">Tools page</a>
             <a href="#portal-ai-delegation-guide" className="nav-link">AI & Delegation Guide</a>
             <a href="#portal-team" className="nav-link">My Team</a>
             <a href="#portal-dynamics" className="nav-link">Dynamics</a>
@@ -356,6 +357,23 @@ export default function Manual() {
             <Card title="Download PDF">Builds a branded PDF of whatever profile + view is currently on screen, client-side via <code>jsPDF</code> with the standard <code>helvetica</code> font (no Google Fonts dependency, so it can't hit the same font-embedding failure the results PDF once did). Section headers reserve room for their first block of following content before triggering a page break, so a header can never get stranded alone at the bottom of a page with its content pushed to the next one — see <code>dayBlock</code>/<code>numberedNotes</code>/the <code>followHeight</code> param on <code>sectionHeader</code> in the component.</Card>
           </section>
 
+          {/* ─── Tools page ─── */}
+          <section className="section" id="portal-tools-page">
+            <div className="section-header">
+              <h2 className="section-title">Tools page</h2>
+              <span className="section-path">/portal/tools</span>
+            </div>
+            <div className="badges">
+              <span className="badge badge-owner">Owner</span>
+              <span className="badge badge-member">Member</span>
+            </div>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>The sidebar is limited to My Profile, Tools, My Team (with its Dynamics / Onboarding Resources / Send Assessment / Analytics sub-tabs), Resources, and Recent Articles. Every individual tool lives on the Tools page instead, as a thumbnail card with a screenshot of the tool, its name, a one-line description, and Open. The Curio Assistant button is unchanged.</p>
+            <Card title="What each person sees">Only the tools they can open, using the same rule the sidebar used when tools were sidebar items (<code>navLockReason</code> in <code>lib/portalNav.js</code>): licenses, a completed assessment for the AI &amp; Delegation Guide. The sidebar's Tools entry only appears once a person has at least one tool; typing <code>/portal/tools</code> without any shows "No tools are included in your account yet."</Card>
+            <Card title="Groups">Cards are grouped by what they're for (<code>TOOL_SECTIONS</code>): <strong>Work with your profile</strong> (AI &amp; Delegation Guide, the three Companions, Orientation Translator), <strong>Sessions and meetings</strong> (Session Architect, Meeting Architect), and <strong>Roles and career</strong> (Role Analyzer, Career Guidance Tool, Job Description Analyzer). A group with no cards for that person is hidden. The Companion that matches the person's tertiary gets a yellow "Built for your tertiary" badge.</Card>
+            <Card title="Where you are">While inside any tool, the sidebar keeps "Tools" highlighted (the tool's key is mapped to <code>tools</code>).</Card>
+            <Card title="Thumbnails and descriptions">Each tool's <code>blurb</code>, <code>section</code>, and placement are set on its entry in <code>NAV_ITEMS</code>. Thumbnails are 800×500 screenshots of each tool at <code>public/images/tools/&lt;key&gt;.webp</code>, captured from the real tool pages with a test account; recapture them when a tool's look changes noticeably. A new tool needs an <code>inTools</code> entry with a <code>section</code>, a <code>blurb</code>, and a thumbnail.</Card>
+          </section>
+
           {/* ─── Session Architect ─── */}
           <section className="section" id="portal-session-architect">
             <div className="section-header">
@@ -366,7 +384,7 @@ export default function Manual() {
               <span className="badge badge-owner">Owner</span>
               <span className="badge badge-member">Member</span>
             </div>
-            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>Builds MindPrint&trade;-informed team session plans — workshops, brainstorms, retros, and planning sessions structured around participants' WHY/WHAT/HOW profiles rather than a generic agenda template. Gated on the <code>session_architect</code> license, granted individually by admin per account (not bundled with any tier), so it can be limited to specific pilot accounts. Sits in the sidebar directly under My Team.</p>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>Builds MindPrint&trade;-informed team session plans — workshops, brainstorms, retros, and planning sessions structured around participants' WHY/WHAT/HOW profiles rather than a generic agenda template. Gated on the <code>session_architect</code> license, granted individually by admin per account (not bundled with any tier), so it can be limited to specific pilot accounts. Opened from a card on the Tools page (see Tools page), not a sidebar item.</p>
             <Card title="Roster auto-fill">On load, fetches the caller's own team from <code>/api/portal/team</code> (owner sees the whole account, manager sees only their own team) and pre-fills the roster with every member who has a completed MindPrint™ assessment, labeled by profile. The roster is a free-text field afterward — edits made by hand aren't overwritten unless the page reloads.</Card>
             <Card title="Orientation content provenance">The six <code>ORIENTATIONS</code> entries' <code>energizedBy</code>/<code>bestUsedFor</code> copy is this tool's own facilitation-specific framing (how to use each profile in a workshop) and has no canonical equivalent elsewhere. <code>watchFor</code> is the exception: it's sourced live from each profile's <code>areasToWatch[0]</code> in <code>lib/profiles.js</code> rather than hand-authored a third time, since that's a factual caution about the profile, not a facilitation synthesis — exactly the class of claim that drifted out of sync with <code>lib/mindprint-source-of-truth.md</code> once already (a "bring them in after the vision is set" line that had accidentally inverted to "not after the vision is set" in both files).</Card>
             <Card title="Session builder">Pick a session type (Brainstorm/Ideation, Decision-Making, Planning/Kickoff, or Retrospective) and a duration (60 min, 90 min, Half day, or Full day); Session Architect assembles a block-by-block agenda with per-block activities and facilitation techniques drawn from a fixed template set, weighted toward the orientations present in the roster.</Card>
@@ -403,7 +421,7 @@ export default function Manual() {
             <Card title="Generation (API)"><code>POST /api/meeting-architect/generate</code>, license-checked server-side (401 logged out, 403 unlicensed). Synchronous JSON, not streamed: 400 for missing/invalid fields, 502 for an Anthropic error or incomplete model output, 500 if the reference files can't load. Raw <code>fetch</code> to the Anthropic API (<code>claude-sonnet-4-6</code>, max 4,000 output tokens, 60s function limit), with the full MindPrint&trade; Source of Truth, the templates file, and the tool library as a cached system block. User-entered text is fenced and marked as data. Em dashes are replaced in all returned copy. The API key never reaches the browser.</Card>
             <Card title="Output">In order: purpose (labeled default or edited), async / live split, the timed live structure (same agenda-block look as Session Architect), role assignments (Roster and Single Relationship only, omitted entirely in No Roster), the lean-in / get-help map, signs this is working vs. failing (rewritten against the stated challenges), and one Download PDF button (jsPDF, same conventions as Session Architect, saved as <code>curio-meeting-&lt;type-slug&gt;.pdf</code>).</Card>
             <Card title="Access">Gated on the <code>meeting_architect</code> license, the same per-account license mechanism as Session Architect (listed in <code>lib/licenseTypes.js</code>). Grant it either by adding it to an account directly (admin Accounts → Edit Account → Tier &amp; Licenses) or by ticking it on a token in Generate Tokens, which applies it when the recipient completes their assessment. Because licenses are account-wide, a token redeemed onto an existing team account gives Meeting Architect to everyone on that account, not just the recipient. Without the license, the sidebar item is hidden entirely (not shown locked), and direct navigation to the URL redirects to the dashboard server-side. Admin sessions bypass the check, same as every other licensed tool.</Card>
-            <Card title="Sidebar placement">Directly under Session Architect.</Card>
+            <Card title="Where it lives">A card on the Tools page, in "Sessions and meetings" next to Session Architect.</Card>
             <Card title="Report history">Successful generations are saved to the <code>meeting_architect_reports</code> table (<code>supabase/migrations/0011_meeting_architect_reports.sql</code>, run by hand like the other migrations). Unlike <code>career_guidance_reports</code>, each row records who generated it (<code>account_id</code>, <code>user_id</code>, <code>user_email</code>), plus the user's own profile at generation time, or null if they hadn't completed an assessment. Failed or malformed generations are never saved; a failed database write is logged and doesn't block the user's result.</Card>
           </section>
 
@@ -469,7 +487,7 @@ export default function Manual() {
               <span className="badge badge-owner">Owner</span>
               <span className="badge badge-member">Member</span>
             </div>
-            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>All tools are gated by license. If an account doesn't have the relevant license, the nav item doesn't appear.</p>
+            <p style={{fontSize:'0.855rem',color:'var(--sub)',marginBottom:12,lineHeight:1.65}}>All tools are gated by license. If an account doesn't have the relevant license, the tool's card doesn't appear on the Tools page.</p>
             <Card title="Role Analyzer · /portal/tools/fit · license: role_analyzer">Enter any role title. Generates a real-time streaming report with an alignment score, energizers, drains, and collaboration recommendations — all calibrated to the user's MindPrint™ profile. If the logged-in user has a completed assessment on file, their name and MindPrint™ profile are shown pre-filled and read-only (no step numbering — just the info, then the role field). If they have no assessment on file, the name field and profile grid render editable instead, so the tool still works for analyzing on someone else's behalf.</Card>
             <Card title="Career Guidance Tool · /portal/tools/career · license: career_guidance">Generates a structured career report with best-fit roles, energizers, challenges, and strategies. Optional inputs: current role, years of experience, additional results, strengths, and areas for growth. Includes a PDF export.</Card>
             <Card title="Job Description Analyzer · /portal/tools/jd · license: jd_analyzer">Paste a job description. Returns an analysis of fit vs. the user's profile — what will energize them, what will drain them, and how to position themselves for that role.</Card>

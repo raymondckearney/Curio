@@ -68,7 +68,10 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
   }, [mobileOpen]);
 
   const navCtx = { licenseTypes, isTeamAccount, role: me?.user?.role, hasProfile: isIndividual };
-  const visibleItems = NAV_ITEMS.filter(item => navLockReason(item, navCtx) === null);
+  // Individual tools live on the Tools page, not in the sidebar.
+  const visibleItems = NAV_ITEMS.filter(item => !item.inTools && navLockReason(item, navCtx) === null);
+  // While inside a tool, highlight "Tools" as where the user is.
+  const activeKey = NAV_ITEMS.find(i => i.key === active)?.inTools ? 'tools' : active;
 
   const visibleKeys = new Set(visibleItems.map(i => i.key));
   const teamVisible = visibleKeys.has('team');
@@ -109,7 +112,7 @@ export default function PortalSidebar({ me, onLogout, active, licenses = [], isI
                   key={item.key}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  style={active === item.key
+                  style={activeKey === item.key
                     ? { ...sb.navItem, ...sb.navItemActive }
                     : sb.navItem}
                 >
