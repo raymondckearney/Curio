@@ -5,7 +5,7 @@ import { COMPANIONS_UI } from '../lib/companion-ui';
 import { TERTIARY_BY_PROFILE } from '../lib/tertiary';
 import MD from './CompanionMarkdown';
 import PortalSidebar from './PortalSidebar';
-import ToolHeader from './ToolHeader';
+import ToolHeader, { bannerControl } from './ToolHeader';
 
 const NAVY = '#0F172A';
 const EMERALD = '#059669';
@@ -123,9 +123,9 @@ export default function CompanionShell({ companionKey, initialProfile, initialTe
           toolKey={companionKey}
           aside={isAdmin && (
             <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', color: '#64748B' }}>Profile override (admin)</span>
+              <span style={{ ...bannerControl.label, margin: 0 }}>Profile override (admin)</span>
               <select value={profile} onChange={(e) => setProfile(e.target.value)}
-                style={{ borderRadius: 6, padding: '6px 8px', fontSize: '0.875rem', fontWeight: 500, background: '#fff', color: INK, border: `1px solid ${RULE}`, outline: 'none' }}>
+                style={bannerControl.select}>
                 {ALL_PROFILES.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </label>

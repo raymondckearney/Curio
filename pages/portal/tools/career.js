@@ -537,7 +537,7 @@ export default function CareerGuidance() {
 
           <ToolHeader
             toolKey="career"
-            subtitle={<><strong style={{ color: '#059669' }}>Find a role that ENERGIZES you!</strong> Get a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.</>}
+            subtitle={<><strong style={{ color: '#fff' }}>Find a role that ENERGIZES you!</strong> Get a personalized report with best-fit roles, what will energize and challenge you, and strategies specific to how you think.</>}
           >
             <p style={{ fontSize: '0.86rem', color: '#64748B', lineHeight: 1.6, maxWidth: 680, margin: 0 }}>
               The more detail you provide below, the more customized the output. You can even add your results from any other assessments you've taken to provide a more comprehensive output.

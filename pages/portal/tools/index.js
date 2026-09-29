@@ -8,6 +8,7 @@ import { getRecentTools } from '../../../lib/toolRecents';
 import PortalSidebar from '../../../components/PortalSidebar';
 import ToolCard, { LockedToolCard, TOOL_CARD_CSS } from '../../../components/ToolCard';
 import { OPEN_ASSISTANT_EVENT } from '../../../components/CurioAssistant';
+import { TOOL_TONES } from '../../../components/ToolHeader';
 
 export async function getServerSideProps({ req }) {
   const result = await loadCompanionProps(req, null);
@@ -31,6 +32,7 @@ export async function getServerSideProps({ req }) {
 const CSS = `
   .tl-section{margin-bottom:36px;}
   .tl-section-title{font-family:'Caveat',cursive;font-size:1.7rem;font-weight:700;color:#0F172A;margin:0 0 2px;}
+  .tl-dot{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:10px;vertical-align:middle;position:relative;top:-2px;}
   .tl-section-sub{font-size:0.86rem;color:#64748B;margin:0 0 14px;}
   .tl-section{scroll-margin-top:24px;}
   @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth;}}
@@ -150,7 +152,7 @@ export default function ToolsPage({ me, licenses, isIndividual, isTeamAccount, t
 
         {sections.map(sec => (
           <section key={sec.key} className="tl-section" id={`tl-${sec.key}`}>
-            <h2 className="tl-section-title">{sec.label}</h2>
+            <h2 className="tl-section-title"><span className="tl-dot" style={{ background: TOOL_TONES[sec.key]?.bg }} aria-hidden="true" />{sec.label}</h2>
             <p className="tl-section-sub">{sec.sub}</p>
             <div className="tc-grid">
               {sec.items.map(t => <ToolCard key={t.key} tool={t} badge={badgeFor(t)} />)}

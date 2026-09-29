@@ -4,35 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import profiles from '../../lib/profiles';
 import PortalSidebar from '../../components/PortalSidebar';
-import ToolCard, { TOOL_CARD_CSS } from '../../components/ToolCard';
-import { NAV_ITEMS, navLockReason } from '../../lib/portalNav';
-import { getRecentTools } from '../../lib/toolRecents';
-
-// Up to three of the person's tools: recently used first, then the
-// Companion matching their tertiary, then the rest in Tools-page order.
-function pickYourTools(available, recentKeys, tertiary) {
-  const ordered = [
-    ...recentKeys.map(k => available.find(t => t.key === k)).filter(Boolean),
-    ...available.filter(t => t.tertiary && t.tertiary === tertiary),
-    ...available,
-  ];
-  return [...new Map(ordered.map(t => [t.key, t])).values()].slice(0, 3);
-}
-
-function YourTools({ tools, tertiary, color }) {
-  if (!tools.length) return null;
-  return (
-    <div style={s.contentCard}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 14 }}>
-        <div style={{ ...s.cardLabel, color, marginBottom: 0 }}>Your tools</div>
-        <Link href="/portal/tools" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#047857', textDecoration: 'none' }}>See all tools →</Link>
-      </div>
-      <div className="tc-grid">
-        {tools.map(t => <ToolCard key={t.key} tool={t} badge={t.tertiary && t.tertiary === tertiary ? 'Built for your tertiary' : null} />)}
-      </div>
-    </div>
-  );
-}
 
 export default function PortalDashboard() {
   const router = useRouter();
@@ -41,8 +12,6 @@ export default function PortalDashboard() {
   const [loading, setLoading] = useState(true);
   const [resendState, setResendState] = useState('idle'); // 'idle' | 'sending' | 'sent' | 'error'
   const [renewalLoading, setRenewalLoading] = useState(false);
-  const [recentKeys, setRecentKeys] = useState([]);
-  useEffect(() => { if (me?.user?.id) setRecentKeys(getRecentTools(me.user.id)); }, [me?.user?.id]);
 
   useEffect(() => {
     Promise.all([
@@ -89,9 +58,6 @@ export default function PortalDashboard() {
   const isIndividual = !!assessment;
   const isTeamAccount = !!data?.isTeamAccount;
   const hasAssessment = data?.hasAssessment;
-  const tertiary = data?.tertiary;
-  const navCtx = { licenseTypes: new Set(licenses.map(l => l.type)), isTeamAccount, role: me.user?.role, hasProfile: isIndividual, tier: data?.tier, tertiary };
-  const yourTools = pickYourTools(NAV_ITEMS.filter(i => i.inTools && navLockReason(i, navCtx) === null), recentKeys, tertiary);
   const hasLibrary = data?.hasLibrary;
   const { total = 0, used = 0, available = 0 } = data?.tokenStats || {};
   const typeKey = assessment?.type?.toLowerCase();
@@ -118,7 +84,6 @@ export default function PortalDashboard() {
             .dash-cta-btn { width: 100% !important; text-align: center !important; box-sizing: border-box; }
             .dash-stats { flex-direction: column !important; }
           }
-          ${TOOL_CARD_CSS}
         `}</style>
       </Head>
       <div style={s.layout}>
@@ -167,7 +132,10 @@ export default function PortalDashboard() {
                     {profile.signal.replace(/^"|"$/g, '')}
                     <span style={{ color, fontSize: '1.2rem', lineHeight: 1, marginLeft: 4 }}>"</span>
                   </blockquote>
-                  <div style={{ marginTop: 24 }}>
+                  <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <Link href="/portal/tools" style={{ ...s.pdfLink, background: color, borderColor: color, color: '#fff' }}>
+                      Your tools →
+                    </Link>
                     <Link
                       href={`/results/${typeKey}?from=portal`}
                       style={{ ...s.pdfLink, borderColor: `${color}40`, color }}
@@ -192,7 +160,6 @@ export default function PortalDashboard() {
                     View Field Guide →
                   </Link>
                 </div>
-                <YourTools tools={yourTools} tertiary={tertiary} color={color} />
                 <div style={s.contentCard}>
                   <div style={{ ...s.cardLabel, color }}>Who You Are</div>
                   <p style={s.prose}>{profile.whoYouAre}</p>
@@ -345,8 +312,6 @@ export default function PortalDashboard() {
                       <Link href="/portal/library" className="dash-cta-btn" style={{ ...s.analyzerBtn, background: color }}>Open Resources →</Link>
                     </div>
                   )}
-
-                  <div style={{ marginBottom: 24 }}><YourTools tools={yourTools} tertiary={tertiary} color={color} /></div>
 
                   {hasAssessment !== false && (
                     <div className="dash-stats" style={s.statsRow}>

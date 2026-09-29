@@ -188,12 +188,12 @@ export default function LanguageToolsPage({ initialProfile, me, licenses, isIndi
             ? "Rewrite a message for a WHY, WHAT, or HOW reader, or for a specific person's profile."
             : "Profile Detector: paste writing samples and get a hypothesis about the writer's orientation. Never for hiring decisions."}
           aside={(
-            <div style={{ display: 'flex', borderRadius: 9999, padding: 4, background: '#F1F5F9', border: `1px solid ${RULE}` }}>
+            <div style={{ display: 'flex', borderRadius: 9999, padding: 4, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
               {[['translate', 'Translate'], ['detect', 'Detect']].map(([k, label]) => (
                 <button key={k} onClick={() => switchTool(k)}
                   style={{
                     borderRadius: 9999, padding: '6px 16px', fontSize: 11, fontWeight: 600, border: 'none', cursor: 'pointer',
-                    background: tool === k ? NAVY : 'transparent', color: tool === k ? '#fff' : '#475569',
+                    background: tool === k ? '#6EE7B7' : 'transparent', color: tool === k ? NAVY : '#CBD5E1',
                   }}>
                   {label}{k === 'detect' ? ' · beta' : ''}
                 </button>

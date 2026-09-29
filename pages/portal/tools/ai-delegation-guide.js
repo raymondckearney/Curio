@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import PortalSidebar from '../../../components/PortalSidebar';
-import ToolHeader from '../../../components/ToolHeader';
+import ToolHeader, { bannerControl } from '../../../components/ToolHeader';
 
 const ORIENTATION_COLORS = { WHY: '#059669', WHAT: '#2563EB', HOW: '#B45309' };
 const ROUTE_BADGE = {
@@ -102,8 +102,8 @@ export default function AiDelegationGuide() {
                   toolKey="ai-delegation-guide"
                   aside={guide.canSwitch && (
                     <div>
-                      <label style={s.switcherLabel}>Viewing profile</label>
-                      <select style={s.switcherSelect} value={selectedCode} onChange={e => setSelectedCode(e.target.value)}>
+                      <label style={bannerControl.label}>Viewing profile</label>
+                      <select style={bannerControl.select} value={selectedCode} onChange={e => setSelectedCode(e.target.value)}>
                         {guide.profiles.map(p => <option key={p.code} value={p.code}>{p.code}</option>)}
                       </select>
                     </div>
@@ -241,8 +241,6 @@ const s = {
   eyebrow: { fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#64748B' },
   profileCode: { fontFamily: "'Caveat', cursive", fontSize: '1.9rem', fontWeight: 700, lineHeight: 1 },
   tagline: { fontSize: '0.92rem', color: '#475569', fontWeight: 500 },
-  switcherLabel: { display: 'block', fontSize: '0.68rem', fontWeight: 700, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' },
-  switcherSelect: { padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#fff', color: '#0F172A', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif" },
   contextRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 },
   contextCard: { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' },
   contextTitle: { fontSize: '0.85rem', fontWeight: 700, color: '#0F172A', marginBottom: 8, marginTop: 0 },

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import PortalSidebar from '../../../components/PortalSidebar';
-import ToolHeader from '../../../components/ToolHeader';
+import ToolHeader, { bannerControl } from '../../../components/ToolHeader';
 
 const TYPES = [
   { id: "WHY-WHAT", label: "WHY – WHAT", tagline: "Purpose-driven, progress-oriented",   primary: "WHY",  secondary: "WHAT" },
@@ -221,7 +221,7 @@ function FitAnalyzer({ me, myProfile }) {
       <ToolHeader
         toolKey="fit"
         subtitle={myProfile ? "How well does a role fit the way you think? Enter a role and get a detailed alignment analysis." : "How well does a role fit the way someone thinks? Select a MindPrint profile, enter a role, and get a detailed alignment analysis."}
-        aside={<Link href="/portal/analyzer-history" className="history-link">View past analyses →</Link>}
+        aside={<Link href="/portal/analyzer-history" style={bannerControl.link}>View past analyses →</Link>}
       />
 
       {myProfile ? (
@@ -402,8 +402,6 @@ const fitCss = `
   .nav-back { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #78716C; text-decoration: none; }
   .nav-back:hover { color: #059669; }
   .page { max-width: 820px; margin: 0 auto; padding: 56px clamp(24px,5vw,72px) 100px; }
-  .history-link { font-size: 0.8rem; font-weight: 600; color: #78716C; text-decoration: none; white-space: nowrap; }
-  .history-link:hover { color: #059669; }
   .step-title { font-family: 'Caveat', cursive; font-size: 1.4rem; font-weight: 700; color: #1C1917; margin-bottom: 24px; }
   .step-block { margin-bottom: 48px; }
   .prefill-block { background: #FAFAF9; border: 1px solid #E7E5E4; border-radius: 6px; padding: 24px 28px; margin-bottom: 48px; display: flex; flex-direction: column; gap: 18px; }
