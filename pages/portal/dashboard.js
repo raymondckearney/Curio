@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import profiles from '../../lib/profiles';
 import PortalSidebar from '../../components/PortalSidebar';
+import { downloadProfilePdf } from '../../lib/profilePdf';
 
 export default function PortalDashboard() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function PortalDashboard() {
   const [loading, setLoading] = useState(true);
   const [resendState, setResendState] = useState('idle'); // 'idle' | 'sending' | 'sent' | 'error'
   const [renewalLoading, setRenewalLoading] = useState(false);
+  const [pdfBuilding, setPdfBuilding] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -36,6 +38,20 @@ export default function PortalDashboard() {
       if (d.url) window.location.href = d.url;
     } catch {
       setRenewalLoading(false);
+    }
+  }
+
+  async function downloadPdf() {
+    const p = profiles[data?.myAssessment?.type?.toLowerCase()];
+    if (!p) return;
+    setPdfBuilding(true);
+    try {
+      await downloadProfilePdf(p, me?.user?.name);
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't build the PDF. Please try again.");
+    } finally {
+      setPdfBuilding(false);
     }
   }
 
@@ -136,12 +152,14 @@ export default function PortalDashboard() {
                     <Link href="/portal/tools" style={{ ...s.pdfLink, background: color, borderColor: color, color: '#fff' }}>
                       Your tools →
                     </Link>
-                    <Link
-                      href={`/results/${typeKey}?from=portal`}
-                      style={{ ...s.pdfLink, borderColor: `${color}40`, color }}
+                    <button
+                      type="button"
+                      onClick={downloadPdf}
+                      disabled={pdfBuilding}
+                      style={{ ...s.pdfLink, borderColor: `${color}40`, color, cursor: pdfBuilding ? 'wait' : 'pointer', fontFamily: 'inherit' }}
                     >
-                      ↓ Download Full Profile PDF
-                    </Link>
+                      {pdfBuilding ? 'Building PDF…' : '↓ Download Full Profile PDF'}
+                    </button>
                   </div>
                 </div>
               </div>

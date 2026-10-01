@@ -50,7 +50,14 @@ const CSS = `
   .or-note-rest{color:#334155;}
   .or-empty{text-align:center;padding:80px 40px;color:#94A3B8;}
   .or-empty-title{font-family:'Caveat',cursive;font-size:1.6rem;font-weight:700;color:#475569;margin-bottom:8px;}
-  @media (max-width: 720px){ .or-col-grid{grid-template-columns:1fr;} }
+  @media (max-width: 720px){
+    .or-col-grid{grid-template-columns:1fr;gap:0;}
+    .or-hero{padding:22px 20px;}
+    .or-card{padding:20px 18px;}
+    .or-profile-pill{padding:8px 14px;}
+    .or-content-header .or-btn{width:100%;}
+    .or-day-row{flex-direction:column;gap:2px;}
+  }
 `;
 
 function ProfilePill({ profile, active, onClick }) {

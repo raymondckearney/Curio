@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import profiles from '../../lib/profiles';
+import { downloadProfilePdf } from '../../lib/profilePdf';
 
 // Style guide's "Orientation colors" — used exclusively on dark
 // backgrounds (this page's hero band is navy), distinct from the deeper
@@ -23,6 +24,7 @@ export default function ResultsPage() {
   // fires; only stop checking once we know for certain we're staying here
   // (no token, an already-used token, or the lookup failing).
   const [checkingToken, setCheckingToken] = useState(true);
+  const [pdfBuilding, setPdfBuilding] = useState(false);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -116,194 +118,16 @@ export default function ResultsPage() {
     ? `${displayName}'s MindPrint Profile — ${profile.label}`
     : `MindPrint Profile — ${profile.label}`;
 
-  function generatePDF() {
-    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-
-    const diamondList = (items) =>
-      items.map(item => `<div class="dlist-item"><span class="diamond">◆</span><span class="dtext">${esc(item)}</span></div>`).join('');
-
-    const twoColDiamondList = (items) => {
-      const half = Math.ceil(items.length / 2);
-      const left = items.slice(0, half);
-      const right = items.slice(half);
-      return `<div class="two-col-list">
-        <div>${diamondList(left)}</div>
-        <div>${diamondList(right)}</div>
-      </div>`;
-    };
-
-    const partnerRows = (items) =>
-      items.map(p => `<tr><td class="partner-type-cell">${esc(p.type)}</td><td class="partner-reason-cell">${esc(p.reason)}</td></tr>`).join('');
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>${esc(pageTitle)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.55;background:#fff}
-.wrap{max-width:720px;margin:0 auto;padding:20px 28px}
-.print-btn{display:block;width:100%;padding:12px;margin-bottom:18px;background:#059669;color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:9pt;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;text-align:center}
-
-/* Hero */
-.hero{background:#0F172A;border-radius:6px;padding:22px 26px 20px;margin-bottom:20px}
-.eyebrow{font-size:6pt;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#34D399;margin-bottom:8px}
-.hero-name{font-family:'Caveat',cursive;font-size:22pt;font-weight:700;color:#fff;line-height:1.1;margin-bottom:3px}
-.hero-label{font-family:'Caveat',cursive;font-size:30pt;font-weight:700;color:#fff;line-height:1;margin-bottom:4px;font-style:italic}
-.hero-tagline{font-size:8pt;color:#94A3B8;margin-bottom:14px}
-.signal-box{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:4px;padding:8px 12px;font-size:8pt;color:#A7F3D0;font-style:italic;line-height:1.55}
-.signal-prefix{font-weight:700;color:#34D399;font-style:normal}
-
-/* Section label */
-.section{margin-bottom:16px}
-.section-label{display:flex;flex-direction:column;gap:4px;margin-bottom:9px}
-.section-bar{width:24px;height:2px;background:#059669}
-.section-title{font-size:6.5pt;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#059669}
-
-/* Cards */
-.card{background:#F8F9FA;border:1px solid #E7E5E4;border-radius:4px;padding:12px 14px}
-.body-text{font-size:8.5pt;color:#44403C;line-height:1.7}
-
-/* Diamond list */
-.dlist-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:5px}
-.diamond{color:#059669;font-size:7pt;margin-top:3px;flex-shrink:0;line-height:1}
-.dtext{font-size:8.5pt;color:#44403C;line-height:1.6}
-
-/* Two-col diamond list */
-.two-col-list{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
-
-/* Side by side sections */
-.side-by-side{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.side-by-side .section{margin-bottom:0}
-
-/* Partner table */
-.partner-table{width:100%;border-collapse:collapse;font-size:8pt}
-.partner-table th{background:#1C1917;color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:7.5pt}
-.partner-table td{padding:9px 12px;border-bottom:1px solid #E7E5E4;vertical-align:top;color:#44403C;line-height:1.55}
-.partner-type-cell{font-weight:700;color:#1C1917;width:38%}
-.partner-reason-cell{color:#57534E}
-.partner-table tr:last-child td{border-bottom:none}
-.partner-table tr:nth-child(even) td{background:#FAFAF9}
-
-/* Footer block */
-.footer-block{background:#0F172A;border-radius:6px;padding:18px 22px;margin-top:20px}
-.footer-title{font-size:9pt;font-weight:700;color:#34D399;margin-bottom:7px}
-.footer-body{font-size:8pt;color:#94A3B8;line-height:1.65;margin-bottom:9px}
-.footer-link{font-size:8pt;font-weight:600;color:#34D399}
-
-.page-footer{margin-top:14px;display:flex;justify-content:space-between;font-size:6.5pt;color:#A8A29E}
-
-@media print{
-  @page{margin:12mm 10mm;size:A4 portrait}
-  body{font-size:8.5pt}
-  .wrap{padding:0;max-width:100%}
-  .print-btn{display:none!important}
-}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <button class="print-btn" onclick="this.style.display='none';window.print();">Save as PDF</button>
-
-  <div class="hero">
-    <div class="eyebrow">MindPrint Profile</div>
-    ${displayName ? `<div class="hero-name">${esc(displayName)}</div>` : ''}
-    <div class="hero-label" style="color:${primaryOrientationColor(profile.slug)}">${esc(profile.label)}</div>
-    <div class="hero-tagline">${esc(profile.tagline)}</div>
-    <div class="signal-box"><span class="signal-prefix">Signal: </span>"${esc(profile.signal)}"</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">Who You Are</div></div>
-    <div class="card"><div class="body-text">${esc(profile.whoYouAre)}</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">Your Superpower</div></div>
-    <div class="card"><div class="body-text">${esc(profile.superpower)}</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">What Energizes You</div></div>
-    <div class="card"><div class="body-text">${esc(profile.energizes)}</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">What Drains You</div></div>
-    <div class="card">${diamondList(profile.drains)}</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">Your Blind Spot</div></div>
-    <div class="card"><div class="body-text">${esc(profile.blindSpot)}</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">Where Friction Appears</div></div>
-    <div class="card"><div class="body-text">${esc(profile.friction)}</div></div>
-  </div>
-
-  <div class="side-by-side">
-    <div class="section">
-      <div class="section-label"><div class="section-bar"></div><div class="section-title">What You Need From Your Team</div></div>
-      <div class="card"><div class="body-text">${esc(profile.needFromTeam)}</div></div>
-    </div>
-    <div class="section">
-      <div class="section-label"><div class="section-bar"></div><div class="section-title">How To Work With You</div></div>
-      <div class="card"><div class="body-text">${esc(profile.howToWorkWithYou)}</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">Where You Add the Most Value</div></div>
-    <div class="card">${twoColDiamondList(profile.valueAreas)}</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">Collaboration</div></div>
-    <table class="partner-table">
-      <thead><tr><th>Partner Profile</th><th>Why It Works</th></tr></thead>
-      <tbody>${partnerRows(profile.partners)}</tbody>
-    </table>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">Areas To Watch</div></div>
-    <div class="card">${diamondList(profile.areasToWatch)}</div>
-  </div>
-
-  <div class="section">
-    <div class="section-label"><div class="section-bar"></div><div class="section-title">Roles Where You Excel</div></div>
-    <div class="card">${twoColDiamondList(profile.roles)}</div>
-  </div>
-
-  <div class="footer-block">
-    <div class="footer-title">MindPrint™ Framework</div>
-    <div class="footer-body">This profile is part of the MindPrint™ Framework, a model for understanding how people and teams are wired to work. Use it to understand your own energy patterns, communicate your needs to teammates, and build partnerships that cover your blind spots.</div>
-    <div class="footer-link">choosecurio.com</div>
-  </div>
-
-  <div class="page-footer">
-    <div>MindPrint™ Framework · choosecurio.com</div>
-    <div>${esc(today)}</div>
-  </div>
-</div>
-</body>
-</html>`;
-
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  async function generatePDF() {
+    setPdfBuilding(true);
+    try {
+      await downloadProfilePdf(profile, displayName);
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't build the PDF. Please try again.");
+    } finally {
+      setPdfBuilding(false);
+    }
   }
 
   const displayName_ = rawName && rawName.toLowerCase() !== 'individual' ? rawName : null;
@@ -319,7 +143,7 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.
 
       <nav className="nav">
         <Link href="/" className="nav-logo">Curio<span className="nav-logo-dot">.</span></Link>
-        <Link href="/" className="nav-back">← Back to site</Link>
+        <Link href={from === 'portal' ? '/portal/dashboard' : '/'} className="nav-back">{from === 'portal' ? '← Back to dashboard' : '← Back to site'}</Link>
       </nav>
 
       <div className="page">
@@ -335,13 +159,13 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.
         </div>
 
         <div className="pdf-row">
-          <button className="pdf-btn" onClick={generatePDF}>
+          <button className="pdf-btn" onClick={generatePDF} disabled={pdfBuilding}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            Save as PDF
+            {pdfBuilding ? 'Building PDF…' : 'Save as PDF'}
           </button>
         </div>
 
@@ -416,13 +240,13 @@ body{font-family:'DM Sans',sans-serif;color:#1C1917;font-size:9pt;line-height:1.
         </div>
 
         <div className="pdf-row pdf-row--bottom">
-          <button className="pdf-btn" onClick={generatePDF}>
+          <button className="pdf-btn" onClick={generatePDF} disabled={pdfBuilding}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            Save as PDF
+            {pdfBuilding ? 'Building PDF…' : 'Save as PDF'}
           </button>
         </div>
       </div>

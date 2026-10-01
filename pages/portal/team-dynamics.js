@@ -112,7 +112,8 @@ export default function TeamDynamicsPage() {
       </Head>
       <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC' }}>
         <PortalNav me={me} onLogout={logout} active="dynamics" licenses={dash?.licenses} isIndividual={!!dash?.myAssessment} isTeamAccount={!!dash?.isTeamAccount} />
-        <main className="portal-main" style={{ marginLeft: 220, flex: 1, padding: '48px 48px 60px', maxWidth: 'calc(100vw - 220px)' }}>
+        <style>{`@media (max-width: 768px) { .team-tool-main { padding: 72px 16px 40px !important; } }`}</style>
+        <main className="portal-main team-tool-main" style={{ marginLeft: 220, flex: 1, minWidth: 0, padding: '48px 48px 60px' }}>
           <TeamDynamics
             participants={participants}
             teamOptions={teamOptions}
