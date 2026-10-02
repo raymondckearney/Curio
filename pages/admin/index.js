@@ -1561,6 +1561,145 @@ function InvitePanel({ onClose, onSuccess }) {
   );
 }
 
+// ─── Per-login MindPrint™ profiles (Edit Account) ────────────────────────────
+// Each login's own profile, and "Set profile": copy it from an existing
+// assessment (e.g. the same person under an old email) or enter it by hand.
+// Server logic in lib/adminProfiles.js. Replaces the old account-level
+// "Update Profile", which edited whichever assessment on the account was
+// newest — on a team account, possibly someone else's.
+const SOURCE_LABEL = { admin_copied: 'Copied by admin', admin_entered: 'Entered by admin, no assessment taken' };
+
+function UserProfilesSection({ accountId }) {
+  const [rows, setRows] = useState(null);
+  const [openId, setOpenId] = useState(null);
+  const [mode, setMode] = useState('copy');
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [manualProfile, setManualProfile] = useState('');
+  const [scores, setScores] = useState({ why: '', what: '', how: '' });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null); // { ok, text }
+
+  async function load() {
+    try {
+      const r = await fetch(`/api/admin/accounts/${accountId}/profiles`);
+      const d = await r.json();
+      setRows(r.ok ? d.users : []);
+    } catch { setRows([]); }
+  }
+  useEffect(() => { load(); }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function openFor(u) {
+    if (openId === u.userId) { setOpenId(null); return; }
+    setOpenId(u.userId); setMode('copy'); setSearch(''); setResults(null);
+    setManualProfile(u.profile ? u.profile.toUpperCase() : ''); setScores({ why: '', what: '', how: '' }); setMsg(null);
+  }
+
+  async function runSearch() {
+    if (search.trim().length < 2) return;
+    setSearching(true); setResults(null);
+    try {
+      const r = await fetch(`/api/admin/accounts/${accountId}/profiles?search=${encodeURIComponent(search.trim())}`);
+      const d = await r.json();
+      setResults(r.ok ? d.results : []);
+    } catch { setResults([]); }
+    finally { setSearching(false); }
+  }
+
+  async function save(u, body) {
+    if (u.profile && !window.confirm(`Replace ${u.name || u.email}'s current profile (${u.profile.toUpperCase()})?`)) return;
+    setSaving(true); setMsg(null);
+    try {
+      const r = await fetch(`/api/admin/accounts/${accountId}/profiles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: u.userId, ...body }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Failed');
+      setMsg({ ok: true, text: d.message });
+      setOpenId(null);
+      await load();
+    } catch (e) { setMsg({ ok: false, text: e.message }); }
+    finally { setSaving(false); }
+  }
+
+  const tabBtn = active => ({ padding: '5px 12px', borderRadius: 999, border: '1px solid ' + (active ? '#0F172A' : '#E2E8F0'), background: active ? '#0F172A' : '#fff', color: active ? '#fff' : '#334155', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" });
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>MindPrint™ Profiles</p>
+      {rows === null && <p style={{ fontSize: '0.82rem', color: '#94A3B8' }}>Loading…</p>}
+      {rows && rows.length === 0 && <p style={{ fontSize: '0.82rem', color: '#94A3B8' }}>No portal logins on this account yet.</p>}
+      {msg && !openId && <p style={{ fontSize: '0.82rem', color: msg.ok ? '#059669' : '#DC2626', margin: '0 0 8px' }}>{msg.text}</p>}
+      {(rows || []).map(u => (
+        <div key={u.userId} style={{ marginBottom: 6, fontSize: '0.82rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '8px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ flex: 1, minWidth: 140, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.email} <span style={{ color: '#94A3B8', fontWeight: 400 }}>{u.name ? u.email : ''}</span></span>
+            {u.profile
+              ? <strong style={{ color: '#0F172A' }}>{u.profile.toUpperCase()}</strong>
+              : <span style={{ color: '#94A3B8' }}>No profile</span>}
+            {u.source && <span style={{ fontSize: '0.7rem', color: '#92400E', background: '#FEF3C7', borderRadius: 999, padding: '2px 8px' }}>{SOURCE_LABEL[u.source] || u.source}</span>}
+            <button style={{ ...s.btnSmall, alignSelf: 'center', padding: '5px 12px' }} onClick={() => openFor(u)}>{openId === u.userId ? 'Cancel' : 'Set profile'}</button>
+          </div>
+
+          {openId === u.userId && (
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                <button style={tabBtn(mode === 'copy')} onClick={() => setMode('copy')}>Copy from an existing assessment</button>
+                <button style={tabBtn(mode === 'manual')} onClick={() => setMode('manual')}>Enter manually</button>
+              </div>
+
+              {mode === 'copy' ? (
+                <>
+                  <p style={{ margin: '0 0 8px', color: '#64748B' }}>Find the assessment they already took (for example under an old email). Its profile, scores, and date are copied to this login. If it's on another account, that account keeps its copy.</p>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <input style={{ ...s.fieldInput, flex: 1 }} value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && runSearch()} placeholder="Search by name or email" />
+                    <button style={{ ...s.btnSmall, alignSelf: 'center' }} onClick={runSearch} disabled={searching || search.trim().length < 2}>{searching ? 'Searching…' : 'Search'}</button>
+                  </div>
+                  {results && results.length === 0 && <p style={{ color: '#94A3B8', margin: 0 }}>No assessments match.</p>}
+                  {(results || []).map(r => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '6px 8px', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, marginBottom: 4 }}>
+                      <span style={{ flex: 1, minWidth: 160 }}>
+                        <strong>{r.name || '—'}</strong> <span style={{ color: '#64748B' }}>{r.email || 'no email'}</span>
+                        <span style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem' }}>
+                          {r.accountName ? `Account: ${r.accountName}` : 'Not on an account'}{r.submittedAt ? ` · ${new Date(r.submittedAt).toLocaleDateString()}` : ''}{r.source ? ` · ${SOURCE_LABEL[r.source] || r.source}` : ''}
+                        </span>
+                      </span>
+                      <strong>{(r.profile || '—').toUpperCase()}</strong>
+                      <button style={{ ...s.btnSmall, alignSelf: 'center', padding: '5px 12px' }} disabled={saving} onClick={() => save(u, { mode: 'copy', sourceAssessmentId: r.id })}>Use this</button>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 8px', color: '#64748B' }}>Gives this login a profile without an assessment. It's marked "Entered by admin" so it's clear later. Scores are optional; leave them blank if you don't have them.</p>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    <div><label style={s.fieldLabel}>Profile</label>
+                      <select style={{ ...s.fieldInput, width: 150 }} value={manualProfile} onChange={e => setManualProfile(e.target.value)}>
+                        <option value="">— Select —</option>
+                        {PROFILES.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    {['why', 'what', 'how'].map(k => (
+                      <div key={k}><label style={s.fieldLabel}>{k.toUpperCase()} score</label>
+                        <input style={{ ...s.fieldInput, width: 80 }} type="number" min="0" value={scores[k]} onChange={e => setScores(sc => ({ ...sc, [k]: e.target.value }))} placeholder="—" />
+                      </div>
+                    ))}
+                    <button style={s.btnSmall} disabled={saving || !manualProfile} onClick={() => save(u, { mode: 'manual', profile: manualProfile.toLowerCase(), scores })}>{saving ? 'Saving…' : 'Save profile'}</button>
+                  </div>
+                </>
+              )}
+              {msg && !msg.ok && <p style={{ fontSize: '0.8rem', color: '#DC2626', margin: '8px 0 0' }}>{msg.text}</p>}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function EditPanel({ account, onClose, onSave }) {
   const [tier, setTier] = useState(account.tier || 'basic');
   const [licenses, setLicenses] = useState(account.licenses || []);
@@ -1586,9 +1725,6 @@ function EditPanel({ account, onClose, onSave }) {
   const [newUserTeamId, setNewUserTeamId] = useState('');
   const [addingUser, setAddingUser] = useState(false);
   const [addUserMsg, setAddUserMsg] = useState(null); // { ok, text }
-  const [profileChanging, setProfileChanging] = useState(false);
-  const [profileMsg, setProfileMsg] = useState('');
-  const [selectedProfile, setSelectedProfile] = useState(account.assessmentProfile || '');
   const [teams, setTeams] = useState([]);
   const [teamsLoading, setTeamsLoading] = useState(true);
   const [newTeamName, setNewTeamName] = useState('');
@@ -1680,22 +1816,6 @@ function EditPanel({ account, onClose, onSave }) {
     } finally {
       setAddingUser(false);
     }
-  }
-
-  async function updateProfile() {
-    if (!selectedProfile) return;
-    setProfileChanging(true); setProfileMsg('');
-    try {
-      const res = await fetch(`/api/admin/accounts/${account.id}/update-profile`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newProfile: selectedProfile }),
-      });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'Failed');
-      setProfileMsg(`Updated to ${d.newProfile}${d.tertiaryChanged ? ' (licenses swapped)' : ''}`);
-    } catch (e) { setProfileMsg(`Error: ${e.message}`); }
-    finally { setProfileChanging(false); }
   }
 
   async function loadTokens() {
@@ -1891,27 +2011,8 @@ function EditPanel({ account, onClose, onSave }) {
         {teamMsg && <p style={{ fontSize: '0.8rem', color: '#DC2626', marginTop: 6 }}>{teamMsg}</p>}
       </div>
 
-      {/* MindPrint™ Profile */}
-      <div style={{ marginBottom: 16 }}>
-        <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>MindPrint™ Profile</p>
-        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px' }}>
-          {account.assessmentProfile ? (
-            <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: '#0F172A' }}>Current: <strong>{account.assessmentProfile}</strong></p>
-          ) : (
-            <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: '#94A3B8' }}>No profile on record.</p>
-          )}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <select style={{ ...s.select, maxWidth: 200, margin: 0 }} value={selectedProfile} onChange={e => setSelectedProfile(e.target.value)}>
-              <option value="">— Select profile —</option>
-              {PROFILES.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-            <button style={{ ...s.btn, padding: '8px 14px' }} onClick={updateProfile} disabled={profileChanging || !selectedProfile}>
-              {profileChanging ? 'Updating…' : 'Update Profile'}
-            </button>
-            {profileMsg && <span style={{ fontSize: '0.82rem', color: profileMsg.startsWith('Error') ? '#DC2626' : '#059669' }}>{profileMsg}</span>}
-          </div>
-        </div>
-      </div>
+      {/* MindPrint™ Profiles, one per login */}
+      <UserProfilesSection accountId={account.id} />
 
       {/* Token Pool */}
       <div style={{ marginBottom: 16 }}>
