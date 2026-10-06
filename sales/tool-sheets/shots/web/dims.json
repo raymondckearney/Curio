@@ -1,0 +1,126 @@
+{
+ "admin-1-team": [
+  1600,
+  1060
+ ],
+ "admin-2-send": [
+  1600,
+  1060
+ ],
+ "admin-3-analytics": [
+  1600,
+  1191
+ ],
+ "career-2-form": [
+  1600,
+  1028
+ ],
+ "delegation-1-header": [
+  1600,
+  314
+ ],
+ "delegation-2-table": [
+  1600,
+  1847
+ ],
+ "dynamics-1-canvas": [
+  1600,
+  604
+ ],
+ "dynamics-2-friction": [
+  1600,
+  449
+ ],
+ "dynamics-3-energy": [
+  1600,
+  1183
+ ],
+ "dynamics-4-problem": [
+  1600,
+  800
+ ],
+ "dynamics-5-blindspot": [
+  1600,
+  658
+ ],
+ "fieldguide-1-top": [
+  1600,
+  676
+ ],
+ "fieldguide-2-land": [
+  1600,
+  733
+ ],
+ "fieldguide-3-adjust": [
+  1600,
+  667
+ ],
+ "jd-2-form": [
+  1600,
+  871
+ ],
+ "library-1-index": [
+  1600,
+  1327
+ ],
+ "library-2-resource": [
+  1600,
+  1000
+ ],
+ "meeting-2-form": [
+  1600,
+  818
+ ],
+ "onboarding-1-manager": [
+  1600,
+  997
+ ],
+ "onboarding-2-checkins": [
+  1600,
+  469
+ ],
+ "onboarding-3-newhire": [
+  1600,
+  703
+ ],
+ "profile-1-hero": [
+  1600,
+  527
+ ],
+ "profile-2-value": [
+  1600,
+  776
+ ],
+ "profile-3-body": [
+  1600,
+  724
+ ],
+ "session-1-agenda": [
+  1600,
+  1201
+ ],
+ "session-2-activity": [
+  1600,
+  1120
+ ],
+ "session-3-roles": [
+  1600,
+  860
+ ],
+ "tips-1-email": [
+  1216,
+  712
+ ],
+ "tips-2-email": [
+  1216,
+  712
+ ],
+ "tips-3-email": [
+  1216,
+  726
+ ],
+ "tools-1-page": [
+  1600,
+  1191
+ ]
+}
