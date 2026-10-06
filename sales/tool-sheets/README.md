@@ -45,25 +45,19 @@ node sales/tool-sheets/scripts/seed-demo.js --delete        # remove the demo co
 
 ## Status
 
-Done (real screenshots): every sheet except Insights. That includes the AI
-results for the AI & Delegation Guide's task classifier, all three AI
-Companions, the Orientation Translator (translate and detect), Meeting
-Architect, Role Alignment Analyzer, Job Description Analyzer, Career
-Guidance Tool, and Curio Assistant, all run as Summit Ridge Co. people.
+All 17 sheets have real screenshots. The two Insights shots
+(`insights-1-index`, `insights-2-article`) were taken from the public site
+and uploaded by hand, since cloud sessions can't reach Sanity; content.js
+crops off the site nav so they match the portal's embedded view.
 
-Still to capture. These show a striped "to come" placeholder:
+To re-shoot Insights automatically instead, start the dev server with
+`NEXT_PUBLIC_SANITY_PROJECT_ID=s1mmyqgb` (the project in `sanity.cli.js`) and
+the real dataset instead of `dummy123`, then run `capture.js insights` and
+`optimize.py`. The article shot opens "Strategic Harmony" if it exists, else
+the newest article. This needs network access to sanity.io (a local run).
 
-| Sheet | Missing shot (file name in content.js) | Needs |
-|---|---|---|
-| Insights | insights-1-index, insights-2-article | Real Sanity project and dataset, and network access to sanity.io |
-
-To capture them, start the dev server with `NEXT_PUBLIC_SANITY_PROJECT_ID=s1mmyqgb`
-(the project in `sanity.cli.js`) and the real dataset instead of `dummy123`, then run
-`capture.js insights` and `optimize.py`. Recent Articles frames the public
-`/insights?embed=1` pages, so the shots match the public site minus its nav.
-The article shot opens "Strategic Harmony" if it exists, else the newest article.
-Cloud sessions can't reach sanity.io or choosecurio.com (network policy), so
-this needs a local run.
+`optimize.py` converts embedded color profiles (Mac screenshots are Display
+P3) to sRGB, so hand-taken screenshots keep their colors.
 
 ## AI screenshots and the response cache
 
@@ -88,6 +82,6 @@ Product wording to fix (seen while capturing, not part of the sheets):
   dominant 57% HOW demand"). Their prompts may need the same rule.
 - The Insights article "The Innovation Bottleneck: How HOW-Dominant Cultures
   Quietly Kill New Ideas" uses "Dominant" in its title, and it is currently the
-  first card on the index (fix in Sanity, or crop it out of insights-1-index).
+  first card on the index and visible in insights-1-index (kept for now; fix in Sanity).
 - The Companions and Translator render a markdown `---` rule as literal
   text (`components/CompanionMarkdown.js` doesn't handle horizontal rules).

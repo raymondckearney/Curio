@@ -319,8 +319,8 @@ module.exports = [
     extra: ['Published by Curio', 'New articles appear in the portal as soon as they are published.'],
     pairs: ['Curio Assistant', 'Weekly Profile Tips', 'MindPrint™ Profile'],
     shots: [
-      { file: 'insights-1-index', caption: 'Recent articles, inside the portal.', sanity: true },
-      { file: 'insights-2-article', caption: 'A full article view.', sanity: true },
+      { file: 'insights-1-index', crop: [0.07, 0.455, 0.86], caption: 'Recent articles, inside the portal.' },
+      { file: 'insights-2-article', crop: [0.245, 0.15, 0.49], h: 200, caption: 'A full article view.' },
     ],
   },
   {
