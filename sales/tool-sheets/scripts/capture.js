@@ -185,6 +185,21 @@ const shots = {
     await go(page, '/portal/library/tool-01-vision-to-task-decomposition');
     await band(page, 'h1', 820, 'library-2-resource', 40);
   },
+  // Needs the dev server started with the real Sanity project
+  // (NEXT_PUBLIC_SANITY_PROJECT_ID=s1mmyqgb, from sanity.cli.js) and dataset.
+  // Recent Articles frames /insights?embed=1, so wait on the frame's content.
+  async insights(page) {
+    await go(page, '/portal/insights', 1200);
+    const frame = page.frameLocator('main iframe');
+    await frame.locator('.insight-card').first().waitFor({ timeout: 30000 });
+    await page.waitForTimeout(1500); // card images
+    await band(page, 'main', 900, 'insights-1-index', 0);
+    const pick = frame.locator('.insight-card', { hasText: /Strategic Harmony/ });
+    await ((await pick.count()) ? pick.first() : frame.locator('.insight-card').first()).click();
+    await frame.locator('.post-back').waitFor({ timeout: 30000 });
+    await page.waitForTimeout(1500);
+    await band(page, 'main', 900, 'insights-2-article', 0);
+  },
   async admin(page) {
     await go(page, '/portal/team', 1200);
     await band(page, 'main h1', 760, 'admin-1-team', 24);

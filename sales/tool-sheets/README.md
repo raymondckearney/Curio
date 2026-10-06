@@ -55,7 +55,15 @@ Still to capture. These show a striped "to come" placeholder:
 
 | Sheet | Missing shot (file name in content.js) | Needs |
 |---|---|---|
-| Insights | insights-1-index, insights-2-article | Real Sanity project ID and dataset (NEXT_PUBLIC_SANITY_PROJECT_ID / _DATASET) |
+| Insights | insights-1-index, insights-2-article | Real Sanity project and dataset, and network access to sanity.io |
+
+To capture them, start the dev server with `NEXT_PUBLIC_SANITY_PROJECT_ID=s1mmyqgb`
+(the project in `sanity.cli.js`) and the real dataset instead of `dummy123`, then run
+`capture.js insights` and `optimize.py`. Recent Articles frames the public
+`/insights?embed=1` pages, so the shots match the public site minus its nav.
+The article shot opens "Strategic Harmony" if it exists, else the newest article.
+Cloud sessions can't reach sanity.io or choosecurio.com (network policy), so
+this needs a local run.
 
 ## AI screenshots and the response cache
 
@@ -78,5 +86,8 @@ Product wording to fix (seen while capturing, not part of the sheets):
 - Orientation Translator's Detect output and the Job Description Analyzer
   both used "dominant" in their AI text ("The dominant signal", "the
   dominant 57% HOW demand"). Their prompts may need the same rule.
+- The Insights article "The Innovation Bottleneck: How HOW-Dominant Cultures
+  Quietly Kill New Ideas" uses "Dominant" in its title, and it is currently the
+  first card on the index (fix in Sanity, or crop it out of insights-1-index).
 - The Companions and Translator render a markdown `---` rule as literal
   text (`components/CompanionMarkdown.js` doesn't handle horizontal rules).
