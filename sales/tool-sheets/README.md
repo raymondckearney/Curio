@@ -24,6 +24,7 @@ NODE_PATH=/opt/node22/lib/node_modules node sales/tool-sheets/build.js        # 
 NODE_PATH=/opt/node22/lib/node_modules node sales/tool-sheets/build.js insights   # one sheet
 ```
 
+The combined PDF needs `pymupdf` (`pip install pymupdf`).
 The build fails loudly if any sheet overflows its page or a screenshot is
 too wide. Check `out/qa/*.png` before sending anything out.
 
@@ -44,33 +45,38 @@ node sales/tool-sheets/scripts/seed-demo.js --delete        # remove the demo co
 
 ## Status
 
-Done (real screenshots): MindPrint™ Profile, Communication Field Guide,
-AI & Delegation Guide (table), Weekly Profile Tips, Team Dynamics, Session
-Architect, Onboarding Resources, Tertiary Support Library, Team
-Administration, and the input forms for Meeting Architect, Job
-Description Analyzer, and Career Guidance Tool.
+Done (real screenshots): every sheet except Insights. That includes the AI
+results for the AI & Delegation Guide's task classifier, all three AI
+Companions, the Orientation Translator (translate and detect), Meeting
+Architect, Role Alignment Analyzer, Job Description Analyzer, Career
+Guidance Tool, and Curio Assistant, all run as Summit Ridge Co. people.
 
 Still to capture. These show a striped "to come" placeholder:
 
 | Sheet | Missing shot (file name in content.js) | Needs |
 |---|---|---|
-| AI & Delegation Guide | delegation-3-classify (task classifier result) | ANTHROPIC_API_KEY |
-| AI Companions | companions-1-precision, -2-purpose, -3-progress | ANTHROPIC_API_KEY |
-| Orientation Translator | translator-1-result, translator-2-detect | ANTHROPIC_API_KEY |
-| Meeting Architect | meeting-1-result, meeting-3-leanin | ANTHROPIC_API_KEY |
-| Role Alignment Analyzer | fit-1-result, fit-2-detail | ANTHROPIC_API_KEY |
-| Job Description Analyzer | jd-1-result | ANTHROPIC_API_KEY |
-| Career Guidance Tool | career-1-result | ANTHROPIC_API_KEY |
-| Curio Assistant | assistant-1-answer, assistant-2-start | ANTHROPIC_API_KEY, curio_assistant license (seeded) |
 | Insights | insights-1-index, insights-2-article | Real Sanity project ID and dataset (NEXT_PUBLIC_SANITY_PROJECT_ID / _DATASET) |
 
-To add them: start the dev server with `ANTHROPIC_API_KEY` set, add a
-capture function per tool to `scripts/capture.js` (same `go`, `el`, and
-`band` helpers; run each tool with realistic demo inputs for Summit Ridge
-Co.), save under the file names above, run `optimize.py`, set a `crop` in
-`content.js` if a small shot needs zooming, and rebuild. Each AI call
-costs real API usage, so capture each result once.
+## AI screenshots and the response cache
+
+The AI tools (`classify`, `companions`, `translator`, `meeting`, `fit`,
+`jd`, `career`, `assistant` in `scripts/capture.js`) need the dev server
+started with `ANTHROPIC_API_KEY` as well. Each one logs in as a demo person
+(the companions use the person whose tertiary they support), fills the tool
+with realistic Summit Ridge inputs, and waits for the result.
+
+Every AI response is saved to `.ai-cache/<tool>.json` (not committed) the
+first time and replayed after that, so re-shooting or fixing a crop costs no
+API usage. Delete a tool's cache file to get a fresh result, or set
+`NO_CACHE=1`. Each run also leaves a full-page `<tool>-full.png` there, in
+case a crop selector misses.
 
 Product wording to fix (seen while capturing, not part of the sheets):
-Team Dynamics' Blind Spot Report says "Dominant Orientation", which the
-source of truth's language rules prohibit (use "primary").
+
+- Team Dynamics' Blind Spot Report says "Dominant Orientation", which the
+  source of truth's language rules prohibit (use "primary").
+- Orientation Translator's Detect output and the Job Description Analyzer
+  both used "dominant" in their AI text ("The dominant signal", "the
+  dominant 57% HOW demand"). Their prompts may need the same rule.
+- The Companions and Translator render a markdown `---` rule as literal
+  text (`components/CompanionMarkdown.js` doesn't handle horizontal rules).

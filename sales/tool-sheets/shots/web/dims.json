@@ -122,5 +122,61 @@
  "tools-1-page": [
   1600,
   1191
+ ],
+ "assistant-1-answer": [
+  1600,
+  1031
+ ],
+ "assistant-2-start": [
+  1600,
+  1031
+ ],
+ "career-1-result": [
+  1600,
+  1332
+ ],
+ "companions-1-precision": [
+  1504,
+  1832
+ ],
+ "companions-2-purpose": [
+  1504,
+  1054
+ ],
+ "companions-3-progress": [
+  1504,
+  1208
+ ],
+ "delegation-3-classify": [
+  1600,
+  833
+ ],
+ "fit-1-result": [
+  1600,
+  458
+ ],
+ "fit-2-detail": [
+  1600,
+  2455
+ ],
+ "jd-1-result": [
+  1600,
+  1332
+ ],
+ "meeting-1-result": [
+  1600,
+  1212
+ ],
+ "meeting-3-leanin": [
+  1600,
+  1028
+ ],
+ "translator-1-result": [
+  1504,
+  1832
+ ],
+ "translator-2-detect": [
+  1504,
+  1832
  ]
 }

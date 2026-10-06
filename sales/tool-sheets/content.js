@@ -6,7 +6,7 @@
 // shots: first is the hero (large), the rest sit side by side below it.
 //   file  = PNG in shots/ (without extension)
 //   crop  = [x, y, w] fractions of the image to zoom into (default whole width, from the top)
-//   ai    = true when the screenshot needs a real AI result (next session)
+//   ai    = true marks a missing AI-result shot (labels its placeholder)
 // group: profile | teams | career | resources (sets the header color)
 
 module.exports = [
@@ -67,7 +67,7 @@ module.exports = [
     shots: [
       { file: 'delegation-2-table', crop: [0, 0, 0.8], caption: 'Every draining task, routed to AI, a teammate, or collaboration, with a resource.' },
       { file: 'delegation-1-header', crop: [0, 0, 0.6], caption: 'The guide opens on the person\'s own profile.' },
-      { file: 'delegation-3-classify', caption: 'Describe your own task and get a routing recommendation.', ai: true },
+      { file: 'delegation-3-classify', crop: [0, 0.48, 0.8], caption: 'Describe your own task and get a routing recommendation.' },
     ],
   },
   {
@@ -85,9 +85,9 @@ module.exports = [
     extra: ['Built to replace, not to teach', 'Each Companion produces the draining work for review rather than coaching someone to enjoy it, in line with the MindPrint™ energy model.'],
     pairs: ['AI & Delegation Guide', 'Tertiary Support Library', 'Orientation Translator'],
     shots: [
-      { file: 'companions-1-precision', caption: 'Precision Companion: a full task breakdown from a one-line goal.', ai: true },
-      { file: 'companions-2-purpose', caption: 'Purpose Companion: a guided purpose brief.', ai: true },
-      { file: 'companions-3-progress', caption: 'Progress Companion: a ready-to-send progress update.', ai: true },
+      { file: 'companions-1-precision', caption: 'Precision Companion: a full task breakdown from a one-line goal.' },
+      { file: 'companions-2-purpose', caption: 'Purpose Companion: a guided purpose brief.' },
+      { file: 'companions-3-progress', caption: 'Progress Companion: a ready-to-send progress update.' },
     ],
   },
   {
@@ -105,8 +105,8 @@ module.exports = [
     extra: ['Detect mode is never for hiring', 'Detect offers a hypothesis to support coaching and self-awareness. It is not used for hiring or screening decisions.'],
     pairs: ['Communication Field Guide', 'Team Dynamics', 'AI Companions'],
     shots: [
-      { file: 'translator-1-result', caption: 'One message, rewritten for a HOW reader, with notes on what changed.', ai: true },
-      { file: 'translator-2-detect', caption: 'Detect (beta): a hypothesis from writing samples.', ai: true },
+      { file: 'translator-1-result', caption: 'One message, rewritten for a HOW reader, with notes on what changed.' },
+      { file: 'translator-2-detect', crop: [0, 0, 0.75], caption: 'Detect (beta): a hypothesis from writing samples.' },
     ],
   },
   {
@@ -184,9 +184,9 @@ module.exports = [
     extra: ['Seven meeting types', 'Weekly status, team meeting, leadership update, 1:1, performance or career conversation, all-hands, and client check-in.'],
     pairs: ['Session Architect', 'Team Dynamics', 'Orientation Translator'],
     shots: [
-      { file: 'meeting-1-result', caption: 'A redesigned weekly status meeting, timed and assigned.', ai: true },
+      { file: 'meeting-1-result', caption: 'A redesigned weekly status meeting, timed and assigned.' },
       { file: 'meeting-2-form', crop: [0, 0, 0.6], caption: 'Start from the meeting type, objectives, and challenges.' },
-      { file: 'meeting-3-leanin', caption: 'Where the leader should lean in, and where to get help.', ai: true },
+      { file: 'meeting-3-leanin', crop: [0, 0, 0.6], caption: 'Where the leader should lean in, and where to get help.' },
     ],
   },
   {
@@ -224,8 +224,8 @@ module.exports = [
     extra: ['Explainable scores', 'Scores use a fixed MindPrint™ formula applied to the role\'s WHY, WHAT, and HOW demands, so every score comes with its reasoning.'],
     pairs: ['Job Description Analyzer', 'Career Guidance Tool', 'MindPrint™ Profile'],
     shots: [
-      { file: 'fit-1-result', caption: 'An alignment score and rationale for a specific role.', ai: true },
-      { file: 'fit-2-detail', caption: 'What will energize, what will drain, and how to make it work.', ai: true },
+      { file: 'fit-1-result', crop: [0.2, 0, 0.6], caption: 'An alignment score and rationale for a specific role.' },
+      { file: 'fit-2-detail', crop: [0.21, 0, 0.57], caption: 'What will energize, what will drain, and how to make it work.' },
     ],
   },
   {
@@ -243,7 +243,7 @@ module.exports = [
     extra: ['For role design', 'Use it to understand and write roles. MindPrint™ describes energy, not ability, and is not used to screen candidates out.'],
     pairs: ['Role Alignment Analyzer', 'Career Guidance Tool', 'Onboarding Resources'],
     shots: [
-      { file: 'jd-1-result', caption: 'The demand breakdown and ranked fit for all six profiles.', ai: true },
+      { file: 'jd-1-result', crop: [0.1, 0.26, 0.8], caption: 'The demand breakdown and ranked fit for all six profiles.' },
       { file: 'jd-2-form', crop: [0.12, 0.25, 0.6], caption: 'Paste a job description or enter a URL.' },
     ],
   },
@@ -262,7 +262,7 @@ module.exports = [
     extra: ['Works alongside other tools', 'MindPrint™ is the organizing framework. Other assessments refine the report and never override the profile.'],
     pairs: ['Role Alignment Analyzer', 'Job Description Analyzer', 'MindPrint™ Profile'],
     shots: [
-      { file: 'career-1-result', caption: 'A personalized career report with best-fit roles.', ai: true },
+      { file: 'career-1-result', caption: 'A personalized career report with best-fit roles.' },
       { file: 'career-2-form', crop: [0.02, 0.38, 0.6], caption: 'Inputs include career level, track, and other assessments.' },
     ],
   },
@@ -300,8 +300,8 @@ module.exports = [
     extra: ['Always on hand', 'The Ask Curio button sits in the corner of every portal page.'],
     pairs: ['Tertiary Support Library', 'AI & Delegation Guide', 'Insights'],
     shots: [
-      { file: 'assistant-1-answer', caption: 'Ask about a real challenge and get pointed to the right tools.', ai: true },
-      { file: 'assistant-2-start', caption: 'Suggested starting questions.', ai: true },
+      { file: 'assistant-1-answer', caption: 'Ask about a real challenge and get pointed to the right tools.' },
+      { file: 'assistant-2-start', crop: [0.45, 0, 0.55], caption: 'Suggested starting questions.' },
     ],
   },
   {
