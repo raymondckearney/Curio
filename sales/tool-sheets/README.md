@@ -12,7 +12,8 @@ know" note, and what it pairs well with, plus 1 to 3 screenshots.
   JPEGs the sheets embed. `dims.json` records image sizes for cropping.
 - `out/` (not committed) gets one PDF and HTML per sheet, the combined
   `MindPrint_Tool_Sheets.pdf`, and `qa/` rasters for review.
-- `overview.pdf`, if placed in this folder, is put in front of the combined PDF.
+- `overview.pdf` is the owner's 3-page capabilities overview (uploaded, not
+  generated here). It goes in front of the combined PDF. Replace the file to update it.
 
 ## Rebuild
 

@@ -324,7 +324,7 @@ module.exports = [
     ],
   },
   {
-    slug: 'team-administration', group: 'teams', name: 'Team Administration',
+    slug: 'team-administration', group: 'resources', name: 'Team Administration',
     promise: 'Roll MindPrint™ out to a whole team, and see the results in one place.',
     serves: ['HR and People teams', 'Account owners', 'Team managers'],
     problem: 'Rolling out an assessment usually means spreadsheets, chasing links, and results scattered across inboxes.',
