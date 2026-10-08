@@ -1,10 +1,10 @@
 # MindPrint™ Framework — AI Source of Truth
 
-**Version:** 2.0  
+**Version:** 2.2  
 **Owner:** Ray Kearney, Curio  
 **Purpose:** Single system-prompt source of truth for all MindPrint™ AI-powered tools built in Claude Code  
 **Status:** Authoritative. No content output — static or AI-generated — may contradict this document.  
-**Governs:** Role Alignment Analyzer · Career Guidance Tool · Coach-Matching Tool · Workshop Dashboard · Session Facilitation Tool · All future AI generation calls
+**Governs:** Role Alignment Analyzer · Career Guidance Tool · Coach-Matching Tool · Workshop Dashboard · Session Facilitation Tool · Team Builder · All future AI generation calls
 
 ---
 
@@ -20,6 +20,7 @@ This document is the single source of truth for all MindPrint™ AI tool generat
 6. **Tool registry** (Section 7) — maps each tool to the sections it must load
 7. **AI generation rules** (Section 8) — consistency checks and modifier logic
 8. **Assessment integration** (Section 9) — hierarchy for multi-assessment contexts
+9. **Activity taxonomy and team role language** (Section 10) — governing all activity tagging and team assignment outputs
 
 ---
 
@@ -641,6 +642,7 @@ score    = round(linear^1.2 × 100)
 | Coach-Matching Tool | Profile + coaching objectives | Coach profile recommendation | Sections 2, 3, 4 (relevant profile), 5 |
 | Workshop Dashboard | Team profiles (multiple) | Team Canvas, Problem Type Match, Friction Spotter, Energy Map, Collaboration Recommender, Blind Spot Report | Sections 2, 3, 4 (all profiles present), 5 |
 | Session Facilitation Tool | Team profiles (multiple) | Facilitator and participant views | Sections 2, 3, 4 (all profiles present), 5 |
+| Team Builder | Work document (SOW, work plan, project plan) + optional roster (name, profile, availability, skills, seniority) | Team shape, owner / contributor / reviewer assignments, drain budget, coverage gaps, friction forecast, individual plans | Sections 2, 3, 4 (all profiles present), 5, 6, 10 |
 
 ---
 
@@ -714,11 +716,28 @@ No other assessment input may produce an output that contradicts Sections 3 or 4
 
 ---
 
+## SECTION 10: ACTIVITY TAXONOMY AND TEAM ROLE LANGUAGE
+
+`lib/mindprint-activity-taxonomy.md` is the governing list for tagging work activities in every tool. Tags use profile notation (LEAD-SUPPORT). Each tag converts to a 60 / 30 / 10 demand split that feeds the Section 6 formula unchanged, so activity-level scores never contradict the Role Alignment Analyzer. Tools may shift a tag by one step only under the taxonomy's context shift rule, and must show the reason.
+
+When a tool assigns people to activities, it uses this vocabulary and no other:
+
+| Term | Meaning |
+|---|---|
+| Owner | Accountable for the activity and does the largest share of the hands-on work. Not a management title. |
+| Contributor | Delivers a defined piece of the activity, agreed with the owner. |
+| Reviewer | Checks the work at the draft stage, bringing the orientation the owner finds draining. |
+| Engagement lead | The single team-level lead for a project. The only use of "lead" for a person. |
+
+Assignments are allocations among people already chosen. No tool ranks, filters or selects individuals.
+
+---
+
 ## DOCUMENT CONTROL
 
 | Field | Value |
 |---|---|
-| Version | 2.1 — Scoring algorithm recalibrated (Levers A+B+C) |
+| Version | 2.2, Section 10 added (Activity Taxonomy and team role language); Team Builder registered |
 | Owner | Ray Kearney, Curio |
 | Supersedes | MindPrint™ Framework Constitution v1.0 · MindPrint™ Constitutional Reference |
 | Review Trigger | Any proposed change to framework language, profile descriptions, or energy model |

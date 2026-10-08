@@ -12,3 +12,8 @@ that must be honored in every generation call.
 The career guidance tool system prompt lives at `/career_guidance_system_prompt.md`.
 The AI & Delegation Guide's task classifier (premium) system prompt lives at
 `/ai_delegation_task_classifier_system_prompt.md`.
+The Team Builder system prompt (PART A extraction, PART B narrative) lives at
+`/team_builder_system_prompt.md`. Activity tagging in every tool is governed by
+`/lib/mindprint-activity-taxonomy.md` (Source of Truth Section 10). The approved
+Team Builder prototype and build spec are kept in `/docs/prototypes/` and
+`/docs/specs/` for reference; they are not served.

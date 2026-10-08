@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed:library": "node scripts/seed-library.js"
+    "seed:library": "node scripts/seed-library.js",
+    "test": "node --test lib/team-builder/*.test.js"
   },
   "dependencies": {
     "@portabletext/react": "^6.2.0",

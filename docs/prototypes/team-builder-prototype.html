@@ -1,0 +1,420 @@
+<title>Team Builder Prototype</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;600;800&display=swap">
+<style>
+/* Layout: one working column, four-step flow, paper-white with navy panels for the shape of the work. Single light look by choice (Curio design system). */
+:root{
+  --emerald:#059669; --emerald-hover:#047857; --pale:#ECFDF5; --cream:#F0FDF4;
+  --ink:#111827; --ink-soft:#374151; --muted:#6B7280; --paper:#FFFFFF; --warm:#F9FAFB; --subtle:#F3F4F6; --rule:#E5E7EB;
+  --navy:#0F172A; --on-navy:#E2E8F0; --navy-muted:#94A3B8; --why:#6EE7B7; --what:#93C5FD; --how:#FCD34D;
+  --e-fg:#065F46; --e-bg:#ECFDF5; --n-fg:#1E40AF; --n-bg:#EFF6FF; --d-fg:#92400E; --d-bg:#FFFBEB;
+  --display:'Caveat','Segoe Script',cursive; --body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --ease:cubic-bezier(0.4,0,0.2,1);
+  color-scheme:light;
+}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-weight:500;font-size:15px;line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:20px;padding-block:28px 72px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.1;margin:0;text-wrap:balance;color:var(--ink)}
+h1{font-size:46px} h2{font-size:34px} h3{font-size:26px}
+p{margin:0;max-width:70ch;color:var(--ink-soft)}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:1.5px solid var(--rule);padding-bottom:16px}
+.logo{font-family:var(--display);font-weight:600;font-size:34px;color:var(--ink)} .logo i{color:var(--emerald);font-style:normal}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--emerald);display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:28px;height:2px;background:var(--emerald);flex:none}
+.note{background:var(--cream);border-left:4px solid var(--emerald);border-radius:0 12px 12px 0;padding:12px 16px;font-size:13.5px;color:var(--ink-soft);margin-top:20px}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 28px;padding:0;list-style:none}
+.steps button{font:inherit;font-size:13px;font-weight:600;border:2px solid var(--rule);background:var(--paper);color:var(--muted);border-radius:50px;padding:8px 16px;cursor:pointer;transition:all .25s var(--ease)}
+.steps button[aria-current="step"]{border-color:var(--emerald);background:var(--emerald);color:#fff}
+.steps button:hover:not([aria-current]){border-color:var(--emerald);color:var(--emerald)}
+.stack{display:flex;flex-direction:column;gap:20px}
+.sec{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--warm);border:1.5px solid var(--rule);border-radius:20px;padding:24px;min-width:0}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+label{font-size:12px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:8px 10px;min-width:0}
+textarea{width:100%;min-height:300px;line-height:1.5;box-sizing:border-box;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--emerald);outline-offset:2px}
+.btn{font:inherit;font-weight:600;font-size:14px;border-radius:50px;border:2px solid var(--emerald);background:var(--emerald);color:#fff;padding:10px 22px;cursor:pointer;transition:all .25s var(--ease)}
+.btn:hover{background:var(--emerald-hover);border-color:var(--emerald-hover);transform:translateY(-2px);box-shadow:0 4px 24px rgba(5,150,105,.2)}
+.btn.ghost{background:transparent;color:var(--emerald)} .btn.ghost:hover{background:var(--pale)}
+.btn.small{padding:6px 14px;font-size:13px}
+.link{font:inherit;font-size:13px;font-weight:600;color:var(--emerald);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.link:hover{color:var(--emerald-hover)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.scroll{overflow-x:auto;border:1.5px solid var(--rule);border-radius:12px;background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1.5px solid var(--rule);white-space:nowrap;background:var(--warm);vertical-align:bottom}
+td{padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:middle;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+tfoot td{background:var(--warm);font-weight:600}
+td input[type=text]{width:100%;min-width:190px;box-sizing:border-box} td input[type=number]{width:64px}
+td select{max-width:220px}
+.phrow td{background:var(--warm);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald)}
+.x{font:inherit;border:0;background:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px 8px;border-radius:8px} .x:hover{color:var(--d-fg);background:var(--d-bg)}
+.x:disabled{opacity:.35;cursor:not-allowed;background:none;color:var(--muted)}
+.chip{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:100px;padding:3px 10px;background:var(--pale);color:var(--emerald);white-space:nowrap}
+.chip.inf{background:var(--subtle);color:var(--muted)} .chip.shift{background:var(--n-bg);color:var(--n-fg)} .chip.unl{background:var(--d-bg);color:var(--d-fg)}
+.badge{display:inline-block;font-size:12px;font-weight:600;border-radius:100px;padding:3px 10px;border:1px solid;white-space:nowrap}
+.E{color:var(--e-fg);background:var(--e-bg);border-color:#A7F3D0} .N{color:var(--n-fg);background:var(--n-bg);border-color:#BFDBFE} .D{color:var(--d-fg);background:var(--d-bg);border-color:#FDE68A}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.grid3{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.big{font-family:var(--display);font-weight:700;font-size:44px;line-height:1;color:var(--ink)}
+.small{font-size:13px;color:var(--muted)}
+.def{border-top:3px solid var(--emerald);padding-top:10px} .def b{display:block;font-size:15px;margin-bottom:4px}
+.navy{background:var(--navy);border-radius:20px;padding:24px;color:var(--on-navy);min-width:0}
+.navy h3{color:#fff} .navy .small{color:var(--navy-muted)}
+.shape{display:grid;grid-template-columns:200px 1fr;gap:28px;align-items:center;margin-top:16px}
+.pie{width:200px;height:200px;max-width:100%}
+.plegend{display:grid;gap:8px;font-size:13.5px}
+.plegend div{display:grid;grid-template-columns:14px 92px 48px 1fr;gap:10px;align-items:center}
+.plegend i{width:12px;height:12px;border-radius:3px;display:block}
+.plegend b{color:#fff;font-weight:700} .plegend span{color:var(--navy-muted)}
+.bar{display:flex;height:28px;border-radius:8px;overflow:hidden}
+.bar span{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--navy);white-space:nowrap;overflow:hidden}
+.bw{background:var(--why)} .bt{background:var(--what)} .bh{background:var(--how)}
+.maprow{display:grid;grid-template-columns:170px 1fr;gap:14px;align-items:center;margin-top:12px}
+.maprow b{font-weight:600;font-size:13.5px;color:#fff;display:block} .maprow small{font-size:12px;color:var(--navy-muted)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;margin-top:16px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.prof{font-family:var(--display);font-weight:700;font-size:28px;line-height:1}
+.ebar{display:flex;height:10px;border-radius:50px;overflow:hidden;background:var(--subtle);margin:10px 0 6px}
+.ebar .e{background:#10B981} .ebar .n{background:#60A5FA} .ebar .d{background:#F59E0B}
+.rl{margin-top:12px;font-size:13.5px} .rl b{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px}
+.rl div{color:var(--ink-soft)}
+ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink-soft);font-size:13.5px} ul.plain li{margin-bottom:5px}
+.flag{background:var(--d-bg);border:1px solid #FDE68A;color:var(--d-fg);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.ok{background:var(--e-bg);border:1px solid #A7F3D0;color:var(--e-fg);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.toggle{flex-direction:row;align-items:center;gap:8px;font-size:14px;color:var(--ink)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tool{font:inherit;font-size:12.5px;font-weight:600;color:var(--emerald);background:var(--pale);border:1.5px solid #A7F3D0;border-radius:50px;padding:5px 12px;cursor:pointer;transition:all .25s var(--ease)}
+.tool:hover{background:var(--paper);border-color:var(--emerald);transform:translateY(-2px)}
+.item{display:grid;grid-template-columns:1fr auto;gap:6px 16px;padding:14px 0;border-top:1px solid var(--rule)}
+.item:first-of-type{border-top:0}
+.item .nm{font-weight:600;color:var(--ink)} .item .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.item p{grid-column:1/-1;font-size:13.5px}
+.foot{font-size:12.5px;color:var(--muted);border-top:1.5px solid var(--rule);padding-top:16px;margin-top:8px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal .box{background:var(--paper);border-radius:20px;max-width:520px;width:100%;padding:28px;box-shadow:0 16px 56px rgba(0,0,0,.1);display:flex;flex-direction:column;gap:12px}
+@media (max-width:640px){h1{font-size:38px}.maprow{grid-template-columns:1fr;gap:4px}.card,.navy{padding:18px}.shape{grid-template-columns:1fr;justify-items:center}.plegend{justify-self:stretch}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div class="logo">Curio<i>.</i></div>
+    <div class="eyebrow">Team Builder · Prototype</div>
+  </div>
+  <div id="app"></div>
+</div>
+<div id="modal"></div>
+
+<script>
+const TAGS=['WHY-WHAT','WHY-HOW','WHAT-WHY','WHAT-HOW','HOW-WHY','HOW-WHAT'];
+const O=['WHY','WHAT','HOW'];
+const MODES=['Solo','Pair','Small team','Whole team'];
+const PCOL={'WHY-WHAT':'#6EE7B7','WHY-HOW':'#34D399','WHAT-WHY':'#93C5FD','WHAT-HOW':'#60A5FA','HOW-WHY':'#FCD34D','HOW-WHAT':'#F59E0B'};
+const TAXRAW=[
+ ['Defining vision and long-range goals','WHY-WHAT'],['Problem definition and reframing','WHY-HOW'],['Identifying market opportunities and white space','WHY-WHAT'],['Setting strategic priorities','WHY-WHAT'],['Evaluating proposals from a purpose lens','WHY-WHAT'],['Assumption surfacing and pre-mortem','WHY-HOW'],['High-level roadmap and milestone planning','WHY-WHAT'],
+ ['Client-facing discovery conversations','WHAT-WHY'],['Deep diagnostic interviews with leadership','WHY-HOW'],['Research design (method, sample, guides)','HOW-WHY'],['Data collection and fieldwork','HOW-WHAT'],['Research synthesis into insights and principles','WHY-HOW'],['Quantitative analysis and data modeling','HOW-WHY'],['Root cause analysis','HOW-WHY'],['Benchmarking and competitive analysis','HOW-WHY'],['Current-state process audit','HOW-WHY'],['Organizational assessment and gap analysis','HOW-WHAT'],
+ ['Systems mapping and interdependencies','WHY-HOW'],['Framework and model development','WHY-HOW'],['Comprehensive strategy, vision through task','WHY-HOW'],['Concept generation and ideation','WHY-WHAT'],['Program or initiative structure design','WHY-WHAT'],['Solution design and optimization','HOW-WHY'],['Operating model and org structure design','HOW-WHAT'],['End-to-end process design','HOW-WHAT'],['Prototyping and rapid iteration','WHAT-HOW'],['Hypothesis testing and validation','HOW-WHY'],
+ ['Breaking initiatives into workstreams','WHAT-HOW'],['Detailed project planning','WHAT-HOW'],['Milestone setting and lightweight sprint plans','WHAT-WHY'],['Effort estimation and resourcing','HOW-WHAT'],['Kickoff and team mobilization','WHAT-WHY'],['Decision rights and accountability design','HOW-WHAT'],
+ ['Standups and progress check-ins','WHAT-WHY'],['Sprints, retrospectives and planning sessions','WHAT-HOW'],['Managing dependencies and blockers','WHAT-HOW'],['Multi-workstream program management','HOW-WHAT'],['Metrics, dashboards and status tracking','WHAT-HOW'],['Fast decisions and real-time course correction','WHAT-WHY'],['Bottleneck identification and resolution','HOW-WHAT'],['Holding teams to timelines and deliverables','WHAT-HOW'],['Technology and system implementation','HOW-WHAT'],
+ ['Quality and consistency review','HOW-WHAT'],['Deliverable pre-flight and closing pass','HOW-WHAT'],['Technical documentation and specifications','HOW-WHY'],['SOPs, playbooks and operational documentation','HOW-WHAT'],['Edge case and risk review','HOW-WHY'],['Compliance and administrative work','HOW-WHAT'],['Post-mortems and lessons learned','WHAT-HOW'],
+ ['Narrative building and pitching','WHY-WHAT'],['Executive storyline and presentation','WHY-WHAT'],['Thought leadership and white papers','WHY-HOW'],['Translating findings into recommendations','WHY-WHAT'],['Aligning stakeholders around a new direction','WHY-WHAT'],['Client relationship and account management','WHAT-WHY'],['Progress communications to the client','WHAT-HOW'],['Solution pitching and business development','WHAT-WHY'],
+ ['Vision-setting workshops and offsites','WHY-WHAT'],['Structured problem-solving sessions','HOW-WHY'],['Process alignment working sessions','HOW-WHAT'],['Change management and adoption','WHAT-WHY'],['Training and methodology coaching','HOW-WHY'],['Handoff and transition to the client','HOW-WHAT']];
+const TAX=TAXRAW.map((r,i)=>({id:i+1,name:r[0],tag:r[1]}));
+const DELIV=new Set([7,29,50,51,52,53,63]);
+const LEADSET=new Set([1,2,3,4,5,6,7,8,28,29,30,31,32,33,50,51,53,54,55,56,57]);
+const ROLE={'WHY-WHAT':'Engagement and strategy lead','WHY-HOW':'Research and systems lead','WHAT-WHY':'Client and momentum lead','WHAT-HOW':'Delivery lead','HOW-WHY':'Analysis and quality lead','HOW-WHAT':'Operations and process lead'};
+const GOTO={WHY:'framing, the reason behind a decision, and whether the work still answers the client\'s real question',WHAT:'next steps, deadlines, and getting a stuck decision unblocked',HOW:'detail, accuracy, edge cases, and how the pieces fit together'};
+const REVIEWFOR={WHY:'whether it answers the right question and ties to the client\'s goal',WHAT:'whether it is ready to ship and what the next step is',HOW:'gaps, accuracy and edge cases'};
+const TOOLS={
+ 4:{n:'The Detail Debt Log',c:'Collection A',d:'A running capture list for details consciously deferred in the moment, reviewed on a fixed weekly rhythm. Deferring stops turning into dropping.'},
+ 5:{n:'Timeboxed Detail Sprints',c:'Collection A',d:'A method for batching detail work into short, scheduled blocks. The drain gets contained to windows you chose, instead of leaking across the whole week.'},
+ 7:{n:'Definition-of-Done Cards',c:'Collection A',d:'A card completed at the start of any piece of work that specifies, objectively, what finished means.'},
+ 9:{n:'The AI Precision Companion',c:'Collection A',d:'A curated prompt pack for delegating precision work to AI: decomposition, checklists, gap reviews, edge cases.'},
+ 10:{n:'The HOW-Partner Review Protocol',c:'Collection A',d:'A structured way to request a precision review from a HOW-primary colleague, so asking is cheap and answering is easy.'},
+ 11:{n:'The Good-Enough Threshold',c:'Collection B',d:'A worksheet that defines the shipping criteria before work begins, agreed with the person receiving the work.'},
+ 13:{n:'The Decision Deadline Ritual',c:'Collection B',d:'Sets the decision date in advance. When the date arrives, the decision is made with the information in hand.'},
+ 20:{n:'The WHAT-Partner Cadence',c:'Collection B',d:''},
+ 21:{n:'The Five-Question Purpose Brief',c:'Collection C',d:''},
+ 23:{n:'The Problem Reframe Deck',c:'Collection C',d:'A card deck of prompts that pressure-test whether the right problem is being solved, used for ten minutes before serious effort is committed.'},
+ 26:{n:'The Quarterly Altitude Check',c:'Collection C',d:'A scheduled, structured zoom-out with four fixed questions. Perspective becomes an appointment instead of an instinct.'},
+ 36:{n:'The Three-Question Kickoff',c:'Collection E',d:'A kickoff protocol requiring the why, the what and the how each be answered in writing before work starts.'},
+ 39:{n:'Decision Rights by Orientation',c:'Collection E',d:'Assigns the stages of a decision to the people energized by each stage, while authority stays where the org chart puts it.'},
+ 42:{n:'The Handoff Contract',c:'Collection E',d:'Four questions answered together in ten minutes at any cross-orientation handoff, so the receiver gets what the sender would not naturally include.'}};
+const MIT={HOW:{t:'Ask a HOW-primary teammate to review it, batch the detail work into fixed blocks, and use AI support for first drafts of checklists and documentation.',tools:[10,5,9]},
+ WHAT:{t:'Pair with a WHAT-primary who sets the cadence, and fix decision dates before the work starts.',tools:[20,13]},
+ WHY:{t:'Have a WHY-primary write a short purpose brief before the work starts, and put a direction check at the end of the phase.',tools:[21,26]}};
+const SAMPLE=`STATEMENT OF WORK (SAMPLE DOCUMENT, FICTIONAL CLIENT)
+Client: Harbor & Pine Outdoor Co.
+Engagement: Loyalty program redesign
+Duration: 12 weeks. Estimated effort: 1,560 hours.
+
+Scope of services
+Phase 1, Discover (weeks 1 to 4). Interview executive sponsors to understand goals for the program. Design the customer research approach. Conduct customer interviews and a member survey. Analyze existing loyalty and transaction data. Benchmark competitor programs.
+
+Phase 2, Define (weeks 5 to 6). Synthesize research into insights. Define the program vision and member value proposition. Facilitate a concept workshop with the client team.
+
+Phase 3, Design (weeks 7 to 10). Design program mechanics and tier structure. Prototype the member experience and test with customers. Identify and contact potential rewards partners.
+
+Phase 4, Deliver (weeks 11 to 12). Build the roadmap and launch plan. Present the executive readout.
+
+Deliverables: research report, program blueprint, tested prototype, business case, launch roadmap.`;
+let uid=1;
+const PH=(name,start,end,ongoing)=>({k:uid++,name,start,end,ongoing:!!ongoing});
+const phases=[PH('Discover',1,4),PH('Define',5,6),PH('Design',7,10),PH('Deliver',11,12),PH('Ongoing',1,12,true)];
+const pk=n=>phases.find(p=>p.name===n).k;
+const A=(name,tax,ph,share,mode,src,tag)=>({k:uid++,name,tax,tag:tag||TAX[tax-1].tag,ph:pk(ph),share,mode,src});
+const S={step:1,doc:SAMPLE,weeks:12,hours:1560,useRoster:true,plan:null,tool:null,phases,
+ acts:[A('Executive sponsor interviews',9,'Discover',6,'Pair','Stated'),A('Customer research design',10,'Discover',4,'Solo','Stated'),A('Customer interviews and member survey',11,'Discover',10,'Small team','Stated'),A('Loyalty and transaction data analysis',13,'Discover',9,'Pair','Stated'),A('Competitor program benchmarking',15,'Discover',4,'Solo','Stated'),
+  A('Research synthesis',12,'Define',8,'Small team','Stated'),A('Program vision and value proposition',1,'Define',7,'Pair','Stated'),A('Concept workshop with client team',58,'Define',4,'Whole team','Stated'),
+  A('Program mechanics and tier design',23,'Design',9,'Pair','Stated'),A('Member experience prototype and testing',26,'Design',9,'Small team','Stated'),A('Business case modeling',13,'Design',6,'Solo','Inferred'),A('Rewards partner outreach',0,'Design',3,'Solo','Stated','WHAT-WHY'),
+  A('Roadmap and launch plan',29,'Deliver',5,'Pair','Stated'),A('Executive readout',51,'Deliver',4,'Small team','Stated'),
+  A('Project management and status reporting',38,'Ongoing',7,'Solo','Inferred'),A('Client relationship management',55,'Ongoing',5,'Solo','Inferred')],
+ roster:[{k:uid++,name:'Maya',profile:'WHY-WHAT',avail:50},{k:uid++,name:'Daniel',profile:'HOW-WHY',avail:100},{k:uid++,name:'Priya',profile:'WHAT-HOW',avail:100},{k:uid++,name:'Tomas',profile:'WHY-HOW',avail:100},{k:uid++,name:'Jordan',profile:'WHAT-WHY',avail:75}]};
+
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const parts=t=>t.split('-'), prim=p=>parts(p)[0], tert=p=>O.find(o=>!parts(p).includes(o));
+function split(tag){const [l,s]=parts(tag);const r={};O.forEach(o=>r[o]=o===l?.6:o===s?.3:.1);return r}
+function score(profile,tag){const d=split(tag),[p,s]=parts(profile),t=tert(profile);const raw=d[p]*1.25+d[s]*.9-d[t];return Math.round(Math.pow(Math.max(0,Math.min(1,(raw+1)/2.25)),1.2)*100)}
+function energy(profile,tag){const l=parts(tag)[0],[p,s]=parts(profile);return l===p?'E':l===s?'N':'D'}
+const ELAB={E:'⚡ Energizing',N:'— Neutral',D:'← Draining'};
+const pct=x=>Math.round(x*100)+'%';
+const phase=k=>S.phases.find(p=>p.k==k)||S.phases[0];
+const weeks=p=>p.ongoing?'across all phases':p.start===p.end?'week '+p.start:'weeks '+p.start+' to '+p.end;
+const orderedPhases=()=>[...S.phases].sort((a,b)=>(a.ongoing-b.ongoing)||(a.start-b.start));
+const shareTotal=()=>S.acts.reduce((s,a)=>s+(+a.share||0),0);
+const hoursOf=a=>{const t=shareTotal();return t?(+a.share||0)/t*(+S.hours||0):0};
+const H=h=>Math.round(h).toLocaleString()+' h';
+const list=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+const toolBtns=ids=>`<div class="tools">${ids.map(i=>`<button class="tool" data-tool="${i}">${esc(TOOLS[i].n)}</button>`).join('')}</div>`;
+
+function demand(acts){const d={WHY:0,WHAT:0,HOW:0};let tot=0;acts.forEach(a=>{const s=split(a.tag),w=+a.share||0;O.forEach(o=>d[o]+=s[o]*w);tot+=w});O.forEach(o=>d[o]=tot?d[o]/tot:0);return d}
+function byProfile(){const r={};let t=0;S.acts.forEach(a=>{r[a.tag]=(r[a.tag]||0)+(+a.share||0);t+=+a.share||0});TAGS.forEach(x=>r[x]=t?(r[x]||0)/t:0);return r}
+function headcount(){const w=+S.weeks,h=+S.hours;if(w>0&&h>0){const lo=Math.max(1,Math.ceil(h/(w*40)));let hi=Math.ceil(h/(w*40*.75));if(hi<=lo)hi=lo+1;
+  return {lo,hi,why:`${h.toLocaleString()} hours over ${w} weeks, assuming 40-hour weeks with people allocated between 75% and 100%.`}}
+ const lo=Math.max(2,Math.round(S.acts.length/4));return {lo,hi:lo+1,why:'No hours were found in the document, so the range is estimated from the number of activities. Add hours and weeks for a firmer range.'}}
+function seats(n){const bp=byProfile();const q=TAGS.map(t=>({t,q:bp[t]*n}));const out=[];q.forEach(x=>{x.f=Math.floor(x.q);x.r=x.q-x.f;for(let i=0;i<x.f;i++)out.push(x.t)});
+ q.sort((a,b)=>b.r-a.r);let i=0;while(out.length<n&&i<q.length){if(q[i].q>0)out.push(q[i].t);i++}
+ return out.map((p,i)=>({k:'s'+i,name:'Seat '+String.fromCharCode(65+i),profile:p,avail:100}))}
+
+function build(){const hc=headcount();const ideal=seats(Math.min(8,Math.max(2,hc.lo)));const usingRoster=S.useRoster&&S.roster.length>0;
+ const people=(usingRoster?S.roster:ideal).map(p=>({...p,role:ROLE[p.profile],cap:(+p.avail||100)/100*(+S.weeks||12)*40,load:0,E:0,N:0,D:0,items:[]}));
+ const rows=[];
+ const val=(p,a)=>score(p.profile,a.tag)-35*(p.load/p.cap);
+ [...S.acts].map(a=>({a,h:hoursOf(a)})).sort((x,y)=>y.h-x.h).forEach(({a,h})=>{
+  const order=[...people].sort((x,y)=>val(y,a)-val(x,a));const owner=order[0];if(!owner)return;
+  let contribs=[];
+  if(a.mode==='Whole team')contribs=order.slice(1);
+  else{const n=a.mode==='Pair'?1:a.mode==='Small team'?2:0;contribs=order.slice(1).filter(p=>score(p.profile,a.tag)>=40).slice(0,n)}
+  let rev=null;const t=tert(owner.profile);
+  if((parts(a.tag).includes(t)||DELIV.has(a.tax))&&!contribs.some(p=>prim(p.profile)===t)){const c=people.filter(p=>p!==owner&&!contribs.includes(p)&&prim(p.profile)===t).sort((x,y)=>val(y,a)-val(x,a));rev=c[0]||null}
+  let so=1,sc=0;if(contribs.length){if(a.mode==='Whole team'){so=.3;sc=.7/contribs.length}else if(contribs.length===1){so=.65;sc=.35}else{so=.5;sc=.5/contribs.length}}
+  const f=rev?.9:1;
+  const put=(p,share,role)=>{const hh=h*share;const e=energy(p.profile,a.tag);p.load+=hh;p[e]+=hh;p.items.push({a,role,h:hh,e})};
+  put(owner,so*f,'Owner');contribs.forEach(p=>put(p,sc*f,'Contributor'));if(rev)put(rev,.1,'Reviewer');
+  rows.push({a,h,owner,contribs,rev})});
+ const ord=orderedPhases().map(p=>p.k);
+ rows.sort((x,y)=>ord.indexOf(x.a.ph)-ord.indexOf(y.a.ph)||S.acts.indexOf(x.a)-S.acts.indexOf(y.a));
+ people.forEach(p=>p.items.sort((x,y)=>ord.indexOf(x.a.ph)-ord.indexOf(y.a.ph)||S.acts.indexOf(x.a)-S.acts.indexOf(y.a)));
+ const ownedIn=(p,f)=>p.items.filter(i=>i.role==='Owner'&&f(i.a)).reduce((s,i)=>s+i.h,0);
+ const lead=[...people].sort((x,y)=>ownedIn(y,a=>LEADSET.has(a.tax))-ownedIn(x,a=>LEADSET.has(a.tax)))[0];
+ const phaseOwners=orderedPhases().filter(p=>!p.ongoing&&S.acts.some(a=>a.ph==p.k)).map(ph=>({ph,p:[...people].sort((x,y)=>ownedIn(y,a=>a.ph==ph.k)-ownedIn(x,a=>a.ph==ph.k))[0]}));
+ return {hc,ideal,people,rows,usingRoster,lead,phaseOwners}}
+
+const FR=[
+ {id:'handoff',a:p=>p.profile==='WHY-WHAT',b:p=>prim(p.profile)==='HOW',title:'Handoff gaps',what:'Direction gets handed off with confidence, and the gaps in it surface later, when the person executing hits them.',
+  steps:(a,b,act)=>[`When ${a} hands off ${act}, spend ten minutes with ${b} on a Handoff Contract: what is decided, what is still open, and who closes each open item by when.`,`Have ${b} review ${a}'s drafts before they reach the client, so execution gaps surface while they are cheap to fix.`,`Write a definition of done with ${b} for each deliverable ${a} owns, before the work starts.`],tools:[42,10,7]},
+ {id:'tissue',a:p=>p.profile==='WHAT-WHY',b:p=>prim(p.profile)==='HOW',title:'Connective tissue',what:'Work moves milestone to milestone, and the detail work between milestones lands on the HOW-primary without being planned.',
+  steps:(a,b,act)=>[`Write a definition of done with ${b} for each milestone ${a} owns, before work starts.`,`Keep a shared Detail Debt Log of the detail work each milestone creates, and assign it in the weekly check-in rather than leaving ${b} to absorb it.`,`Book that detail work into fixed blocks instead of the last days of the phase.`],tools:[7,4,5]},
+ {id:'trust',a:p=>p.profile==='WHAT-HOW',b:p=>prim(p.profile)==='WHY',title:'Direction trust',what:'Once execution is moving, questions about direction read as obstruction, so they get raised late or not at all.',
+  steps:(a,b,act)=>[`Put a direction check on the calendar at the end of each phase, run by ${b}, so direction questions have a set place instead of landing mid-sprint.`,`${b} raises a concern as a specific risk to the client's stated goal, not as a general reopening of the direction.`,`Before ${a} commits effort to ${act}, spend ten minutes with the Problem Reframe Deck.`],tools:[26,23]},
+ {id:'system',a:p=>p.profile==='HOW-WHAT',b:p=>prim(p.profile)==='WHY',title:'System disruption',what:'A change of direction can undo structure that is already working, so it meets resistance unless the case for it is specific.',
+  steps:(a,b,act)=>[`When ${b} wants to change direction, show ${a} the specific evidence of what is not working before proposing the change.`,`Agree at kickoff which parts of the plan are fixed and which stay open, and who decides each.`,`Bring ${a} into ${act} at the start, not after the direction is set.`],tools:[39,23]},
+ {id:'deploy',a:p=>p.profile==='HOW-WHY',b:p=>prim(p.profile)==='WHAT',title:'Deployment pressure',what:'Refinement continues past the point where the work could ship, while the WHAT-primary pushes to deliver.',
+  steps:(a,b,act)=>[`At kickoff, set a decision date for ${act} and each other deliverable ${a} owns, and write down what complete enough means for each.`,`${b} owns the delivery date and ${a} owns the quality bar. Agree both in writing with the person receiving the work.`,`Share a working draft of ${act} at its halfway point, not at the end.`],tools:[13,11]},
+ {id:'timing',a:p=>prim(p.profile)==='WHY',b:p=>prim(p.profile)==='WHAT',title:'Timing',what:'Purpose questions arrive at the moment the team is ready to execute.',
+  steps:(a,b,act)=>[`Run the kickoff so the why, the what and the how each have a written answer before work starts.`,`Give ${a} a standing slot at the start of the weekly check-in for direction questions, so they land there and not at decision points.`,`Record each decision with its reason. Reopening a decision needs new information, not a new question.`],tools:[36,13]},
+ {id:'action',a:p=>prim(p.profile)==='WHAT',b:p=>prim(p.profile)==='HOW',title:'Action versus completeness',what:'One side wants to move, the other wants to understand first, and each reads the other as the obstacle.',
+  steps:(a,b,act)=>[`For ${act}, agree what ready to move means before the work starts.`,`Protect ${b}'s depth work in fixed blocks so ${a} can see when it will end.`],tools:[11,5]}];
+function friction(R){const out=[];
+ FR.forEach(f=>{const A=R.people.filter(f.a),B=R.people.filter(f.b);if(!A.length||!B.length)return;let best=null;
+  A.forEach(a=>B.forEach(b=>{if(a===b)return;const sh=R.rows.filter(r=>{const on=[r.owner,...r.contribs,r.rev];return on.includes(a)&&on.includes(b)});if(!best||sh.length>best.sh.length)best={a,b,sh}}));
+  if(!best)return;const own=best.sh.find(r=>r.owner===best.a)||R.rows.find(r=>r.owner===best.a)||best.sh[0];
+  const act=own?own.a.name.toLowerCase():'shared work';
+  out.push({...f,pa:best.a,pb:best.b,sh:best.sh,list:f.steps(esc(best.a.name),esc(best.b.name),esc(act))})});
+ return out.sort((x,y)=>y.sh.length-x.sh.length).slice(0,4)}
+
+function gaps(R){const d=demand(S.acts),out=[];
+ O.filter(o=>d[o]>=.2&&!R.people.some(p=>prim(p.profile)===o)).forEach(o=>out.push(`<b>No one on the team has ${o} as their primary orientation,</b> yet ${pct(d[o])} of this work demands it. Add a ${TAGS.filter(t=>prim(t)===o).join(' or ')}, or expect the ${o}-heavy work to drain whoever owns it.`));
+ R.rows.filter(r=>energy(r.owner.profile,r.a.tag)==='D').forEach(r=>{const t=prim(r.a.tag);out.push(`<b>${esc(r.a.name)} has no natural owner.</b> ${esc(r.owner.name)} owns it, and the work sits in their tertiary orientation, so it will cost them energy. Add someone with ${t} as their primary, or keep it small and time-boxed with a reviewer.`+toolBtns(MIT[t].tools))});
+ R.people.filter(p=>p.load>p.cap*1.0).forEach(p=>out.push(`<b>${esc(p.name)} is over capacity.</b> The plan gives them about ${H(p.load)}, ${pct(p.load/p.cap)} of their available time. Move a contributor role to someone with room, or raise their availability.`));
+ if(R.usingRoster)R.people.filter(p=>!p.load).forEach(p=>out.push(`<b>${esc(p.name)} has no work on this plan.</b> Consider whether they are needed on this project.`));
+ return out}
+
+function sel(opts,val,attrs){return `<select ${attrs}>${opts.map(o=>{const v=typeof o==='object'?o.v:o,l=typeof o==='object'?o.l:o;return `<option value="${esc(v)}"${String(v)===String(val)?' selected':''}>${esc(l)}</option>`}).join('')}</select>`}
+function steps(){const n=['The work','Review activities','Roster','Result'];return `<ol class="steps">${n.map((t,i)=>`<li><button data-go="${i+1}"${S.step===i+1?' aria-current="step"':''}>${i+1}. ${t}</button></li>`).join('')}</ol>`}
+
+function v1(){return `<div class="stack"><div><h1>Build the team around the work.</h1><p style="margin-top:10px">Team Builder reads a statement of work, work plan or project plan, maps the cognitive orientation each activity demands, and recommends the team shape, who owns and contributes to each activity, and where the drain will land.</p></div>
+ <div class="card stack"><label for="doc">Paste a document, or use the sample below<textarea id="doc" data-f="doc">${esc(S.doc)}</textarea></label>
+ <div class="actions"><span class="small">The build will also accept PDF and Word uploads.</span><button class="btn" data-go="2">Read the document</button></div></div></div>`}
+
+function v2(){const tot=shareTotal();
+ return `<div class="stack"><div><h2>Review the activities</h2><p style="margin-top:8px">Here is what Team Builder found in the document. Correct anything that reads wrong before the team is built.</p></div>
+ <div class="grid3">
+  <div class="card def"><b>Share of effort</b><p class="small">The percentage of the project's total hours each activity takes. It comes from the document where hours are stated and is estimated otherwise. The hours column shows what each share means in practice.</p></div>
+  <div class="card def"><b>Matching</b><p class="small">Each activity is matched to the closest entry on the MindPrint™ activity list, which sets its demand tag. Anything with no close match is marked <span class="chip unl">Unlisted</span> and keeps the tag set here. Unlisted activities are logged so the list can grow.</p></div>
+  <div class="card def"><b>Delivery</b><p class="small">How many people the activity needs. Solo is one owner. Pair adds one contributor. Small team adds two. Whole team involves everyone, with one owner running it.</p></div></div>
+
+ <div class="card stack"><div class="actions"><div><h3>Phases</h3><p class="small">Read from the document. Rename, re-time, add or remove phases. Ongoing holds work that runs across every phase, such as project management.</p></div></div>
+  <div class="scroll"><table><thead><tr><th>Phase</th><th>Start week</th><th>End week</th><th>Activities</th><th></th></tr></thead><tbody>
+  ${orderedPhases().map(p=>{const n=S.acts.filter(a=>a.ph==p.k).length;return `<tr><td><input type="text" id="phn${p.k}" aria-label="Phase name" data-ph="${p.k}" data-p="name" value="${esc(p.name)}" style="min-width:140px"></td>
+  <td>${p.ongoing?'<span class="small">All</span>':`<input type="number" min="1" id="phs${p.k}" aria-label="Start week" data-ph="${p.k}" data-p="start" value="${p.start}">`}</td>
+  <td>${p.ongoing?'<span class="small">All</span>':`<input type="number" min="1" id="phe${p.k}" aria-label="End week" data-ph="${p.k}" data-p="end" value="${p.end}">`}</td>
+  <td>${n}</td><td>${p.ongoing?'':`<button class="x" data-delph="${p.k}" aria-label="Remove phase"${n?' disabled title="Move its activities to another phase first"':''}>×</button>`}</td></tr>`}).join('')}
+  </tbody></table></div>
+  <div class="row" style="align-items:center"><button class="btn ghost small" data-add="phase">Add a phase</button><span class="small">A phase can be removed once its activities have moved to another phase.</span></div>
+  <div class="row"><label for="weeks">Duration (weeks)<input id="weeks" type="number" min="1" data-f="weeks" value="${esc(S.weeks)}" style="width:110px"></label>
+  <label for="hours">Total effort (hours)<input id="hours" type="number" min="0" data-f="hours" value="${esc(S.hours)}" style="width:140px"></label></div></div>
+
+ <div class="scroll"><table><thead><tr><th>Activity</th><th>Matched to</th><th>Demand</th><th>Phase</th><th>Share</th><th>Hours</th><th>Delivery</th><th>Source</th><th></th></tr></thead><tbody>
+ ${S.acts.map(a=>{const shifted=a.tax>0&&a.tag!==TAX[a.tax-1].tag;return `<tr><td><input type="text" id="n${a.k}" aria-label="Activity name" data-a="${a.k}" data-p="name" value="${esc(a.name)}"></td>
+ <td>${sel([{v:0,l:'Not on the list'}].concat(TAX.map(t=>({v:t.id,l:t.id+'. '+t.name}))),a.tax,`id="t${a.k}" aria-label="Matched activity" data-a="${a.k}" data-p="tax"`)}</td>
+ <td style="white-space:nowrap">${sel(TAGS,a.tag,`id="g${a.k}" aria-label="Demand tag" data-a="${a.k}" data-p="tag"`)}${shifted?' <span class="chip shift">Shifted</span>':''}</td>
+ <td>${sel(orderedPhases().map(p=>({v:p.k,l:p.name})),a.ph,`id="p${a.k}" aria-label="Phase" data-a="${a.k}" data-p="ph"`)}</td>
+ <td style="white-space:nowrap"><input type="number" min="0" id="e${a.k}" aria-label="Share of effort, percent" data-a="${a.k}" data-p="share" value="${esc(a.share)}"> %</td>
+ <td class="small" style="white-space:nowrap">${H(hoursOf(a))}</td>
+ <td>${sel(MODES,a.mode,`id="m${a.k}" aria-label="Delivery" data-a="${a.k}" data-p="mode"`)}</td>
+ <td style="white-space:nowrap">${a.tax===0?'<span class="chip unl">Unlisted</span> ':''}<span class="chip${a.src==='Stated'?'':' inf'}">${a.src}</span></td><td><button class="x" data-del="${a.k}" aria-label="Remove activity">×</button></td></tr>`}).join('')}
+ </tbody><tfoot><tr><td colspan="4">Total</td><td>${tot}%</td><td>${H(+S.hours||0)}</td><td colspan="3" class="small" style="font-weight:500">${tot===100?'':'Shares add to '+tot+'%, so they are scaled to 100% for the result.'}</td></tr></tfoot></table></div>
+ <div class="actions"><button class="btn ghost small" data-add="act">Add an activity</button><button class="btn" data-go="3">Continue to roster</button></div></div>`}
+
+function v3(){return `<div class="stack"><div><h2>Add the roster</h2><p style="margin-top:8px">Enter the people being considered and their MindPrint™ Profiles. The roster is optional and is entered fresh for each run. Without one, the result describes the ideal team shape.</p></div>
+ <label class="toggle" for="use"><input type="checkbox" id="use" data-f="useRoster"${S.useRoster?' checked':''}> Use this roster for the recommendation</label>
+ <div class="scroll"><table><thead><tr><th>Name</th><th>Profile</th><th>Availability</th><th>Hours available</th><th></th></tr></thead><tbody>
+ ${S.roster.map(r=>`<tr><td><input type="text" id="rn${r.k}" aria-label="Name" data-r="${r.k}" data-p="name" value="${esc(r.name)}"></td>
+ <td>${sel(TAGS,r.profile,`id="rp${r.k}" aria-label="Profile" data-r="${r.k}" data-p="profile"`)}</td>
+ <td>${sel([100,75,50,25].map(v=>({v,l:v+'%'})),r.avail,`id="ra${r.k}" aria-label="Availability" data-r="${r.k}" data-p="avail"`)}</td>
+ <td class="small">${H(r.avail/100*(+S.weeks||12)*40)}</td>
+ <td><button class="x" data-delr="${r.k}" aria-label="Remove person">×</button></td></tr>`).join('')}
+ </tbody></table></div>
+ <div class="actions"><div class="row" style="align-items:center"><button class="btn ghost small" data-add="person">Add a person</button><span class="small">Sample names. Skills and seniority fields arrive in the build. Names are never sent to the AI.</span></div>
+ <button class="btn" data-go="4">Build the team</button></div></div>`}
+
+function pie(bp){let a0=-Math.PI/2,out='';const cx=100,cy=100,r=92;
+ TAGS.filter(t=>bp[t]>0).forEach(t=>{const v=bp[t];if(v>=.999){out+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${PCOL[t]}"/>`;return}
+  const a1=a0+v*2*Math.PI,x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+  out+=`<path d="M${cx} ${cy} L${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${v>.5?1:0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z" fill="${PCOL[t]}" stroke="#0F172A" stroke-width="2"/>`;a0=a1});
+ return `<svg class="pie" viewBox="0 0 200 200" role="img" aria-label="Share of work by profile">${out}</svg>`}
+
+function defs(){return `<div class="grid3">
+ <div class="card def"><b>Owner</b><p class="small">Accountable for the activity and does the largest share of the hands-on work, usually half or more. Owner is not a management title. The team has one engagement lead, shown under team structure.</p></div>
+ <div class="card def"><b>Contributor</b><p class="small">Delivers a defined piece of the activity, agreed with the owner at the start. In a pair the contributor carries about a third of the work. In a small team, two contributors split half.</p></div>
+ <div class="card def"><b>Reviewer</b><p class="small">Checks the work at the draft stage, bringing the orientation the owner finds draining. About a tenth of the effort. A reviewer is added when the activity calls on the owner's tertiary orientation, or when it produces a client deliverable such as a roadmap or readout.</p></div></div>`}
+
+function personCard(p,R){const t=p.load||1,dr=p.D/t;const by=r=>p.items.filter(i=>i.role===r).map(i=>esc(i.a.name));const o=by('Owner'),c=by('Contributor'),v=by('Reviewer');const di=p.items.filter(i=>i.e==='D');
+ return `<div class="card"><div class="small">${esc(p.name)}${R.lead===p?' · Engagement lead':''}</div><div class="prof">${p.profile}</div><div style="font-weight:600;margin-top:4px">${p.role}</div>
+ <div class="small" style="margin-top:6px">About ${H(p.load)}, ${pct(p.load/p.cap)} of available time</div>
+ <div class="ebar" role="img" aria-label="Energizing ${pct(p.E/t)}, neutral ${pct(p.N/t)}, draining ${pct(dr)}"><span class="e" style="width:${p.E/t*100}%"></span><span class="n" style="width:${p.N/t*100}%"></span><span class="d" style="width:${dr*100}%"></span></div>
+ <div class="small">Energizing ${pct(p.E/t)} · Neutral ${pct(p.N/t)} · Draining ${pct(dr)}</div>
+ ${o.length?`<div class="rl"><b>Owns</b><div>${list(o)}</div></div>`:''}${c.length?`<div class="rl"><b>Contributes to</b><div>${list(c)}</div></div>`:''}${v.length?`<div class="rl"><b>Reviews</b><div>${list(v)}</div></div>`:''}
+ <div class="rl"><b>Draining work</b><div>${di.length?list(di.map(i=>esc(i.a.name)+' ('+i.role.toLowerCase()+')')):'None. Nothing assigned sits in their tertiary orientation.'}</div></div>
+ ${dr>.2?`<div class="flag" style="margin-top:12px"><b>Over the drain budget.</b> ${pct(dr)} of this workload is draining, against a 20% limit. ${MIT[tert(p.profile)].t}${toolBtns(MIT[tert(p.profile)].tools)}</div>`:''}
+ <div style="margin-top:14px"><button class="btn ghost small" data-plan="${p.k}">Open individual plan</button></div></div>`}
+
+function v4(){const R=build();if(S.plan!=null){const p=R.people.find(x=>x.k==S.plan);if(p)return planView(p,R);S.plan=null}
+ const P=R.people,d=demand(S.acts),bp=byProfile(),top=O.slice().sort((a,b)=>d[b]-d[a]);
+ const bar=x=>`<div class="bar">${[['WHY','bw'],['WHAT','bt'],['HOW','bh']].map(([o,c])=>`<span class="${c}" style="width:${x[o]*100}%">${x[o]>=.08?pct(x[o]):''}</span>`).join('')}</div>`;
+ const seatCount=t=>R.ideal.filter(s=>s.profile===t).length;
+ const fr=friction(R),gp=gaps(R);
+ return `<div class="stack" style="gap:40px">
+ <div class="sec"><div class="eyebrow">Summary</div><h1>${R.usingRoster?'The recommended allocation':'The recommended team'}</h1>
+ <p>This work is ${top[0]}-heavy: ${pct(d[top[0]])} of its demand sits in the ${top[0]} orientation, ${pct(d[top[1]])} in ${top[1]} and ${pct(d[top[2]])} in ${top[2]}. ${R.usingRoster?`The plan below spreads it across ${P.length} people.`:`The ideal team has ${R.ideal.length} seats.`}</p>
+ <div class="grid"><div class="card"><div class="small">Headcount range</div><div class="big">${R.hc.lo} to ${R.hc.hi} people</div><div class="small" style="margin-top:8px">${esc(R.hc.why)}</div></div>
+ <div class="card"><div class="small">Team structure</div><div style="margin-top:6px"><b>Engagement lead:</b> ${esc(R.lead.name)} (${R.lead.profile}). Owns the most direction-setting, planning and client-facing work, and is the client's main contact.</div>
+ <ul class="plain">${R.phaseOwners.map(x=>`<li><b>${esc(x.ph.name)}</b> (${weeks(x.ph)}): ${esc(x.p.name)} owns the most work</li>`).join('')}</ul></div></div></div>
+
+ <div class="navy"><h3>The shape of the work</h3><div class="small">Share of total effort by the profile each activity calls for. The ideal team puts seats where the effort sits.</div>
+ <div class="shape">${pie(bp)}<div class="plegend">${TAGS.filter(t=>bp[t]>0).sort((a,b)=>bp[b]-bp[a]).map(t=>`<div><i style="background:${PCOL[t]}"></i><b>${t}</b><b>${pct(bp[t])}</b><span>${seatCount(t)?seatCount(t)+' seat'+(seatCount(t)>1?'s':'')+' in the ideal team':'Covered by a contributor'}</span></div>`).join('')}</div></div></div>
+
+ <div class="navy"><h3>Energy demand map</h3><div class="small">How the WHY, WHAT and HOW demand shifts across the project.</div>
+ <div class="maprow"><div><b>All work combined</b><small>Every activity</small></div>${bar(d)}</div>
+ ${orderedPhases().filter(p=>S.acts.some(a=>a.ph==p.k)).map(p=>`<div class="maprow"><div><b>${esc(p.name)}</b><small>${p.ongoing?'Runs across all phases':weeks(p)}</small></div>${bar(demand(S.acts.filter(a=>a.ph==p.k)))}</div>`).join('')}
+ <div class="legend"><span><i style="background:var(--why)"></i>WHY · Purpose</span><span><i style="background:var(--what)"></i>WHAT · Progress</span><span><i style="background:var(--how)"></i>HOW · Precision</span></div>
+ <div class="small" style="margin-top:10px">Ongoing work, such as project management, runs alongside every phase. It has its own row so each phase shows only its own work.</div></div>
+
+ <div class="sec"><div class="eyebrow">Roles</div><h2>Who carries what</h2><p>Every activity has one owner. Depending on how it is delivered, it may also have contributors and a reviewer.</p>${defs()}
+ <div class="grid">${P.map(p=>personCard(p,R)).join('')}</div></div>
+
+ <div class="sec"><div class="eyebrow">Owner and contributor matrix</div><h2>Every activity, every person</h2>
+ <div class="row" style="gap:8px;align-items:center"><span class="badge E">${ELAB.E}</span><span class="badge N">${ELAB.N}</span><span class="badge D">${ELAB.D}</span><span class="small">Color shows what the role costs that person.</span></div>
+ <div class="scroll"><table><thead><tr><th>Activity</th><th>Delivery</th><th>Hours</th>${P.map(p=>`<th>${esc(p.name)}<br><span style="font-weight:600;letter-spacing:0">${p.profile}</span></th>`).join('')}</tr></thead><tbody>
+ ${R.rows.map((r,i)=>`${i===0||R.rows[i-1].a.ph!==r.a.ph?`<tr class="phrow"><td colspan="${P.length+3}">${esc(phase(r.a.ph).name)} · ${weeks(phase(r.a.ph))}</td></tr>`:''}
+ <tr><td style="min-width:220px">${esc(r.a.name)}<div class="small">${r.a.tag}</div></td><td>${r.a.mode}</td><td class="small">${H(r.h)}</td>${P.map(p=>{const role=r.owner===p?'Owner':r.contribs.includes(p)?'Contributor':r.rev===p?'Reviewer':'';return `<td>${role?`<span class="badge ${energy(p.profile,r.a.tag)}">${role}</span>`:''}</td>`}).join('')}</tr>`).join('')}
+ </tbody></table></div></div>
+
+ <div class="sec"><div class="eyebrow">Coverage</div><h2>Gaps to close</h2>
+ ${gp.length?gp.map(g=>`<div class="flag">${g}</div>`).join(''):'<div class="ok">Every orientation the work needs has a primary on the team, every activity has an owner who is energized or neutral doing it, and no one is over capacity.</div>'}
+ ${R.usingRoster?`<p class="small" style="max-width:none">For comparison, the ideal shape for this work is ${R.ideal.map(s=>s.profile).join(', ')}.</p>`:''}</div>
+
+ <div class="sec"><div class="eyebrow">Friction forecast</div><h2>Where the work will strain, and what to do</h2>
+ ${fr.length?`<div class="grid">${fr.map(f=>`<div class="card"><h3>${f.title}</h3><div class="small" style="margin:4px 0 10px">${esc(f.pa.name)} (${f.pa.profile}) and ${esc(f.pb.name)} (${f.pb.profile})</div>
+ <p style="font-size:14px">${f.what}</p>
+ <div class="rl"><b>Where it shows up</b><div>${f.sh.length?list(f.sh.slice(0,3).map(r=>esc(r.a.name)+' ('+esc(phase(r.a.ph).name)+')')):'They share no activity directly, so it will show at phase handoffs and in check-ins.'}</div></div>
+ <div class="rl"><b>What to do</b></div><ul class="plain">${f.list.map(s=>`<li>${s}</li>`).join('')}</ul>${toolBtns(f.tools)}</div>`).join('')}</div>`:'<div class="ok">None of the recurring friction patterns applies to this mix of profiles.</div>'}</div>
+
+ <div class="actions"><button class="btn ghost" data-go="3">Change the roster</button><span class="small">PDF team brief and individual plan exports arrive in the build.</span></div>
+ <div class="foot">Team Builder allocates work among people already chosen for a project. It offers insight for a human staffing decision and is never a ranking or selection of individuals. Skills in every activity can be learned. The model describes energy, never ability.</div></div>`}
+
+function planView(p,R){const t=p.load||1;const ph=orderedPhases().filter(x=>p.items.some(i=>i.a.ph==x.k));
+ const others=r=>[r.owner,...r.contribs,r.rev].filter(x=>x&&x!==p);
+ const rowOf=a=>R.rows.find(r=>r.a===a);
+ const roleOf=(r,x)=>r.owner===x?'Owner':r.rev===x?'Reviewer':'Contributor';
+ const what=(i,r)=>i.role==='Owner'?`Own the plan and the output. Set the approach, do most of the work${r.contribs.length?', agree with '+list(r.contribs.map(x=>esc(x.name)))+' which piece each delivers,':''} and bring the result to review.`
+  :i.role==='Contributor'?`Deliver the piece agreed with ${esc(r.owner.name)}, the owner, and flag anything blocking it early.`
+  :`Review ${esc(r.owner.name)}'s draft for ${REVIEWFOR[prim(p.profile)]}. Review at the draft stage, not the final one.`;
+ const coll={};p.items.forEach(i=>{const r=rowOf(i.a);others(r).forEach(x=>{(coll[x.k]=coll[x.k]||{x,acts:[]}).acts.push(i.a.name)})});
+ const di=p.items.filter(i=>i.e==='D');const tt=tert(p.profile);
+ return `<div class="stack" style="gap:32px"><div><button class="link" data-back="1">Back to the full result</button></div>
+ <div class="sec"><div class="eyebrow">Individual plan</div><h1>${esc(p.name)}</h1>
+ <div class="row" style="align-items:center;gap:12px"><span class="prof">${p.profile}</span><span style="font-weight:600">${p.role}</span>${R.lead===p?'<span class="chip">Engagement lead</span>':''}</div>
+ <p>About ${H(p.load)} over ${S.weeks} weeks, ${pct(p.load/p.cap)} of available time. Owns ${p.items.filter(i=>i.role==='Owner').length} activities, contributes to ${p.items.filter(i=>i.role==='Contributor').length} and reviews ${p.items.filter(i=>i.role==='Reviewer').length}. Energizing ${pct(p.E/t)}, neutral ${pct(p.N/t)}, draining ${pct(p.D/t)}.</p></div>
+
+ <div class="sec"><h2>The work, phase by phase</h2>
+ ${ph.map(x=>`<div class="card"><div class="eyebrow">${esc(x.name)} · ${weeks(x)}</div>
+ ${p.items.filter(i=>i.a.ph==x.k).map(i=>{const r=rowOf(i.a);const o=others(r);return `<div class="item"><div class="nm">${esc(i.a.name)}</div><div class="meta"><span class="badge ${i.e}">${i.role}</span><span class="small">${i.a.mode} · ${H(i.h)}</span></div>
+ <p>${what(i,r)}</p><p class="small">${o.length?'Works with '+list(o.map(y=>esc(y.name)+' ('+roleOf(r,y).toLowerCase()+')'))+'.':'Solo work.'} ${ELAB[i.e].replace(/^\S+ /,'')} for ${esc(p.name)}.</p></div>`}).join('')}</div>`).join('')}</div>
+
+ <div class="sec"><h2>Who to go to for what</h2><div class="grid">
+ ${Object.values(coll).map(c=>`<div class="card"><div class="small">${c.x.profile}</div><h3>${esc(c.x.name)}</h3><p style="margin-top:6px;font-size:14px">Go to ${esc(c.x.name)} for ${GOTO[prim(c.x.profile)]}.</p><div class="rl"><b>Shared work</b><div>${list([...new Set(c.acts)].map(esc))}</div></div></div>`).join('')||'<p>No shared activities on this plan.</p>'}</div></div>
+
+ <div class="sec"><h2>Watch for</h2>
+ ${di.length?`<div class="flag"><b>${list(di.map(i=>esc(i.a.name)))}</b> ${di.length>1?'sit':'sits'} in ${tt}, ${esc(p.name)}'s tertiary orientation, and will cost energy. ${MIT[tt].t}${toolBtns(MIT[tt].tools)}</div>`:`<div class="ok">Nothing on this plan sits in ${tt}, ${esc(p.name)}'s tertiary orientation.</div>`}</div>
+ <div><button class="link" data-back="1">Back to the full result</button></div></div>`}
+
+function modal(){const m=document.getElementById('modal');if(S.tool==null){m.innerHTML='';return}const t=TOOLS[S.tool];
+ m.innerHTML=`<div class="modal" data-close="1"><div class="box" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="eyebrow">Tool ${S.tool} · ${t.c}</div><h2 id="mt">${esc(t.n)}</h2>
+ <p>${t.d||'Part of the MindPrint™ Tertiary Support Library.'}</p><p class="small">In the build, this opens the tool in the MindPrint™ library with its worksheet.</p>
+ <div><button class="btn small" data-close="1" id="mclose">Close</button></div></div></div>`;document.getElementById('mclose').focus()}
+
+function render(){document.getElementById('app').innerHTML=`<div class="note"><b>Prototype.</b> Reading the document is simulated with a fictional sample statement of work. Everything after that step is live: edit phases, activities, delivery or the roster and the result recalculates.</div>`+steps()+[v1,v2,v3,v4][S.step-1]();modal()}
+document.addEventListener('click',e=>{const t=e.target.closest('button,[data-close]');if(!t)return;const d=t.dataset;
+ if(d.close&&(t.tagName==='BUTTON'||e.target===t)){S.tool=null;modal();return}
+ if(d.tool){S.tool=+d.tool;modal();return}
+ if(d.go){S.step=+d.go;S.plan=null;render();window.scrollTo(0,0)}
+ else if(d.plan){S.plan=d.plan;render();window.scrollTo(0,0)}
+ else if(d.back){S.plan=null;render();window.scrollTo(0,0)}
+ else if(d.del){S.acts=S.acts.filter(a=>a.k!=d.del);render()}
+ else if(d.delr){S.roster=S.roster.filter(r=>r.k!=d.delr);render()}
+ else if(d.delph){S.phases=S.phases.filter(p=>p.k!=d.delph);render()}
+ else if(d.add==='act'){S.acts.push({k:uid++,name:'New activity',tax:14,tag:TAX[13].tag,ph:orderedPhases()[0].k,share:3,mode:'Solo',src:'Added'});render()}
+ else if(d.add==='person'){S.roster.push({k:uid++,name:'New person',profile:'HOW-WHAT',avail:100});render()}
+ else if(d.add==='phase'){const last=Math.max(...S.phases.filter(p=>!p.ongoing).map(p=>p.end),0);S.phases.push(PH('New phase',last+1,last+2));render()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.tool!=null){S.tool=null;modal()}});
+document.addEventListener('change',e=>{const t=e.target,d=t.dataset;
+ if(d.f){S[d.f]=t.type==='checkbox'?t.checked:t.value;if(d.f!=='doc')render();return}
+ if(d.ph){const p=S.phases.find(x=>x.k==d.ph);if(!p)return;p[d.p]=d.p==='name'?t.value:Math.max(1,+t.value||1);render();return}
+ if(d.a){const a=S.acts.find(x=>x.k==d.a);if(!a)return;if(d.p==='tax'){a.tax=+t.value;if(a.tax>0)a.tag=TAX[a.tax-1].tag}else if(d.p==='share')a.share=Math.max(0,+t.value||0);else if(d.p==='ph')a.ph=+t.value;else a[d.p]=t.value;render();return}
+ if(d.r){const r=S.roster.find(x=>x.k==d.r);if(!r)return;r[d.p]=d.p==='avail'?+t.value:t.value;render()}});
+render();
+</script>
