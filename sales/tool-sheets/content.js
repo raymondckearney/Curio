@@ -190,6 +190,26 @@ module.exports = [
     ],
   },
   {
+    slug: 'team-builder', group: 'teams', name: 'Team Builder',
+    promise: 'Staff a project around the work it actually demands.',
+    serves: ['Resourcing and project leads', 'Consulting and services firms', 'Managers splitting work across a team'],
+    problem: 'Projects get staffed by availability and title. Nobody maps what the work demands, so the detail work lands on someone it drains, handoffs leak, and the friction shows up mid-project when it is expensive to fix.',
+    benefits: [
+      ['The team shape, from the document', 'Reads a statement of work or project plan and maps the WHY, WHAT, and HOW demand of every activity and phase.'],
+      ['Clear owners, contributors, and reviewers', 'Every activity gets one owner, the help it needs, and a reviewer who covers what the owner finds draining.'],
+      ['Problems found before kickoff', 'Coverage gaps, overload, draining assignments, and likely friction between profiles, each with a practical fix.'],
+    ],
+    how: ['Upload or paste a SOW, work plan, or project plan', 'Review the activities, phases, and hours it found', 'Add the people already chosen, or leave it empty for the ideal seats'],
+    outputs: ['Headcount range and team structure', 'Owner and contributor matrix by phase', 'Drain budget, gaps, and friction forecast', 'A team brief and individual plans as PDFs'],
+    extra: ['Insight, not selection', 'Team Builder allocates work among people already chosen and is never a ranking of individuals. Every number comes from the same rules each time, and names are never sent to the AI.'],
+    pairs: ['Team Dynamics', 'Session Architect', 'Tertiary Support Library'],
+    shots: [
+      { file: 'team-builder-1-result', crop: [0, 0.6, 1], caption: 'The shape of the work: where the effort sits, by profile.' },
+      { file: 'team-builder-3-matrix', crop: [0, 0.03, 0.75], caption: 'Who owns, contributes to, and reviews each activity.' },
+      { file: 'team-builder-5-plan', crop: [0, 0, 0.7], caption: 'An individual plan for every person on the team.' },
+    ],
+  },
+  {
     slug: 'onboarding-resources', group: 'teams', name: 'Onboarding Resources',
     promise: 'A first 90 days built around how the new hire is wired.',
     serves: ['Hiring managers', 'HR and People teams', 'New hires'],

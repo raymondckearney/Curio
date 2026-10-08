@@ -31,7 +31,7 @@ const PENDING = ['Chris Patel', 'member'];
 const LICENSES = [
   'assessment_tokens', 'team_account', 'role_analyzer', 'career_guidance', 'jd_analyzer',
   'precision_companion', 'purpose_companion', 'progress_companion', 'orientation_translator',
-  'session_architect', 'meeting_architect', 'curio_assistant', 'library_full',
+  'session_architect', 'meeting_architect', 'team_builder', 'curio_assistant', 'library_full',
 ];
 
 const emailOf = name => `${name.toLowerCase().replace(/[^a-z]+/g, '.')}@${DOMAIN}`;
@@ -41,7 +41,7 @@ async function removeExisting() {
   for (const { id } of accounts) {
     const tokens = await dbQuery('tokens', { account_id: `eq.${id}`, select: 'token' });
     for (const t of tokens) await dbDelete('assessments', { token: t.token });
-    for (const table of ['account_licenses', 'tokens', 'assistant_logs', 'access_requests', 'meeting_architect_reports', 'client_users', 'teams']) {
+    for (const table of ['account_licenses', 'tokens', 'assistant_logs', 'access_requests', 'meeting_architect_reports', 'team_builder_runs', 'team_builder_calls', 'client_users', 'teams']) {
       try { await dbDelete(table, { account_id: id }); } catch { /* table may not exist or have no rows */ }
     }
     await dbDelete('client_accounts', { id });

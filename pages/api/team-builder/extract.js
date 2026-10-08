@@ -23,6 +23,8 @@ export default async function handler(req, res) {
 
     const docs = loadDocs();
     const system = systemBlocks(docs.partA, docs, 'Team Builder PART A: EXTRACTION');
+    // The notes are shown to the person reviewing, as written.
+    blocks.push({ type: 'text', text: 'Write "notes" for the person reviewing the activities: plain sentences, no JSON field names, no taxonomy IDs.' });
     const deadline = Date.now() + MODEL_DEADLINE_MS;
     const started = Date.now();
 

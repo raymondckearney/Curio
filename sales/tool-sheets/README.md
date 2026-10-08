@@ -1,6 +1,6 @@
 # MindPrint™ tool sheets
 
-One-page sales sheets, one per tool or resource (17 total, the three AI
+One-page sales sheets, one per tool or resource (18 total, the three AI
 Companions share one). Every sheet has the same sections: who it serves,
 the problem, what it does for you, how it works, what you get, a "good to
 know" note, and what it pairs well with, plus 1 to 3 screenshots.
@@ -45,7 +45,7 @@ node sales/tool-sheets/scripts/seed-demo.js --delete        # remove the demo co
 
 ## Status
 
-All 17 sheets have real screenshots. The two Insights shots
+All 18 sheets have real screenshots. The two Insights shots
 (`insights-1-index`, `insights-2-article`) were taken from the public site
 and uploaded by hand, since cloud sessions can't reach Sanity; content.js
 crops off the site nav so they match the portal's embedded view.
@@ -58,6 +58,15 @@ the newest article. This needs network access to sanity.io (a local run).
 
 `optimize.py` converts embedded color profiles (Mac screenshots are Display
 P3) to sRGB, so hand-taken screenshots keep their colors.
+
+The Team Builder shots (`team-builder-1-result`, `-3-matrix`, `-5-plan`)
+use the tool's built-in sample statement of work (the fictional Harbor &
+Pine Outdoor Co.) and sample roster, not Summit Ridge, since Team Builder
+works from a document rather than the account's people. They were taken
+with real AI output against a local fake database, so nothing was written
+to Supabase. To re-shoot them with the demo company instead, re-run
+`seed-demo.js` (it now grants `team_builder`), open Team Builder, choose
+"Use a sample statement of work", and build the team with the sample roster.
 
 ## AI screenshots and the response cache
 

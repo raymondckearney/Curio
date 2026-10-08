@@ -20,6 +20,7 @@ const TOOL_LABELS = {
   orientation_translator: 'Orientation Translator',
   session_architect: 'Session Architect',
   meeting_architect: 'Meeting Architect',
+  team_builder: 'Team Builder',
   team_account: 'Team account (shows My Team)',
   curio_assistant: 'Curio Assistant',
   library_full: 'Client Library (Full)', library_a: 'Client Library — Collection A', library_b: 'Client Library — Collection B',
@@ -77,6 +78,9 @@ const NAV = [
   { section: 'LANGUAGE TOOLS', items: [
     { id: 'detection-feedback', label: 'Detection Feedback' },
     { id: 'mirror-tokens',      label: 'Mirror Tokens' },
+  ]},
+  { section: 'TOOLS', items: [
+    { id: 'team-builder',       label: 'Team Builder' },
   ]},
   { section: 'SETTINGS', items: [
     { id: 'settings',     label: 'Settings' },
@@ -2595,6 +2599,96 @@ function DetectionFeedbackPanel() {
   );
 }
 
+// ─── Team Builder Panel ───────────────────────────────────────────────────────
+// Runs (newest first) and the activities that matched nothing on the
+// MindPrint™ Activity Taxonomy, grouped by name, so the list can be reviewed
+// for missing entries. Runs hold labels (P1, Seat A), never names.
+
+function TeamBuilderPanel() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState('runs');
+
+  async function load() {
+    setError(''); setLoading(true);
+    try {
+      const res = await fetch('/api/admin/team-builder');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed');
+      setData(json);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const tabBtn = (id, label) => (
+    <button key={id} onClick={() => setTab(id)} style={{ ...s.btnSecondary, ...(tab === id ? { background: '#0F172A', color: '#fff', borderColor: '#0F172A' } : {}) }}>{label}</button>
+  );
+
+  return (
+    <section style={s.panel}>
+      <h2 style={s.panelTitle}>Team Builder</h2>
+      <p style={{ fontSize: '0.875rem', color: '#64748B', marginTop: -16, marginBottom: 20 }}>
+        One row per completed result. People are stored as labels only; rosters, names, skills and document text are never saved.
+      </p>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {tabBtn('runs', `Runs${data ? ` (${data.runs.length})` : ''}`)}
+        {tabBtn('unlisted', `Unlisted activities${data ? ` (${data.unlisted.length})` : ''}`)}
+      </div>
+      {loading && <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Loading…</p>}
+      {error && <p style={s.error}>{error}</p>}
+
+      {data && tab === 'runs' && (
+        data.runs.length ? (
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead><tr>{['Date', 'Account', 'User', 'Mode', 'Weeks', 'Hours', 'Activities', 'Profiles', 'Headcount'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {data.runs.map((r, i) => (
+                  <tr key={r.id} style={i % 2 === 0 ? s.trEven : {}}>
+                    <td style={s.td}>{new Date(r.created_at).toLocaleString()}</td>
+                    <td style={s.td}>{r.account_name || '—'}</td>
+                    <td style={s.td}>{r.user_email || '—'}</td>
+                    <td style={s.td}>{r.mode === 'design' ? 'Design' : 'Roster'}</td>
+                    <td style={s.td}>{r.weeks ?? '—'}</td>
+                    <td style={s.td}>{r.hours != null ? r.hours.toLocaleString() : '—'}</td>
+                    <td style={s.td}>{r.activity_count ?? '—'}</td>
+                    <td style={s.td}>{(r.profiles || []).map((p, j) => <span key={j} style={{ ...profileBadgeStyle(p), marginRight: 4 }}>{p}</span>)}</td>
+                    <td style={s.td}>{r.result_summary?.headcount ? `${r.result_summary.headcount.lo} to ${r.result_summary.headcount.hi}` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>No runs yet.</p>
+      )}
+
+      {data && tab === 'unlisted' && (
+        data.unlisted.length ? (
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead><tr>{['Activity', 'Times seen', 'Demand tags set', 'Evidence from documents', 'Last seen'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {data.unlisted.map((u, i) => (
+                  <tr key={u.name} style={i % 2 === 0 ? s.trEven : {}}>
+                    <td style={s.td}>{u.name}</td>
+                    <td style={s.td}>{u.count}</td>
+                    <td style={s.td}>{Object.entries(u.tags).map(([t, n]) => <span key={t} style={{ ...profileBadgeStyle(t), marginRight: 4 }}>{t}{n > 1 ? ` ×${n}` : ''}</span>)}</td>
+                    <td style={{ ...s.td, fontSize: '0.8rem', color: '#64748B', maxWidth: 360 }}>{u.evidence.length ? u.evidence.map(e => `“${e}”`).join(' · ') : '—'}</td>
+                    <td style={s.td}>{new Date(u.lastSeen).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p style={{ color: '#94A3B8', fontSize: '0.875rem' }}>Every activity so far matched an entry on the taxonomy.</p>
+      )}
+    </section>
+  );
+}
+
 // ─── Mirror Tokens Panel ──────────────────────────────────────────────────────
 // Create, label, and deactivate access to the hidden /mirror preview.
 // mirror_tokens is a separate table from the assessment `tokens` table and
@@ -3709,6 +3803,7 @@ export default function AdminDashboard() {
           {active === 'emails' && <EmailsPanel />}
           {active === 'detection-feedback' && <DetectionFeedbackPanel />}
           {active === 'mirror-tokens' && <MirrorTokensPanel />}
+          {active === 'team-builder' && <TeamBuilderPanel />}
           {active === 'settings' && (
             <section style={s.panel}>
               <h2 style={s.panelTitle}>Settings</h2>
