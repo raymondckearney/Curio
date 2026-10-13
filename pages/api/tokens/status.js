@@ -1,5 +1,6 @@
 import { dbGet } from '../../../lib/supabase';
 import { getAdminSession } from '../../../lib/adminSession';
+import { finalizeDueScheduledLinks } from '../../../lib/scheduledLinks';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -14,6 +15,8 @@ export default async function handler(req, res) {
     if (!engagement_id) return res.status(400).json({ error: 'engagement_id is required' });
 
     const rows = await dbGet('tokens', { engagement_id });
+    // Scheduled emails whose time has passed show as sent.
+    await finalizeDueScheduledLinks(rows).catch(err => console.error('status finalize:', err));
     return res.status(200).json({ tokens: rows });
   } catch (err) {
     console.error('status error:', err);

@@ -1,7 +1,8 @@
 import { Resend } from 'resend';
-import { dbPatch } from '../../../lib/supabase';
+import { dbGet, dbPatch } from '../../../lib/supabase';
 import { setContactLinkSent } from '../../../lib/notion';
 import { getAdminSession } from '../../../lib/adminSession';
+import { parseSendAt, cancelScheduled } from '../../../lib/scheduledLinks';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -11,7 +12,9 @@ export default async function handler(req, res) {
   const hasCookie = !!getAdminSession(req);
   if (!hasBearer && !hasCookie) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { token, to, subject, message, participantEmail, purpose } = req.body;
+  // sendAt (optional, ISO time): schedule the email instead of sending now.
+  // Resend holds it and sends it at that time (lib/scheduledLinks.js).
+  const { token, to, subject, message, participantEmail, purpose, sendAt } = req.body;
   if (!token || !to || !subject || !message) {
     return res.status(400).json({ error: 'token, to, subject, and message are required' });
   }
@@ -20,20 +23,49 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
   }
 
+  const when = parseSendAt(sendAt);
+  if (when.error) return res.status(400).json({ error: when.error });
+
+  // A new send or schedule replaces any email still waiting to go out for
+  // this token, so the person never gets two.
+  try {
+    const [existing] = await dbGet('tokens', { token });
+    if (existing?.scheduled_email_id) await cancelScheduled(existing);
+  } catch (err) {
+    console.error('[send-token-link] cancel previous schedule failed:', err);
+    return res.status(500).json({ error: `This token already has a scheduled email that could not be cancelled: ${err.message}` });
+  }
+
   const resend = new Resend(process.env.RESEND_API_KEY);
 
+  let emailId = null;
   try {
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: 'Curio <hello@choosecurio.com>',
       to,
       bcc: ['raymondckearney@gmail.com'],
       subject,
       text: message,
       html: buildEmailHtml(message, purpose),
+      ...(when.at ? { scheduledAt: when.at.toISOString() } : {}),
     });
+    if (error) throw new Error(error.message || 'Failed to send email');
+    emailId = data?.id || null;
   } catch (err) {
     console.error('[send-token-link] resend failed:', err);
     return res.status(500).json({ error: err.message || 'Failed to send email' });
+  }
+
+  if (when.at) {
+    try {
+      await dbPatch('tokens', { token }, { link_scheduled_for: when.at.toISOString(), scheduled_email_id: emailId });
+    } catch (err) {
+      // The email is scheduled at Resend either way; only the admin view
+      // would miss it, so say so rather than fail.
+      console.error('[send-token-link] supabase update failed:', err);
+      return res.status(200).json({ success: true, scheduled: true, scheduledFor: when.at.toISOString(), warning: 'Scheduled, but the token could not be marked. Run migration 0015 if you have not.' });
+    }
+    return res.status(200).json({ success: true, scheduled: true, scheduledFor: when.at.toISOString() });
   }
 
   try {

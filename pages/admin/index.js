@@ -139,6 +139,46 @@ function buildDefaultMessage(name, tokenUrl, purpose) {
   return `Hi ${name},\n\nI'd like to invite you to take the MindPrint™ Assessment — a short exercise that identifies how you're naturally wired to think through and solve problems. It will take approximately 7-10 minutes to complete.\n\nYour personal link:\n\n${tokenUrl}\n\nThis link is unique to you and can only be used once.\n\nLooking forward to sharing the results with you.\n\nRay Kearney\nCurio`;
 }
 
+// Scheduling: the picker works in the admin's own time zone; the server gets
+// an ISO time and Resend sends the email then (lib/scheduledLinks.js).
+const SCHEDULE_MAX_DAYS = 30;
+function toLocalInput(d) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function tomorrowAtNine() {
+  const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d;
+}
+function fmtWhen(iso) {
+  return new Date(iso).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+// "Scheduled · Tue, Oct 14, 9:00 AM" with a Cancel button. Once the time has
+// passed it reads as sent.
+function ScheduledBadge({ token, when, onCancelled }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  if (new Date(when) <= new Date()) return <span style={s.sentBadge}>Sent ✓</span>;
+  async function cancel() {
+    if (!window.confirm(`Cancel the email scheduled for ${fmtWhen(when)}? It will not be sent.`)) return;
+    setBusy(true); setErr('');
+    try {
+      const res = await fetch('/api/email/cancel-scheduled-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not cancel');
+      onCancelled();
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }
+  return (
+    <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+      <span style={s.badgeScheduled}>Scheduled · {fmtWhen(when)}</span>
+      <button style={s.cancelScheduleBtn} onClick={cancel} disabled={busy}>{busy ? 'Cancelling…' : 'Cancel'}</button>
+      {err && <span style={{ color: '#DC2626', fontSize: '0.75rem' }}>{err}</span>}
+    </span>
+  );
+}
+
 function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, purpose, onClose, onSent }) {
   const isCareer = purpose === 'career';
   const [to, setTo] = useState(participantEmail || '');
@@ -147,18 +187,32 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
   const [message, setMessage] = useState(buildDefaultMessage(safeName, tokenUrl, purpose));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [when, setWhen] = useState('now'); // 'now' | 'later'
+  const [sendAt, setSendAt] = useState(() => toLocalInput(tomorrowAtNine()));
+  const [tz, setTz] = useState('');
+  useEffect(() => { try { setTz(Intl.DateTimeFormat().resolvedOptions().timeZone || ''); } catch {} }, []);
 
   async function send() {
     if (!to.trim()) return setError('Recipient email is required');
+    let iso;
+    if (when === 'later') {
+      const at = new Date(sendAt);
+      if (!sendAt || Number.isNaN(at.getTime())) return setError('Pick a date and time to send it.');
+      if (at.getTime() < Date.now() + 2 * 60000) return setError('Pick a time at least 2 minutes from now, or send it now.');
+      if (at.getTime() > Date.now() + SCHEDULE_MAX_DAYS * 86400000) return setError(`Emails can be scheduled up to ${SCHEDULE_MAX_DAYS} days ahead.`);
+      iso = at.toISOString();
+    }
     setSending(true); setError('');
     try {
-      const res = await fetch('/api/email/send-token-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, to: to.trim(), subject, message, participantEmail, purpose }) });
+      const res = await fetch('/api/email/send-token-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, to: to.trim(), subject, message, participantEmail, purpose, ...(iso ? { sendAt: iso } : {}) }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send');
-      onSent();
+      if (data.warning) window.alert(data.warning);
+      onSent(data);
     } catch (e) { setError(e.message); }
     finally { setSending(false); }
   }
+  const pillStyle = active => ({ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: active ? 600 : 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", background: active ? '#0F172A' : '#F1F5F9', color: active ? '#fff' : '#64748B' });
 
   return (
     <div style={s.sendPanel}>
@@ -167,9 +221,22 @@ function SendLinkPanel({ token, participantName, participantEmail, tokenUrl, pur
         <div style={s.sendField}><label style={s.sendLabel}>Subject</label><input style={s.sendInput} value={subject} onChange={e => setSubject(e.target.value)} /></div>
         <div style={{ ...s.sendField, gridColumn: '1 / -1' }}><label style={s.sendLabel}>Message</label><textarea style={s.sendTextarea} rows={8} value={message} onChange={e => setMessage(e.target.value)} /></div>
       </div>
+      <div style={{ ...s.sendField, marginBottom: 12 }}>
+        <label style={s.sendLabel}>When</label>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <button type="button" style={pillStyle(when === 'now')} onClick={() => setWhen('now')}>Send now</button>
+          <button type="button" style={pillStyle(when === 'later')} onClick={() => setWhen('later')}>Schedule</button>
+          {when === 'later' && (
+            <>
+              <input type="datetime-local" style={{ ...s.sendInput, width: 'auto' }} value={sendAt} min={toLocalInput(new Date(Date.now() + 5 * 60000))} max={toLocalInput(new Date(Date.now() + SCHEDULE_MAX_DAYS * 86400000))} onChange={e => setSendAt(e.target.value)} />
+              <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Your time{tz ? ` (${tz})` : ''}. Up to {SCHEDULE_MAX_DAYS} days ahead.</span>
+            </>
+          )}
+        </div>
+      </div>
       {error && <p style={s.error}>{error}</p>}
       <div style={s.sendActions}>
-        <button style={s.btn} onClick={send} disabled={sending}>{sending ? 'Sending…' : 'Send'}</button>
+        <button style={s.btn} onClick={send} disabled={sending}>{sending ? (when === 'later' ? 'Scheduling…' : 'Sending…') : (when === 'later' ? 'Schedule' : 'Send')}</button>
         <button style={s.btnSecondary} onClick={onClose}>Cancel</button>
       </div>
     </div>
@@ -249,12 +316,14 @@ function GeneratePanel({ prefillEngId }) {
   const [copied, setCopied] = useState(false);
   const [openSendLink, setOpenSendLink] = useState(null);
   const [sentLinks, setSentLinks] = useState(new Set());
+  const [scheduledLinks, setScheduledLinks] = useState({}); // token -> ISO send time
 
   // Individual mode state
   const [indivName, setIndivName] = useState('');
   const [indivEmail, setIndivEmail] = useState('');
   const [indivResult, setIndivResult] = useState(null);
   const [indivSentLink, setIndivSentLink] = useState(false);
+  const [indivScheduled, setIndivScheduled] = useState(null); // ISO send time
 
   useEffect(() => {
     if (prefillEngId) { setEngagementId(prefillEngId); setBatchMode('enterprise'); }
@@ -338,8 +407,10 @@ function GeneratePanel({ prefillEngId }) {
                 <button style={s.copyBtn} onClick={() => navigator.clipboard.writeText(indivResult.url)}>Copy</button>
               </div>
               <div style={{ marginTop: 12 }}>
-                {indivSentLink ? <span style={s.sentBadge}>Link Sent ✓</span> : (
-                  <SendLinkPanel token={indivResult.token} participantName={indivResult.name} participantEmail={indivResult.email} tokenUrl={indivResult.url} purpose={purpose} onClose={() => {}} onSent={() => setIndivSentLink(true)} />
+                {indivSentLink ? <span style={s.sentBadge}>Link Sent ✓</span> : indivScheduled ? (
+                  <ScheduledBadge token={indivResult.token} when={indivScheduled} onCancelled={() => setIndivScheduled(null)} />
+                ) : (
+                  <SendLinkPanel token={indivResult.token} participantName={indivResult.name} participantEmail={indivResult.email} tokenUrl={indivResult.url} purpose={purpose} onClose={() => {}} onSent={d => (d?.scheduled ? setIndivScheduled(d.scheduledFor) : setIndivSentLink(true))} />
                 )}
               </div>
             </div>
@@ -393,7 +464,9 @@ function GeneratePanel({ prefillEngId }) {
                           <td style={{ ...s.td, ...s.urlCell }}>{r.url}</td>
                           <td style={s.td}><button style={s.copyBtn} onClick={() => navigator.clipboard.writeText(r.url)}>Copy</button></td>
                           <td style={s.td}>
-                            {sentLinks.has(r.token) ? <span style={s.sentBadge}>Sent ✓</span> : (
+                            {sentLinks.has(r.token) ? <span style={s.sentBadge}>Sent ✓</span> : scheduledLinks[r.token] ? (
+                              <ScheduledBadge token={r.token} when={scheduledLinks[r.token]} onCancelled={() => setScheduledLinks(prev => { const n = { ...prev }; delete n[r.token]; return n; })} />
+                            ) : (
                               <button style={openSendLink === r.token ? s.sendLinkBtnActive : s.sendLinkBtn} onClick={() => setOpenSendLink(openSendLink === r.token ? null : r.token)}>Send Link</button>
                             )}
                           </td>
@@ -402,7 +475,7 @@ function GeneratePanel({ prefillEngId }) {
                       if (openSendLink === r.token) {
                         rows.push(
                           <tr key={`${r.token}-panel`}><td colSpan={7} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}>
-                            <SendLinkPanel token={r.token} participantName={r.name} participantEmail={r.email} tokenUrl={r.url} purpose={purpose} onClose={() => setOpenSendLink(null)} onSent={() => { setSentLinks(prev => new Set([...prev, r.token])); setOpenSendLink(null); }} />
+                            <SendLinkPanel token={r.token} participantName={r.name} participantEmail={r.email} tokenUrl={r.url} purpose={purpose} onClose={() => setOpenSendLink(null)} onSent={d => { if (d?.scheduled) setScheduledLinks(prev => ({ ...prev, [r.token]: d.scheduledFor })); else setSentLinks(prev => new Set([...prev, r.token])); setOpenSendLink(null); }} />
                           </td></tr>
                         );
                       }
@@ -499,7 +572,9 @@ function StatusPanel({ preloadEngId }) {
                       <td style={s.td}>{t.company || '—'}</td>
                       <td style={s.td}>{t.role || '—'}</td>
                       <td style={s.td}><span style={t.used ? s.badgeUsed : s.badgePending}>{t.used ? 'Completed' : 'Pending'}</span></td>
-                      <td style={s.td}>{(t.link_sent_at || sentLinks.has(t.token)) ? <span style={s.badgeLinkSent}>Link Sent</span> : '—'}</td>
+                      <td style={s.td}>{(t.link_sent_at || sentLinks.has(t.token)) ? <span style={s.badgeLinkSent}>Link Sent</span> : t.link_scheduled_for ? (
+                        <ScheduledBadge token={t.token} when={t.link_scheduled_for} onCancelled={() => setTokens(prev => prev.map(tok => tok.token === t.token ? { ...tok, link_scheduled_for: null, scheduled_email_id: null } : tok))} />
+                      ) : '—'}</td>
                       <td style={s.td}>{t.used_at ? new Date(t.used_at).toLocaleString() : '—'}</td>
                       <td style={s.td}>{profile ? <span style={s.badgeType}>{profile}</span> : '—'}</td>
                       <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
@@ -525,7 +600,11 @@ function StatusPanel({ preloadEngId }) {
                   return [
                     mainRow,
                     <tr key={`${t.token}-panel`}><td colSpan={9} style={{ padding: 0, borderBottom: '1px solid #E2E8F0' }}>
-                      <SendLinkPanel token={t.token} participantName={t.name} participantEmail={t.email} tokenUrl={tokenUrl} onClose={() => setOpenSendLink(null)} onSent={() => { setSentLinks(prev => new Set([...prev, t.token])); setTokens(prev => prev.map(tok => tok.token === t.token ? { ...tok, link_sent_at: new Date().toISOString() } : tok)); setOpenSendLink(null); }} />
+                      <SendLinkPanel token={t.token} participantName={t.name} participantEmail={t.email} tokenUrl={tokenUrl} onClose={() => setOpenSendLink(null)} onSent={d => {
+                        if (d?.scheduled) setTokens(prev => prev.map(tok => tok.token === t.token ? { ...tok, link_scheduled_for: d.scheduledFor } : tok));
+                        else { setSentLinks(prev => new Set([...prev, t.token])); setTokens(prev => prev.map(tok => tok.token === t.token ? { ...tok, link_sent_at: new Date().toISOString(), link_scheduled_for: null } : tok)); }
+                        setOpenSendLink(null);
+                      }} />
                     </td></tr>,
                   ];
                 })}
@@ -2090,7 +2169,7 @@ function EditPanel({ account, onClose, onSave }) {
                             {t.used ? 'Completed' : t.email ? 'Sent' : 'Available'}
                           </span>
                         </td>
-                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.link_sent_at ? new Date(t.link_sent_at).toLocaleDateString() : '—'}</td>
+                        <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.link_sent_at ? new Date(t.link_sent_at).toLocaleDateString() : t.link_scheduled_for ? <span style={{ color: '#92400E', fontWeight: 600 }} title={fmtWhen(t.link_scheduled_for)}>Scheduled {new Date(t.link_scheduled_for).toLocaleDateString()}</span> : '—'}</td>
                         <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: '#64748B' }}>{t.used_at ? new Date(t.used_at).toLocaleDateString() : '—'}</td>
                         <td style={{ padding: '7px 10px', borderBottom: '1px solid #F1F5F9', color: t.expires_at && new Date(t.expires_at) < new Date() ? '#DC2626' : '#64748B' }}>{t.expires_at ? new Date(t.expires_at).toLocaleDateString() : '—'}</td>
                       </tr>
@@ -3854,6 +3933,8 @@ const s = {
   badgeActive: { background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', fontWeight: 600 },
   badgeRevoked: { background: '#FEE2E2', color: '#991B1B', padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', fontWeight: 600 },
   sentBadge: { color: '#059669', fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap' },
+  badgeScheduled: { background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A', padding: '3px 10px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap' },
+  cancelScheduleBtn: { padding: '3px 8px', background: 'none', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   sendLinkBtn: { padding: '4px 10px', background: '#F0FDF4', color: '#059669', border: '1px solid #BBF7D0', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' },
   sendLinkBtnActive: { padding: '4px 10px', background: '#059669', color: '#fff', border: '1px solid #059669', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' },
   sendProfileBtn: { padding: '4px 10px', background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' },

@@ -9,6 +9,8 @@
 //   SUPABASE_SERVICE_KEY
 //   CRON_SECRET            (new — any random string; Vercel sends it automatically)
 
+import { finalizeDueScheduledLinks } from '../../../lib/scheduledLinks';
+
 export default async function handler(req, res) {
   // Vercel Cron sends: Authorization: Bearer <CRON_SECRET>
   // This blocks random public hits to the endpoint.
@@ -45,9 +47,14 @@ export default async function handler(req, res) {
       });
     }
 
+    // Also mark any scheduled token emails that have gone out as sent, so
+    // portal team pages and Notion catch up even if no admin opens a list.
+    const scheduledFinalized = await finalizeDueScheduledLinks().catch(err => { console.error('[keepalive] scheduled links:', err.message); return 0; });
+
     return res.status(200).json({
       ok: true,
       pingedAt: new Date().toISOString(),
+      scheduledFinalized,
     });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
