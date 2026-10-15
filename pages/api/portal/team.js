@@ -23,25 +23,33 @@ export default async function handler(req, res) {
         dbQuery('tokens', tokenFilter),
       ]);
 
-      // Build a map of email → token status
-      const tokenByEmail = {};
+      // Every token held by each email. Someone can hold several (repeat
+      // self-serve links, or a profile set by hand in admin on a token that
+      // was never marked used), so all of them are checked below.
+      const tokensByEmail = {};
       for (const t of tokens) {
-        if (t.email) tokenByEmail[t.email.toLowerCase()] = t;
+        if (t.email) (tokensByEmail[t.email.toLowerCase()] = tokensByEmail[t.email.toLowerCase()] || []).push(t);
       }
 
-      // Fetch assessments for completed tokens
-      const usedTokenIds = tokens.filter(t => t.used).map(t => t.token);
+      // Assessments on any of those tokens, the same way the dashboard finds
+      // a person's own profile (lib/ownProfile.js), so the two never disagree.
+      const assignedTokenIds = tokens.filter(t => t.email).map(t => t.token);
       const assessmentMap = {};
-      if (usedTokenIds.length) {
+      if (assignedTokenIds.length) {
         const assessments = await dbQuery('assessments', {
-          token: `in.(${usedTokenIds.join(',')})`,
+          token: `in.(${assignedTokenIds.join(',')})`,
           select: 'token,type,submitted_at',
+          order: 'submitted_at.desc',
         }).catch(() => []);
-        for (const a of assessments) assessmentMap[a.token] = a;
+        for (const a of assessments) if (!assessmentMap[a.token]) assessmentMap[a.token] = a;
       }
 
       const enriched = users.map(u => {
-        const tok = tokenByEmail[u.email.toLowerCase()];
+        const held = tokensByEmail[u.email.toLowerCase()] || [];
+        // A token with a completed assessment wins, then a used one, then
+        // the most recently sent.
+        const tok = held.find(t => assessmentMap[t.token]) || held.find(t => t.used)
+          || [...held].sort((a, b) => String(b.link_sent_at || '').localeCompare(String(a.link_sent_at || '')))[0];
         const assessment = tok ? assessmentMap[tok.token] : null;
         return {
           ...u,
